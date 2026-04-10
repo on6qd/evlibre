@@ -3,4 +3,11 @@ websocket_port = 9090
 heartbeat_interval = 900
 
 [database]
+# Options: "in-memory" or "h2-file"
 type = "in-memory"
+# H2 settings (only used when type = "h2-file")
+jdbc_url = "jdbc:h2:./data/evlibre;MODE=PostgreSQL"
+username = "sa"
+password = ""
+pool_size = 10
+run_migrations = true

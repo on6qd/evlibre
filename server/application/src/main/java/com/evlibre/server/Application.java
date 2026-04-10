@@ -4,12 +4,14 @@ import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.*;
 import com.evlibre.server.adapter.ocpp.handler.v16.*;
 import com.evlibre.server.adapter.ocpp.handler.v201.*;
+import com.evlibre.server.adapter.persistence.h2.*;
 import com.evlibre.server.adapter.persistence.inmemory.*;
 import com.evlibre.server.config.ConfigLoader;
 import com.evlibre.server.config.ServerConfig;
 import com.evlibre.server.core.domain.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.model.Tenant;
 import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.ports.outbound.*;
 import com.evlibre.server.core.usecases.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -30,26 +32,53 @@ public class Application {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Persistence adapters
-        InMemoryTenantRepository tenantRepo = new InMemoryTenantRepository();
-        InMemoryStationRepository stationRepo = new InMemoryStationRepository();
-        InMemoryOcppEventLog eventLog = new InMemoryOcppEventLog();
-        SystemTimeProvider timeProvider = new SystemTimeProvider();
-        InMemoryTransactionRepository transactionRepo = new InMemoryTransactionRepository();
-        InMemoryAuthorizationRepository authorizationRepo = new InMemoryAuthorizationRepository();
+        // Persistence adapters — selected by config
+        TenantRepositoryPort tenantRepo;
+        StationRepositoryPort stationRepo;
+        OcppEventLogPort eventLog;
+        TransactionRepositoryPort transactionRepo;
+        AuthorizationRepositoryPort authorizationRepo;
+        TimeProvider timeProvider = new SystemTimeProvider();
 
-        // Seed demo tenant
-        tenantRepo.save(Tenant.builder()
-                .id(UUID.randomUUID())
-                .tenantId(new TenantId("demo-tenant"))
-                .companyName("Demo Company")
-                .createdAt(Instant.now())
-                .build());
-        log.info("Seeded demo-tenant");
+        String dbType = config.database().type();
+        if ("h2-file".equals(dbType)) {
+            log.info("Using H2 file-based persistence: {}", config.database().jdbcUrl());
+            var dbConfig = config.database();
+            H2DatabaseManager db = new H2DatabaseManager(
+                    dbConfig.jdbcUrl(), dbConfig.username(), dbConfig.password(),
+                    dbConfig.poolSize(), dbConfig.runMigrations());
 
-        // Seed demo authorization
-        authorizationRepo.addAuthorization(new TenantId("demo-tenant"), "TAG001", AuthorizationStatus.ACCEPTED);
-        log.info("Seeded demo authorization: TAG001 -> ACCEPTED");
+            tenantRepo = new H2TenantRepository(db);
+            stationRepo = new H2StationRepository(db);
+            eventLog = new H2OcppEventLog(db);
+            transactionRepo = new H2TransactionRepository(db);
+            authorizationRepo = new H2AuthorizationRepository(db);
+            // Demo data seeded by Flyway migration V6
+        } else {
+            log.info("Using in-memory persistence");
+            var inMemTenantRepo = new InMemoryTenantRepository();
+            var inMemStationRepo = new InMemoryStationRepository();
+            var inMemEventLog = new InMemoryOcppEventLog();
+            var inMemTransactionRepo = new InMemoryTransactionRepository();
+            var inMemAuthorizationRepo = new InMemoryAuthorizationRepository();
+
+            // Seed demo data for in-memory mode
+            inMemTenantRepo.save(Tenant.builder()
+                    .id(UUID.randomUUID())
+                    .tenantId(new TenantId("demo-tenant"))
+                    .companyName("Demo Company")
+                    .createdAt(Instant.now())
+                    .build());
+            inMemAuthorizationRepo.addAuthorization(
+                    new TenantId("demo-tenant"), "TAG001", AuthorizationStatus.ACCEPTED);
+            log.info("Seeded demo-tenant + TAG001");
+
+            tenantRepo = inMemTenantRepo;
+            stationRepo = inMemStationRepo;
+            eventLog = inMemEventLog;
+            transactionRepo = inMemTransactionRepo;
+            authorizationRepo = inMemAuthorizationRepo;
+        }
 
         // Use cases
         RegisterStationUseCase registerStation = new RegisterStationUseCase(
@@ -112,7 +141,8 @@ public class Application {
 
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
-            log.info("OCPP server started on port {}", config.ocpp().websocketPort());
+            log.info("OCPP server started on port {} (database: {})",
+                    config.ocpp().websocketPort(), dbType);
         }).onFailure(err -> {
             log.error("Failed to start OCPP server: {}", err.getMessage());
             vertx.close();

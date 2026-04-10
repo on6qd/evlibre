@@ -32,6 +32,26 @@ public class ServerConfig {
         @JsonProperty("type")
         private String type = "in-memory";
 
+        @JsonProperty("jdbc_url")
+        private String jdbcUrl = "jdbc:h2:./data/evlibre;MODE=PostgreSQL";
+
+        @JsonProperty("username")
+        private String username = "sa";
+
+        @JsonProperty("password")
+        private String password = "";
+
+        @JsonProperty("pool_size")
+        private int poolSize = 10;
+
+        @JsonProperty("run_migrations")
+        private boolean runMigrations = true;
+
         public String type() { return type; }
+        public String jdbcUrl() { return jdbcUrl; }
+        public String username() { return username; }
+        public String password() { return password; }
+        public int poolSize() { return poolSize; }
+        public boolean runMigrations() { return runMigrations; }
     }
 }
