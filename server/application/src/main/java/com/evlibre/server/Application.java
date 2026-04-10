@@ -3,6 +3,7 @@ package com.evlibre.server;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.*;
 import com.evlibre.server.adapter.ocpp.handler.v16.*;
+import com.evlibre.server.adapter.ocpp.handler.v201.*;
 import com.evlibre.server.adapter.persistence.inmemory.*;
 import com.evlibre.server.config.ConfigLoader;
 import com.evlibre.server.config.ServerConfig;
@@ -60,6 +61,7 @@ public class Application {
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo);
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
+        HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
 
         // OCPP WebSocket components
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -83,6 +85,20 @@ public class Application {
                 new StopTransactionHandler16(stopTransaction, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "MeterValues",
                 new MeterValuesHandler16(handleMeterValues, objectMapper));
+
+        // Register OCPP 2.0.1 handlers
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
+                new BootNotificationHandler201(registerStation, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
+                new HeartbeatHandler201(handleHeartbeat, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",
+                new StatusNotificationHandler201(handleStatusNotification, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "Authorize",
+                new AuthorizeHandler201(authorize, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "TransactionEvent",
+                new TransactionEventHandler201(handleTransactionEvent, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
+                new MeterValuesHandler201(handleMeterValues, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

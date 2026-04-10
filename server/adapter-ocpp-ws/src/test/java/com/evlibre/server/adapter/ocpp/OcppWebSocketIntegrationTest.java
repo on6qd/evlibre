@@ -2,6 +2,7 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.handler.v16.BootNotificationHandler16;
+import com.evlibre.server.adapter.ocpp.handler.v201.BootNotificationHandler201;
 import com.evlibre.server.core.domain.model.Tenant;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
@@ -57,6 +58,9 @@ class OcppWebSocketIntegrationTest {
 
         BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification", bootHandler);
+
+        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, objectMapper);
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification", bootHandler201);
 
         verticle = new OcppWebSocketVerticle(0, codec, schemaValidator, dispatcher, sessionManager, negotiator);
         vertx.deployVerticle(verticle).onComplete(ctx.succeedingThenComplete());
@@ -131,6 +135,34 @@ class OcppWebSocketIntegrationTest {
                 JsonNode response = objectMapper.readTree(msg);
                 assertThat(response.get(0).asInt()).isEqualTo(4); // CALLERROR
                 assertThat(response.get(2).asText()).isEqualTo("FormationViolation");
+                ws.close();
+                ctx.completeNow();
+            }));
+        }));
+    }
+
+    @Test
+    void ocpp201_bootNotification_returns_accepted(Vertx vertx, VertxTestContext ctx) {
+        WebSocketClient client = vertx.createWebSocketClient();
+        WebSocketConnectOptions options = new WebSocketConnectOptions()
+                .setPort(verticle.actualPort())
+                .setHost("localhost")
+                .setURI("/ocpp/demo-tenant/CHARGER-201")
+                .addSubProtocol("ocpp2.0.1");
+
+        client.connect(options).onComplete(ctx.succeeding(ws -> {
+            String bootReq = "[2,\"msg-201\",\"BootNotification\","
+                    + "{\"chargingStation\":{\"vendorName\":\"ABB\",\"model\":\"Terra AC\"},\"reason\":\"PowerUp\"}]";
+            ws.writeTextMessage(bootReq);
+
+            ws.textMessageHandler(msg -> ctx.verify(() -> {
+                JsonNode response = objectMapper.readTree(msg);
+                assertThat(response.isArray()).isTrue();
+                assertThat(response.get(0).asInt()).isEqualTo(3);
+                assertThat(response.get(1).asText()).isEqualTo("msg-201");
+                assertThat(response.get(2).get("status").asText()).isEqualTo("Accepted");
+                assertThat(response.get(2).has("currentTime")).isTrue();
+                assertThat(response.get(2).get("interval").asInt()).isEqualTo(900);
                 ws.close();
                 ctx.completeNow();
             }));
