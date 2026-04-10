@@ -29,6 +29,7 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
     private final OcppMessageDispatcher dispatcher;
     private final OcppSessionManager sessionManager;
     private final OcppProtocolNegotiator protocolNegotiator;
+    private final OcppPendingCallManager pendingCallManager;
     private HttpServer httpServer;
 
     public OcppWebSocketVerticle(int port,
@@ -36,13 +37,15 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
                                   OcppSchemaValidator schemaValidator,
                                   OcppMessageDispatcher dispatcher,
                                   OcppSessionManager sessionManager,
-                                  OcppProtocolNegotiator protocolNegotiator) {
+                                  OcppProtocolNegotiator protocolNegotiator,
+                                  OcppPendingCallManager pendingCallManager) {
         this.port = port;
         this.codec = codec;
         this.schemaValidator = schemaValidator;
         this.dispatcher = dispatcher;
         this.sessionManager = sessionManager;
         this.protocolNegotiator = protocolNegotiator;
+        this.pendingCallManager = pendingCallManager;
     }
 
     @Override
@@ -171,12 +174,12 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
 
     private void handleCallResult(OcppCallResultMessage result) {
         log.debug("Received CALLRESULT for message {}", result.messageId());
-        // Will be handled by OcppPendingCallManager in step 14
+        pendingCallManager.resolveCallResult(result.messageId(), result.payload());
     }
 
     private void handleCallError(OcppCallErrorMessage error) {
         log.warn("Received CALLERROR for message {}: {} - {}",
                 error.messageId(), error.errorCode(), error.errorDescription());
-        // Will be handled by OcppPendingCallManager in step 14
+        pendingCallManager.resolveCallError(error.messageId(), error.errorCode().value(), error.errorDescription());
     }
 }

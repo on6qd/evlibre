@@ -62,7 +62,8 @@ class OcppWebSocketIntegrationTest {
         BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification", bootHandler201);
 
-        verticle = new OcppWebSocketVerticle(0, codec, schemaValidator, dispatcher, sessionManager, negotiator);
+        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
+        verticle = new OcppWebSocketVerticle(0, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager);
         vertx.deployVerticle(verticle).onComplete(ctx.succeedingThenComplete());
     }
 

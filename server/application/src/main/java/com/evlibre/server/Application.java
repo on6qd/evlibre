@@ -100,10 +100,15 @@ public class Application {
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues, objectMapper));
 
+        // CSMS -> CS command support
+        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
+        OcppStationCommandSender commandSender = new OcppStationCommandSender(
+                sessionManager, codec, pendingCallManager, objectMapper);
+
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
                 config.ocpp().websocketPort(), codec, schemaValidator,
-                dispatcher, sessionManager, protocolNegotiator);
+                dispatcher, sessionManager, protocolNegotiator, pendingCallManager);
 
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
