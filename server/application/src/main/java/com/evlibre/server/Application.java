@@ -2,20 +2,14 @@ package com.evlibre.server;
 
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.*;
-import com.evlibre.server.adapter.ocpp.handler.v16.BootNotificationHandler16;
-import com.evlibre.server.adapter.ocpp.handler.v16.HeartbeatHandler16;
-import com.evlibre.server.adapter.ocpp.handler.v16.StatusNotificationHandler16;
-import com.evlibre.server.adapter.persistence.inmemory.InMemoryOcppEventLog;
-import com.evlibre.server.adapter.persistence.inmemory.InMemoryStationRepository;
-import com.evlibre.server.adapter.persistence.inmemory.InMemoryTenantRepository;
-import com.evlibre.server.adapter.persistence.inmemory.SystemTimeProvider;
+import com.evlibre.server.adapter.ocpp.handler.v16.*;
+import com.evlibre.server.adapter.persistence.inmemory.*;
 import com.evlibre.server.config.ConfigLoader;
 import com.evlibre.server.config.ServerConfig;
+import com.evlibre.server.core.domain.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.model.Tenant;
 import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.usecases.HandleHeartbeatUseCase;
-import com.evlibre.server.core.usecases.HandleStatusNotificationUseCase;
-import com.evlibre.server.core.usecases.RegisterStationUseCase;
+import com.evlibre.server.core.usecases.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.Vertx;
@@ -40,6 +34,8 @@ public class Application {
         InMemoryStationRepository stationRepo = new InMemoryStationRepository();
         InMemoryOcppEventLog eventLog = new InMemoryOcppEventLog();
         SystemTimeProvider timeProvider = new SystemTimeProvider();
+        InMemoryTransactionRepository transactionRepo = new InMemoryTransactionRepository();
+        InMemoryAuthorizationRepository authorizationRepo = new InMemoryAuthorizationRepository();
 
         // Seed demo tenant
         tenantRepo.save(Tenant.builder()
@@ -50,12 +46,19 @@ public class Application {
                 .build());
         log.info("Seeded demo-tenant");
 
+        // Seed demo authorization
+        authorizationRepo.addAuthorization(new TenantId("demo-tenant"), "TAG001", AuthorizationStatus.ACCEPTED);
+        log.info("Seeded demo authorization: TAG001 -> ACCEPTED");
+
         // Use cases
         RegisterStationUseCase registerStation = new RegisterStationUseCase(
                 tenantRepo, stationRepo, eventLog, timeProvider,
                 config.ocpp().heartbeatInterval());
         HandleHeartbeatUseCase handleHeartbeat = new HandleHeartbeatUseCase(stationRepo, timeProvider);
         HandleStatusNotificationUseCase handleStatusNotification = new HandleStatusNotificationUseCase(eventLog);
+        AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
+        StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo);
+        StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
 
         // OCPP WebSocket components
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -71,6 +74,12 @@ public class Application {
                 new HeartbeatHandler16(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "StatusNotification",
                 new StatusNotificationHandler16(handleStatusNotification, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "Authorize",
+                new AuthorizeHandler16(authorize, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "StartTransaction",
+                new StartTransactionHandler16(startTransaction, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "StopTransaction",
+                new StopTransactionHandler16(stopTransaction, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
