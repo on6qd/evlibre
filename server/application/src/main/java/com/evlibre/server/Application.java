@@ -59,6 +59,7 @@ public class Application {
         AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo);
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
+        HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
 
         // OCPP WebSocket components
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -80,6 +81,8 @@ public class Application {
                 new StartTransactionHandler16(startTransaction, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "StopTransaction",
                 new StopTransactionHandler16(stopTransaction, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "MeterValues",
+                new MeterValuesHandler16(handleMeterValues, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
