@@ -1,0 +1,64 @@
+@import com.evlibre.server.adapter.webui.dto.StationView
+@import java.util.List
+@import layouts.main
+
+@args (List<StationView> stations, String tenantId)
+
+@main.template("Stations", tenantId) -> {
+    <div class="px-4 sm:px-0">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Charging Stations</h1>
+            <p class="mt-2 text-sm text-gray-600">@stations.size() station(s) registered</p>
+        </div>
+
+        @if (stations.isEmpty()) {
+            <div class="bg-white shadow rounded-lg px-4 py-12 text-center">
+                <p class="text-gray-500 text-lg">No stations registered yet.</p>
+                <p class="text-gray-400 text-sm mt-2">Stations will appear here once they send a BootNotification.</p>
+            </div>
+        } else {
+            <div class="bg-white shadow overflow-hidden rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor / Model</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @for (StationView station : stations) {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">@station.stationId()</div>
+                                    @if (!station.serialNumber().equals("-")) {
+                                        <div class="text-xs text-gray-500">S/N: @station.serialNumber()</div>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">@station.vendor()</div>
+                                    <div class="text-xs text-gray-500">@station.model()</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @station.protocol()
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @station.statusBadgeClass()">
+                                        @if (station.online()) {Online} else {Offline}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @station.registrationBadgeClass()">
+                                        @station.registrationStatus()
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}

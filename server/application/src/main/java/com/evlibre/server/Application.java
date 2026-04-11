@@ -4,6 +4,7 @@ import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.*;
 import com.evlibre.server.adapter.ocpp.handler.v16.*;
 import com.evlibre.server.adapter.ocpp.handler.v201.*;
+import com.evlibre.server.adapter.webui.WebUiVerticle;
 import com.evlibre.server.adapter.persistence.h2.*;
 import com.evlibre.server.adapter.persistence.inmemory.*;
 import com.evlibre.server.config.ConfigLoader;
@@ -139,6 +140,10 @@ public class Application {
                 config.ocpp().websocketPort(), codec, schemaValidator,
                 dispatcher, sessionManager, protocolNegotiator, pendingCallManager);
 
+        // Web UI
+        WebUiVerticle webUiVerticle = new WebUiVerticle(
+                tenantRepo, stationRepo, transactionRepo, config.webui().port());
+
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
             log.info("OCPP server started on port {} (database: {})",
@@ -146,6 +151,12 @@ public class Application {
         }).onFailure(err -> {
             log.error("Failed to start OCPP server: {}", err.getMessage());
             vertx.close();
+        });
+
+        vertx.deployVerticle(webUiVerticle).onSuccess(id -> {
+            log.info("Web UI started on port {}", config.webui().port());
+        }).onFailure(err -> {
+            log.error("Failed to start Web UI: {}", err.getMessage());
         });
     }
 }

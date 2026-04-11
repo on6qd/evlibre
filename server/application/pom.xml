@@ -30,6 +30,10 @@
             <artifactId>adapter-persistence-h2</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.evlibre.server</groupId>
+            <artifactId>adapter-ui-web</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-toml</artifactId>
         </dependency>

@@ -11,3 +11,6 @@ username = "sa"
 password = ""
 pool_size = 10
 run_migrations = true
+
+[webui]
+port = 8080

@@ -12,8 +12,12 @@ public class ServerConfig {
     @JsonProperty("database")
     private DatabaseConfig database = new DatabaseConfig();
 
+    @JsonProperty("webui")
+    private WebUiConfig webui = new WebUiConfig();
+
     public OcppConfig ocpp() { return ocpp; }
     public DatabaseConfig database() { return database; }
+    public WebUiConfig webui() { return webui; }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OcppConfig {
@@ -53,5 +57,13 @@ public class ServerConfig {
         public String password() { return password; }
         public int poolSize() { return poolSize; }
         public boolean runMigrations() { return runMigrations; }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class WebUiConfig {
+        @JsonProperty("port")
+        private int port = 8080;
+
+        public int port() { return port; }
     }
 }

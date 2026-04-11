@@ -137,6 +137,11 @@
                 <artifactId>adapter-persistence-h2</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.evlibre.server</groupId>
+                <artifactId>adapter-ui-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
