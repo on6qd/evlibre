@@ -1,0 +1,85 @@
+{
+  "supervisionUrls": ["ws://host.docker.internal:9090/ocpp/demo-tenant"],
+  "idTagsFile": "idtags.json",
+  "baseName": "CS-KEBA-201",
+  "chargePointModel": "KC-P30-ESS400C2-E0R",
+  "chargePointVendor": "Keba AG",
+  "firmwareVersion": "1.10.1",
+  "power": 22080,
+  "powerUnit": "W",
+  "numberOfConnectors": 1,
+  "randomConnectors": false,
+  "ocppVersion": "2.0.1",
+  "resetTime": 30,
+  "enableStatistics": false,
+  "voltageOut": 230,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "AuthCtrlr.AuthorizeRemoteStart",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "OCPPCommCtrlr.WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedMeasurands",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
+      },
+      {
+        "key": "TxCtrlr.EVConnectionTimeOut",
+        "readonly": false,
+        "value": "180"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": true,
+    "minDuration": 60,
+    "maxDuration": 300,
+    "minDelayBetweenTwoTransactions": 30,
+    "maxDelayBetweenTwoTransactions": 120,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "Connectors": {
+        "1": {
+          "MeterValues": [
+            {
+              "unit": "V",
+              "measurand": "Voltage"
+            },
+            {
+              "unit": "W",
+              "measurand": "Power.Active.Import"
+            },
+            {
+              "unit": "A",
+              "measurand": "Current.Import"
+            },
+            {
+              "unit": "Wh"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

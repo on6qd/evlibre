@@ -1,0 +1,67 @@
+# EVLibre Charger Simulator Configuration
+#
+# Usage:
+#   java -jar simulator/target/simulator-1.0-SNAPSHOT.jar --config simulator.toml
+
+[defaults]
+server_url = "ws://localhost:9090"
+heartbeat_interval = 60
+meter_interval = 15
+
+# --- Hardware Profiles ---
+
+[profiles.terra-ac]
+vendor = "ABB"
+model = "Terra AC W22-T-0"
+protocol = "ocpp1.6"
+evse_count = 1
+id_tags = ["TAG001", "TAG002"]
+
+[profiles.terra-360]
+vendor = "ABB"
+model = "Terra 360"
+protocol = "ocpp2.0.1"
+evse_count = 2
+id_tags = ["TAG001", "TAG002"]
+
+[profiles.evlink]
+vendor = "Schneider Electric"
+model = "EVlink City"
+protocol = "ocpp1.6"
+evse_count = 1
+id_tags = ["TAG001"]
+
+# --- Fleet Definitions ---
+
+# 5 AC chargers that automatically simulate charging sessions
+[[fleets]]
+tenant = "demo-tenant"
+prefix = "AC"
+count = 5
+profile = "terra-ac"
+behavior = "auto-charge"
+
+# 3 DC fast chargers waiting for remote commands
+[[fleets]]
+tenant = "demo-tenant"
+prefix = "DC"
+count = 3
+profile = "terra-360"
+behavior = "idle"
+
+# 2 chargers that occasionally report faults
+[[fleets]]
+tenant = "demo-tenant"
+prefix = "EL"
+count = 2
+profile = "evlink"
+behavior = "error-prone"
+
+# --- Individual Charger Overrides ---
+# Uncomment to add specific chargers:
+#
+# [[chargers]]
+# id = "LOBBY-001"
+# tenant = "demo-tenant"
+# profile = "terra-ac"
+# behavior = "idle"

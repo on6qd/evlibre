@@ -54,16 +54,17 @@ class OcppWebSocketIntegrationTest {
         FakeEventLog eventLog = new FakeEventLog();
 
         RegisterStationUseCase registerUseCase = new RegisterStationUseCase(
-                tenantRepo, stationRepo, eventLog, Instant::now, 900);
+                tenantRepo, stationRepo, eventLog, Instant::now, 900,
+                (t, s) -> {});
 
-        BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, objectMapper);
+        BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, null, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification", bootHandler);
 
-        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, objectMapper);
+        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, null, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification", bootHandler201);
 
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
-        verticle = new OcppWebSocketVerticle(0, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager);
+        verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {});
         vertx.deployVerticle(verticle).onComplete(ctx.succeedingThenComplete());
     }
 

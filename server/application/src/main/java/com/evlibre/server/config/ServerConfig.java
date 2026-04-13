@@ -27,8 +27,12 @@ public class ServerConfig {
         @JsonProperty("heartbeat_interval")
         private int heartbeatInterval = 900;
 
+        @JsonProperty("ping_interval")
+        private int pingInterval = 60;
+
         public int websocketPort() { return websocketPort; }
         public int heartbeatInterval() { return heartbeatInterval; }
+        public int pingInterval() { return pingInterval; }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

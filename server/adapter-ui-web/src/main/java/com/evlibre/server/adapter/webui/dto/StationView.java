@@ -1,9 +1,9 @@
 package com.evlibre.server.adapter.webui.dto;
 
+import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.model.ChargingStation;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.util.Set;
 
 public record StationView(
         String stationId,
@@ -18,8 +18,8 @@ public record StationView(
         String registrationBadgeClass
 ) {
 
-    public static StationView fromDomain(ChargingStation station) {
-        boolean online = isOnline(station);
+    public static StationView fromDomain(ChargingStation station, Set<ChargePointIdentity> connectedStations) {
+        boolean online = connectedStations.contains(station.identity());
 
         return new StationView(
                 station.identity().value(),
@@ -33,11 +33,6 @@ public record StationView(
                 online ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800",
                 getRegistrationBadgeClass(station.registrationStatus().name())
         );
-    }
-
-    private static boolean isOnline(ChargingStation station) {
-        if (station.lastHeartbeat() == null) return false;
-        return Duration.between(station.lastHeartbeat(), Instant.now()).getSeconds() < 900;
     }
 
     private static String getRegistrationBadgeClass(String status) {

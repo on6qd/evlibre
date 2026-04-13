@@ -60,5 +60,10 @@
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.evlibre.server</groupId>
+            <artifactId>test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

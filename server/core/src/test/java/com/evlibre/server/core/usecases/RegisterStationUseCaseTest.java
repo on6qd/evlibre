@@ -31,7 +31,8 @@ class RegisterStationUseCaseTest {
         fixedTime = Instant.parse("2025-01-15T10:00:00Z");
 
         useCase = new RegisterStationUseCase(
-                tenantRepo, stationRepo, eventLog, () -> fixedTime, 900);
+                tenantRepo, stationRepo, eventLog, () -> fixedTime, 900,
+                (t, s) -> {});
 
         tenantRepo.save(Tenant.builder()
                 .id(UUID.randomUUID())

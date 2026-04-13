@@ -1,0 +1,13 @@
+services:
+  sap-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./sap-simulator/config.json:/app/dist/assets/config.json
+      - ./sap-simulator/station-16.json:/app/dist/assets/station-templates/evlibre-16.json
+      - ./sap-simulator/station-201.json:/app/dist/assets/station-templates/evlibre-201.json
+      - ./sap-simulator/idtags.json:/app/dist/assets/idtags.json
+    restart: unless-stopped

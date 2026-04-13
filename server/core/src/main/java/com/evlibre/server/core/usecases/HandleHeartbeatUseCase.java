@@ -3,6 +3,7 @@ package com.evlibre.server.core.usecases;
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.inbound.HandleHeartbeatPort;
+import com.evlibre.server.core.domain.ports.outbound.StationEventPublisher;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TimeProvider;
 import org.slf4j.Logger;
@@ -16,10 +17,14 @@ public class HandleHeartbeatUseCase implements HandleHeartbeatPort {
 
     private final StationRepositoryPort stationRepository;
     private final TimeProvider timeProvider;
+    private final StationEventPublisher stationEventPublisher;
 
-    public HandleHeartbeatUseCase(StationRepositoryPort stationRepository, TimeProvider timeProvider) {
+    public HandleHeartbeatUseCase(StationRepositoryPort stationRepository,
+                                  TimeProvider timeProvider,
+                                  StationEventPublisher stationEventPublisher) {
         this.stationRepository = stationRepository;
         this.timeProvider = timeProvider;
+        this.stationEventPublisher = stationEventPublisher;
     }
 
     @Override
@@ -29,6 +34,7 @@ public class HandleHeartbeatUseCase implements HandleHeartbeatPort {
         stationRepository.findByTenantAndIdentity(tenantId, stationIdentity)
                 .ifPresent(station -> {
                     stationRepository.save(station.receiveHeartbeat(now));
+                    stationEventPublisher.stationUpdated(tenantId, stationIdentity);
                     log.debug("Heartbeat from {}", stationIdentity.value());
                 });
 

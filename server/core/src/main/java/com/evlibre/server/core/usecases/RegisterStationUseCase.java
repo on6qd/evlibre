@@ -6,6 +6,7 @@ import com.evlibre.server.core.domain.model.ChargingStation;
 import com.evlibre.server.core.domain.model.RegistrationStatus;
 import com.evlibre.server.core.domain.ports.inbound.RegisterStationPort;
 import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.ports.outbound.StationEventPublisher;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TimeProvider;
@@ -25,17 +26,20 @@ public class RegisterStationUseCase implements RegisterStationPort {
     private final OcppEventLogPort eventLog;
     private final TimeProvider timeProvider;
     private final int heartbeatInterval;
+    private final StationEventPublisher stationEventPublisher;
 
     public RegisterStationUseCase(TenantRepositoryPort tenantRepository,
                                   StationRepositoryPort stationRepository,
                                   OcppEventLogPort eventLog,
                                   TimeProvider timeProvider,
-                                  int heartbeatInterval) {
+                                  int heartbeatInterval,
+                                  StationEventPublisher stationEventPublisher) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.stationRepository = Objects.requireNonNull(stationRepository);
         this.eventLog = Objects.requireNonNull(eventLog);
         this.timeProvider = Objects.requireNonNull(timeProvider);
         this.heartbeatInterval = heartbeatInterval;
+        this.stationEventPublisher = Objects.requireNonNull(stationEventPublisher);
     }
 
     @Override
@@ -92,6 +96,7 @@ public class RegisterStationUseCase implements RegisterStationPort {
         }
 
         stationRepository.save(station);
+        stationEventPublisher.stationUpdated(registration.tenantId(), registration.identity());
 
         return new RegistrationResult(RegistrationStatus.ACCEPTED, now, heartbeatInterval);
     }

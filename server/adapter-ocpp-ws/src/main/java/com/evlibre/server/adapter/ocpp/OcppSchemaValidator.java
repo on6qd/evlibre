@@ -61,10 +61,10 @@ public class OcppSchemaValidator {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode schemaNode = mapper.readTree(is);
 
-            // Remove $id to avoid URI parsing issues with OCPP URN format
-            if (schemaNode.has("$id")) {
-                ((com.fasterxml.jackson.databind.node.ObjectNode) schemaNode).remove("$id");
-            }
+            // Remove id/$id to avoid URI parsing issues with OCPP URN format
+            var objectNode = (com.fasterxml.jackson.databind.node.ObjectNode) schemaNode;
+            objectNode.remove("$id");
+            objectNode.remove("id");
 
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
             return factory.getSchema(schemaNode);

@@ -1,7 +1,9 @@
 package com.evlibre.server.adapter.webui;
 
+import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import com.evlibre.server.adapter.webui.handlers.DashboardHandler;
 import com.evlibre.server.adapter.webui.handlers.ErrorHandler;
+import com.evlibre.server.adapter.webui.handlers.SseHandler;
 import com.evlibre.server.adapter.webui.handlers.StationsHandler;
 import com.evlibre.server.adapter.webui.handlers.TenantContextExtractor;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
@@ -23,24 +25,28 @@ public class WebUiVerticle extends AbstractVerticle {
     private final TenantRepositoryPort tenantRepository;
     private final StationRepositoryPort stationRepository;
     private final TransactionRepositoryPort transactionRepository;
+    private final OcppSessionManager sessionManager;
     private final int port;
     private HttpServer httpServer;
 
     public WebUiVerticle(TenantRepositoryPort tenantRepository,
                          StationRepositoryPort stationRepository,
                          TransactionRepositoryPort transactionRepository,
+                         OcppSessionManager sessionManager,
                          int port) {
         this.tenantRepository = tenantRepository;
         this.stationRepository = stationRepository;
         this.transactionRepository = transactionRepository;
+        this.sessionManager = sessionManager;
         this.port = port;
     }
 
     @Override
     public void start(Promise<Void> startPromise) {
         TenantContextExtractor contextExtractor = new TenantContextExtractor(tenantRepository);
-        DashboardHandler dashboardHandler = new DashboardHandler(vertx, stationRepository);
-        StationsHandler stationsHandler = new StationsHandler(vertx, stationRepository);
+        DashboardHandler dashboardHandler = new DashboardHandler(vertx, stationRepository, sessionManager);
+        StationsHandler stationsHandler = new StationsHandler(vertx, stationRepository, sessionManager);
+        SseHandler sseHandler = new SseHandler(vertx, stationRepository, sessionManager);
         ErrorHandler errorHandler = new ErrorHandler();
 
         Router router = Router.router(vertx);
@@ -49,16 +55,18 @@ public class WebUiVerticle extends AbstractVerticle {
         router.route().handler(BodyHandler.create());
 
         // Multi-tenant routes
-        router.get("/ui/:tenantId/dashboard")
+        router.get("/:tenantId/dashboard")
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, dashboardHandler::showDashboard));
-        router.get("/ui/:tenantId/stations")
+        router.get("/:tenantId/stations")
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, stationsHandler::listStations));
+        router.get("/:tenantId/events/stations")
+                .handler(ctx -> contextExtractor.extractAndValidate(ctx, sseHandler::streamStationUpdates));
 
         // Root
         router.get("/").handler(ctx -> {
             ctx.response()
                     .putHeader("Content-Type", "text/html; charset=UTF-8")
-                    .end("<html><body><h1>evlibre</h1><p>Navigate to /ui/{tenantId}/dashboard</p></body></html>");
+                    .end("<html><body><h1>evlibre</h1><p>Navigate to /{tenantId}/dashboard</p></body></html>");
         });
 
         // Error handling

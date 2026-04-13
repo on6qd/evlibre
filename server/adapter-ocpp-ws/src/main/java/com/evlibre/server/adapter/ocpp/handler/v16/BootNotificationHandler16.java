@@ -2,9 +2,11 @@ package com.evlibre.server.adapter.ocpp.handler.v16;
 
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.OcppSession;
+import com.evlibre.server.adapter.ocpp.PostBootActionService;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.dto.RegistrationResult;
 import com.evlibre.server.core.domain.dto.StationRegistration;
+import com.evlibre.server.core.domain.model.RegistrationStatus;
 import com.evlibre.server.core.domain.ports.inbound.RegisterStationPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,10 +18,15 @@ import java.time.format.DateTimeFormatter;
 public class BootNotificationHandler16 implements OcppMessageHandler {
 
     private final RegisterStationPort registerStationPort;
+    private final PostBootActionService postBootActionService;
     private final ObjectMapper objectMapper;
+    private volatile boolean accepted;
 
-    public BootNotificationHandler16(RegisterStationPort registerStationPort, ObjectMapper objectMapper) {
+    public BootNotificationHandler16(RegisterStationPort registerStationPort,
+                                     PostBootActionService postBootActionService,
+                                     ObjectMapper objectMapper) {
         this.registerStationPort = registerStationPort;
+        this.postBootActionService = postBootActionService;
         this.objectMapper = objectMapper;
     }
 
@@ -36,6 +43,7 @@ public class BootNotificationHandler16 implements OcppMessageHandler {
         );
 
         RegistrationResult result = registerStationPort.register(registration);
+        accepted = result.status() == RegistrationStatus.ACCEPTED;
 
         ObjectNode response = objectMapper.createObjectNode();
         response.put("status", result.status().name().substring(0, 1).toUpperCase()
@@ -45,5 +53,13 @@ public class BootNotificationHandler16 implements OcppMessageHandler {
         response.put("interval", result.heartbeatInterval());
 
         return response;
+    }
+
+    @Override
+    public void afterResponse(OcppSession session) {
+        if (accepted && postBootActionService != null) {
+            postBootActionService.onBootAccepted(session.tenantId(), session.stationIdentity(),
+                    session.protocol());
+        }
     }
 }

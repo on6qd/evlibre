@@ -1,15 +1,18 @@
 package com.evlibre.server.adapter.webui.handlers;
 
+import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.webui.dto.DashboardStats;
 import com.evlibre.server.core.domain.model.ChargingStation;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 
 public class DashboardHandler {
 
@@ -17,16 +20,20 @@ public class DashboardHandler {
 
     private final Vertx vertx;
     private final StationRepositoryPort stationRepository;
+    private final OcppSessionManager sessionManager;
 
-    public DashboardHandler(Vertx vertx, StationRepositoryPort stationRepository) {
+    public DashboardHandler(Vertx vertx, StationRepositoryPort stationRepository,
+                            OcppSessionManager sessionManager) {
         this.vertx = vertx;
         this.stationRepository = stationRepository;
+        this.sessionManager = sessionManager;
     }
 
     public void showDashboard(RoutingContext ctx, TenantId tenantId) {
         vertx.<String>executeBlocking(() -> {
             List<ChargingStation> stations = stationRepository.findByTenant(tenantId);
-            DashboardStats stats = DashboardStats.calculate(stations);
+            Set<ChargePointIdentity> connected = sessionManager.connectedStations(tenantId);
+            DashboardStats stats = DashboardStats.calculate(stations, connected);
 
             return pages.dashboard.template(stats, tenantId.value())
                     .render()

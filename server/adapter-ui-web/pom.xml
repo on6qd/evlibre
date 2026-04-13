@@ -22,6 +22,12 @@
             <artifactId>core</artifactId>
         </dependency>
 
+        <!-- OCPP adapter (for OcppSessionManager) -->
+        <dependency>
+            <groupId>com.evlibre.server</groupId>
+            <artifactId>adapter-ocpp-ws</artifactId>
+        </dependency>
+
         <!-- Vert.x -->
         <dependency>
             <groupId>io.vertx</groupId>
@@ -64,6 +70,11 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.evlibre.server</groupId>
+            <artifactId>test-support</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -20,6 +20,7 @@
         <module>adapter-persistence-inmemory</module>
         <module>adapter-persistence-h2</module>
         <module>adapter-ui-web</module>
+        <module>test-support</module>
         <module>application</module>
     </modules>
 </project>

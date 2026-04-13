@@ -1,10 +1,10 @@
 package com.evlibre.server.adapter.webui.dto;
 
+import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.model.ChargingStation;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 public record DashboardStats(
         int totalStations,
@@ -13,9 +13,10 @@ public record DashboardStats(
         double uptimePercentage
 ) {
 
-    public static DashboardStats calculate(List<ChargingStation> stations) {
+    public static DashboardStats calculate(List<ChargingStation> stations,
+                                           Set<ChargePointIdentity> connectedStations) {
         int online = (int) stations.stream()
-                .filter(DashboardStats::isOnline)
+                .filter(s -> connectedStations.contains(s.identity()))
                 .count();
         int offline = stations.size() - online;
 
@@ -29,10 +30,5 @@ public record DashboardStats(
                 offline,
                 Math.round(uptime * 10.0) / 10.0
         );
-    }
-
-    private static boolean isOnline(ChargingStation station) {
-        if (station.lastHeartbeat() == null) return false;
-        return Duration.between(station.lastHeartbeat(), Instant.now()).getSeconds() < 900;
     }
 }

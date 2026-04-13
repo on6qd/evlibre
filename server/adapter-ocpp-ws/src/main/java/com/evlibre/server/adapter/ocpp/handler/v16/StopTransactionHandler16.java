@@ -6,6 +6,7 @@ import com.evlibre.server.core.domain.dto.StopTransactionData;
 import com.evlibre.server.core.domain.ports.inbound.StopTransactionPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.time.Instant;
 
@@ -35,6 +36,13 @@ public class StopTransactionHandler16 implements OcppMessageHandler {
 
         stopTransactionPort.stopTransaction(data);
 
-        return objectMapper.createObjectNode();
+        // OCPP 1.6 spec: StopTransaction.conf must include idTagInfo if idTag was provided
+        ObjectNode response = objectMapper.createObjectNode();
+        if (idTag != null) {
+            ObjectNode idTagInfo = objectMapper.createObjectNode();
+            idTagInfo.put("status", "Accepted");
+            response.set("idTagInfo", idTagInfo);
+        }
+        return response;
     }
 }

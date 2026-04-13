@@ -4,6 +4,9 @@ import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.*;
 import com.evlibre.server.adapter.ocpp.handler.v16.*;
 import com.evlibre.server.adapter.ocpp.handler.v201.*;
+import com.evlibre.server.adapter.persistence.inmemory.InMemoryDeviceModelRepository;
+import com.evlibre.server.adapter.persistence.inmemory.InMemoryStationConfigurationRepository;
+import com.evlibre.server.adapter.webui.EventBusStationEventPublisher;
 import com.evlibre.server.adapter.webui.WebUiVerticle;
 import com.evlibre.server.adapter.persistence.h2.*;
 import com.evlibre.server.adapter.persistence.inmemory.*;
@@ -81,11 +84,18 @@ public class Application {
             authorizationRepo = inMemAuthorizationRepo;
         }
 
+        // Vert.x instance (created early so EventBus is available for use cases)
+        Vertx vertx = Vertx.vertx();
+
+        // Station event publisher (pushes updates to Web UI via EventBus)
+        EventBusStationEventPublisher stationEventPublisher = new EventBusStationEventPublisher(vertx);
+
         // Use cases
         RegisterStationUseCase registerStation = new RegisterStationUseCase(
                 tenantRepo, stationRepo, eventLog, timeProvider,
-                config.ocpp().heartbeatInterval());
-        HandleHeartbeatUseCase handleHeartbeat = new HandleHeartbeatUseCase(stationRepo, timeProvider);
+                config.ocpp().heartbeatInterval(), stationEventPublisher);
+        HandleHeartbeatUseCase handleHeartbeat = new HandleHeartbeatUseCase(stationRepo, timeProvider,
+                stationEventPublisher);
         HandleStatusNotificationUseCase handleStatusNotification = new HandleStatusNotificationUseCase(eventLog);
         AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo);
@@ -100,9 +110,21 @@ public class Application {
         OcppSessionManager sessionManager = new OcppSessionManager();
         OcppProtocolNegotiator protocolNegotiator = new OcppProtocolNegotiator();
 
+        // CSMS -> CS command support
+        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
+        OcppStationCommandSender commandSender = new OcppStationCommandSender(
+                sessionManager, codec, pendingCallManager, objectMapper);
+
+        // Station configuration storage
+        var stationConfigRepo = new InMemoryStationConfigurationRepository();
+        var deviceModelRepo = new InMemoryDeviceModelRepository();
+
+        // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
+        PostBootActionService postBootActionService = new PostBootActionService(commandSender, stationConfigRepo);
+
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
-                new BootNotificationHandler16(registerStation, objectMapper));
+                new BootNotificationHandler16(registerStation, postBootActionService, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "Heartbeat",
                 new HeartbeatHandler16(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "StatusNotification",
@@ -118,7 +140,7 @@ public class Application {
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
-                new BootNotificationHandler201(registerStation, objectMapper));
+                new BootNotificationHandler201(registerStation, postBootActionService, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
                 new HeartbeatHandler201(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",
@@ -129,22 +151,21 @@ public class Application {
                 new TransactionEventHandler201(handleTransactionEvent, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues, objectMapper));
-
-        // CSMS -> CS command support
-        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
-        OcppStationCommandSender commandSender = new OcppStationCommandSender(
-                sessionManager, codec, pendingCallManager, objectMapper);
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
+                new NotifyReportHandler201(deviceModelRepo, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
-                config.ocpp().websocketPort(), codec, schemaValidator,
-                dispatcher, sessionManager, protocolNegotiator, pendingCallManager);
+                config.ocpp().websocketPort(), config.ocpp().pingInterval(),
+                codec, schemaValidator,
+                dispatcher, sessionManager, protocolNegotiator, pendingCallManager,
+                stationEventPublisher);
 
         // Web UI
         WebUiVerticle webUiVerticle = new WebUiVerticle(
-                tenantRepo, stationRepo, transactionRepo, config.webui().port());
+                tenantRepo, stationRepo, transactionRepo, sessionManager,
+                config.webui().port());
 
-        Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
             log.info("OCPP server started on port {} (database: {})",
                     config.ocpp().websocketPort(), dbType);

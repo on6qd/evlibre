@@ -4,57 +4,22 @@
 @args (DashboardStats stats, String tenantId)
 
 @main.template("Dashboard", tenantId) -> {
-    <div class="px-4 sm:px-0">
+    <div class="px-4 sm:px-0" hx-sse="connect:/@tenantId/events/stations">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p class="mt-2 text-sm text-gray-600">Monitor your charging network at a glance</p>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Total Stations</dt>
-                    <dd class="mt-1 text-3xl font-semibold text-gray-900">@stats.totalStations()</dd>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Online</dt>
-                    <dd class="mt-1 text-3xl font-semibold text-green-600">@stats.onlineStations()</dd>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Offline</dt>
-                    <dd class="mt-1 text-3xl font-semibold text-red-600">@stats.offlineStations()</dd>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Uptime</dt>
-                    <dd class="mt-1 text-3xl font-semibold text-blue-600">@stats.uptimePercentage()%</dd>
-                </div>
-            </div>
-        </div>
-
-        <!-- Uptime Bar -->
-        <div class="bg-white shadow rounded-lg px-4 py-5 sm:p-6 mb-8">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Network Uptime</h2>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-blue-600 h-2.5 rounded-full" style="width: @stats.uptimePercentage()%"></div>
-            </div>
-            <p class="mt-2 text-sm text-gray-600">@stats.uptimePercentage()% uptime across all stations</p>
+        <!-- Statistics Cards (live-updated via SSE) -->
+        <div id="dashboard-stats" hx-sse="swap:dashboard-stats" hx-swap="innerHTML">
+            @partials.dashboardStats.template(stats)
         </div>
 
         <!-- Quick Actions -->
         <div class="bg-white shadow rounded-lg px-4 py-5 sm:p-6">
             <h2 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
             <div class="flex flex-wrap gap-4">
-                <a href="/ui/@tenantId/stations"
+                <a href="/@tenantId/stations"
                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
                     View All Stations
                 </a>

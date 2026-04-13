@@ -1,0 +1,67 @@
+{
+  "idTagsFile": "idtags.json",
+  "baseName": "SAP-16",
+  "chargePointModel": "RefCharger-16",
+  "chargePointVendor": "SAP-Reference",
+  "firmwareVersion": "1.0.0",
+  "power": 7400,
+  "powerUnit": "W",
+  "currentOutType": "AC",
+  "numberOfPhases": 1,
+  "useConnectorId0": true,
+  "randomConnectors": false,
+  "resetTime": 30,
+  "enableStatistics": false,
+  "voltageOut": 230,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "HeartbeatInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": "15"
+      },
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "NumberOfConnectors",
+        "readonly": true,
+        "value": "1"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": true,
+    "minDuration": 60,
+    "maxDuration": 300,
+    "minDelayBetweenTwoTransactions": 30,
+    "maxDelayBetweenTwoTransactions": 120,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Connectors": {
+    "0": {},
+    "1": {
+      "MeterValues": [
+        {
+          "unit": "Wh",
+          "measurand": "Energy.Active.Import.Register",
+          "location": "Outlet"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "supervisionUrls": ["ws://host.docker.internal:9090/ocpp/demo-tenant"],
+  "supervisionUrlDistribution": "round-robin",
+  "stationTemplateUrls": [
+    {
+      "file": "abb-atg.station-template.json",
+      "numberOfStations": 1
+    },
+    {
+      "file": "evlibre-201.json",
+      "numberOfStations": 1
+    }
+  ],
+  "log": {
+    "statisticsInterval": 60,
+    "level": "info",
+    "console": true
+  },
+  "performanceStorage": {
+    "enabled": false,
+    "type": "none"
+  },
+  "worker": {
+    "processType": "workerSet",
+    "startDelay": 500,
+    "elementsPerWorker": "auto",
+    "elementAddDelay": 100
+  },
+  "uiServer": {
+    "enabled": false
+  }
+}
