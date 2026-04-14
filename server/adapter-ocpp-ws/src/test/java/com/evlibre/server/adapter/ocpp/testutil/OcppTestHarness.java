@@ -61,6 +61,8 @@ public class OcppTestHarness {
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
         HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
+        HandleDiagnosticsStatusUseCase handleDiagnosticsStatus = new HandleDiagnosticsStatusUseCase(eventLog);
+        HandleFirmwareStatusUseCase handleFirmwareStatus = new HandleFirmwareStatusUseCase(eventLog);
 
         // OCPP infrastructure
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -88,6 +90,10 @@ public class OcppTestHarness {
                 new MeterValuesHandler16(handleMeterValues, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "DataTransfer",
                 new DataTransferHandler16(handleDataTransfer, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "DiagnosticsStatusNotification",
+                new DiagnosticsStatusNotificationHandler16(handleDiagnosticsStatus, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "FirmwareStatusNotification",
+                new FirmwareStatusNotificationHandler16(handleFirmwareStatus, objectMapper));
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
