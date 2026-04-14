@@ -80,6 +80,29 @@ public class StationCommandHandler {
                 Map.of("transactionId", Integer.parseInt(txStr)));
     }
 
+    public void getDiagnostics(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String location = ctx.request().getFormAttribute("location");
+        if (location == null || location.isBlank()) {
+            respondResult(ctx, "GetDiagnostics", "error: missing location", false);
+            return;
+        }
+        sendCommand(ctx, tenantId, stationId, "GetDiagnostics", Map.of("location", location));
+    }
+
+    public void updateFirmware(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String location = ctx.request().getFormAttribute("location");
+        if (location == null || location.isBlank()) {
+            respondResult(ctx, "UpdateFirmware", "error: missing location", false);
+            return;
+        }
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("location", location);
+        payload.put("retrieveDate", java.time.Instant.now().toString());
+        sendCommand(ctx, tenantId, stationId, "UpdateFirmware", payload);
+    }
+
     private void sendCommand(RoutingContext ctx, TenantId tenantId, String stationId,
                               String action, Map<String, Object> payload) {
         ChargePointIdentity identity = new ChargePointIdentity(stationId);
