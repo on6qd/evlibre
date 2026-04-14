@@ -227,6 +227,34 @@ class OcppAllHandlersIT {
                 }));
     }
 
+    // --- Firmware Management Profile ---
+
+    @Test
+    void diagnosticsStatusNotification_returns_empty_response(Vertx vertx, VertxTestContext ctx) {
+        harness.send16(vertx, "CHARGER-001", OcppMessages.bootNotification16("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send16(vertx, "CHARGER-001",
+                        OcppMessages.diagnosticsStatusNotification16("Uploaded")))
+                .whenComplete((response, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(response.get(0).asInt()).isEqualTo(3);
+                    assertThat(response.get(2).size()).isEqualTo(0); // empty response
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void firmwareStatusNotification_returns_empty_response(Vertx vertx, VertxTestContext ctx) {
+        harness.send16(vertx, "CHARGER-001", OcppMessages.bootNotification16("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send16(vertx, "CHARGER-001",
+                        OcppMessages.firmwareStatusNotification16("Installed")))
+                .whenComplete((response, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(response.get(0).asInt()).isEqualTo(3);
+                    assertThat(response.get(2).size()).isEqualTo(0); // empty response
+                    ctx.completeNow();
+                }));
+    }
+
     // --- Error handling ---
 
     @Test
