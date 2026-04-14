@@ -143,6 +143,35 @@ public final class OcppMessages {
                 msgId, evseId, timestamp, value);
     }
 
+    // --- OCPP 1.6 additional CS→CSMS messages ---
+
+    public static String dataTransfer16(String vendorId, String messageId, String data) {
+        return dataTransfer16(nextId(), vendorId, messageId, data);
+    }
+
+    public static String dataTransfer16(String msgId, String vendorId, String messageId, String data) {
+        String messagePart = messageId != null ? String.format(",\"messageId\":\"%s\"", messageId) : "";
+        String dataPart = data != null ? String.format(",\"data\":\"%s\"", data) : "";
+        return String.format("[2,\"%s\",\"DataTransfer\",{\"vendorId\":\"%s\"%s%s}]",
+                msgId, vendorId, messagePart, dataPart);
+    }
+
+    public static String diagnosticsStatusNotification16(String status) {
+        return diagnosticsStatusNotification16(nextId(), status);
+    }
+
+    public static String diagnosticsStatusNotification16(String msgId, String status) {
+        return String.format("[2,\"%s\",\"DiagnosticsStatusNotification\",{\"status\":\"%s\"}]", msgId, status);
+    }
+
+    public static String firmwareStatusNotification16(String status) {
+        return firmwareStatusNotification16(nextId(), status);
+    }
+
+    public static String firmwareStatusNotification16(String msgId, String status) {
+        return String.format("[2,\"%s\",\"FirmwareStatusNotification\",{\"status\":\"%s\"}]", msgId, status);
+    }
+
     // --- Error cases ---
 
     public static String unknownAction(String action) {

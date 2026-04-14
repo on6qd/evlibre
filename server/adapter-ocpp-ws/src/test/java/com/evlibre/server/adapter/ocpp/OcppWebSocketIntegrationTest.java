@@ -3,12 +3,10 @@ package com.evlibre.server.adapter.ocpp;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.handler.v16.BootNotificationHandler16;
 import com.evlibre.server.adapter.ocpp.handler.v201.BootNotificationHandler201;
-import com.evlibre.server.core.domain.model.Tenant;
 import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
-import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
 import com.evlibre.server.core.usecases.RegisterStationUseCase;
+import com.evlibre.server.test.fakes.*;
+import com.evlibre.server.test.fixtures.Tenants;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Vertx;
@@ -19,10 +17,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,19 +36,14 @@ class OcppWebSocketIntegrationTest {
         OcppProtocolNegotiator negotiator = new OcppProtocolNegotiator();
 
         // Set up fake repos
-        FakeTenantRepo tenantRepo = new FakeTenantRepo();
-        tenantRepo.save(Tenant.builder()
-                .id(UUID.randomUUID())
-                .tenantId(new TenantId("demo-tenant"))
-                .companyName("Demo")
-                .createdAt(Instant.now())
-                .build());
-
-        FakeStationRepo stationRepo = new FakeStationRepo();
-        FakeEventLog eventLog = new FakeEventLog();
+        FakeTenantRepository tenantRepo = new FakeTenantRepository();
+        tenantRepo.save(Tenants.demo());
+        FakeStationRepository stationRepo = new FakeStationRepository();
+        FakeOcppEventLog eventLog = new FakeOcppEventLog();
+        FakeTimeProvider timeProvider = new FakeTimeProvider();
 
         RegisterStationUseCase registerUseCase = new RegisterStationUseCase(
-                tenantRepo, stationRepo, eventLog, Instant::now, 900,
+                tenantRepo, stationRepo, eventLog, timeProvider, 900,
                 (t, s) -> {});
 
         BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, null, objectMapper);
@@ -169,29 +158,5 @@ class OcppWebSocketIntegrationTest {
                 ctx.completeNow();
             }));
         }));
-    }
-
-    // Minimal fakes for the integration test
-
-    static class FakeTenantRepo implements TenantRepositoryPort {
-        private final Map<String, Tenant> store = new ConcurrentHashMap<>();
-        @Override public void save(Tenant tenant) { store.put(tenant.tenantId().value(), tenant); }
-        @Override public Optional<Tenant> findByTenantId(TenantId id) { return Optional.ofNullable(store.get(id.value())); }
-    }
-
-    static class FakeStationRepo implements StationRepositoryPort {
-        private final Map<UUID, com.evlibre.server.core.domain.model.ChargingStation> store = new ConcurrentHashMap<>();
-        @Override public void save(com.evlibre.server.core.domain.model.ChargingStation s) { store.put(s.id(), s); }
-        @Override public Optional<com.evlibre.server.core.domain.model.ChargingStation> findById(UUID id) { return Optional.ofNullable(store.get(id)); }
-        @Override public Optional<com.evlibre.server.core.domain.model.ChargingStation> findByTenantAndIdentity(TenantId t, com.evlibre.common.model.ChargePointIdentity i) {
-            return store.values().stream().filter(s -> s.tenantId().equals(t) && s.identity().equals(i)).findFirst();
-        }
-        @Override public java.util.List<com.evlibre.server.core.domain.model.ChargingStation> findByTenant(TenantId t) {
-            return store.values().stream().filter(s -> s.tenantId().equals(t)).toList();
-        }
-    }
-
-    static class FakeEventLog implements OcppEventLogPort {
-        @Override public void logEvent(String s, String m, String a, String d, String p) {}
     }
 }

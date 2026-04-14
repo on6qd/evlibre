@@ -1,4 +1,4 @@
-package com.evlibre.server.test.fakes;
+package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.model.TenantId;
@@ -10,10 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class FakeStationCommandSender implements StationCommandSender {
+/**
+ * Minimal stub for testing CSMS-to-CS command use cases within the core module.
+ */
+class StubCommandSender implements StationCommandSender {
 
-    public record SentCommand(TenantId tenantId, ChargePointIdentity stationIdentity,
-                              String action, Map<String, Object> payload) {}
+    record SentCommand(TenantId tenantId, ChargePointIdentity stationIdentity,
+                       String action, Map<String, Object> payload) {}
 
     private final List<SentCommand> commands = Collections.synchronizedList(new ArrayList<>());
     private volatile Map<String, Object> nextResponse = Map.of();
@@ -27,15 +30,11 @@ public class FakeStationCommandSender implements StationCommandSender {
         return CompletableFuture.completedFuture(nextResponse);
     }
 
-    public void setNextResponse(Map<String, Object> response) {
+    void setNextResponse(Map<String, Object> response) {
         this.nextResponse = response;
     }
 
-    public List<SentCommand> commands() {
+    List<SentCommand> commands() {
         return List.copyOf(commands);
-    }
-
-    public void clear() {
-        commands.clear();
     }
 }

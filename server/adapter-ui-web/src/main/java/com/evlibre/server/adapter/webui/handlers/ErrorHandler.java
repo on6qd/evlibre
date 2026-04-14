@@ -45,20 +45,42 @@ public class ErrorHandler {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Error %d - evlibre</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
+                    <title>Error %d // evlibre</title>
+                    <style>
+                        body {
+                            font-family: 'Courier New', monospace;
+                            background: #0a0a0a;
+                            color: #ff4444;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            margin: 0;
+                        }
+                        .error-box {
+                            border: 1px solid #882222;
+                            padding: 32px 48px;
+                            text-align: center;
+                        }
+                        h1 { font-size: 48px; margin-bottom: 12px; }
+                        p { color: #666; font-size: 12px; margin-bottom: 20px; }
+                        a {
+                            color: #00ff88;
+                            border: 1px solid #333;
+                            padding: 8px 20px;
+                            text-decoration: none;
+                            font-size: 11px;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                        }
+                        a:hover { border-color: #00ff88; }
+                    </style>
                 </head>
-                <body class="bg-gray-50">
-                    <div class="min-h-screen flex items-center justify-center">
-                        <div class="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
-                            <div class="text-center">
-                                <h1 class="text-6xl font-bold text-red-600 mb-4">%d</h1>
-                                <p class="text-xl text-gray-700 mb-6">%s</p>
-                                <a href="/" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    Go to Home
-                                </a>
-                            </div>
-                        </div>
+                <body>
+                    <div class="error-box">
+                        <h1>%d</h1>
+                        <p>%s</p>
+                        <a href="/">&lt; home</a>
                     </div>
                 </body>
                 </html>

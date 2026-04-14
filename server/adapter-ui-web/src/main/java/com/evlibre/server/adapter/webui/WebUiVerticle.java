@@ -4,8 +4,11 @@ import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import com.evlibre.server.adapter.webui.handlers.DashboardHandler;
 import com.evlibre.server.adapter.webui.handlers.ErrorHandler;
 import com.evlibre.server.adapter.webui.handlers.SseHandler;
+import com.evlibre.server.adapter.webui.handlers.StationCommandHandler;
+import com.evlibre.server.adapter.webui.handlers.StationDetailHandler;
 import com.evlibre.server.adapter.webui.handlers.StationsHandler;
 import com.evlibre.server.adapter.webui.handlers.TenantContextExtractor;
+import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
@@ -26,6 +29,7 @@ public class WebUiVerticle extends AbstractVerticle {
     private final StationRepositoryPort stationRepository;
     private final TransactionRepositoryPort transactionRepository;
     private final OcppSessionManager sessionManager;
+    private final StationCommandSender commandSender;
     private final int port;
     private HttpServer httpServer;
 
@@ -34,10 +38,20 @@ public class WebUiVerticle extends AbstractVerticle {
                          TransactionRepositoryPort transactionRepository,
                          OcppSessionManager sessionManager,
                          int port) {
+        this(tenantRepository, stationRepository, transactionRepository, sessionManager, null, port);
+    }
+
+    public WebUiVerticle(TenantRepositoryPort tenantRepository,
+                         StationRepositoryPort stationRepository,
+                         TransactionRepositoryPort transactionRepository,
+                         OcppSessionManager sessionManager,
+                         StationCommandSender commandSender,
+                         int port) {
         this.tenantRepository = tenantRepository;
         this.stationRepository = stationRepository;
         this.transactionRepository = transactionRepository;
         this.sessionManager = sessionManager;
+        this.commandSender = commandSender;
         this.port = port;
     }
 
@@ -46,6 +60,7 @@ public class WebUiVerticle extends AbstractVerticle {
         TenantContextExtractor contextExtractor = new TenantContextExtractor(tenantRepository);
         DashboardHandler dashboardHandler = new DashboardHandler(vertx, stationRepository, sessionManager);
         StationsHandler stationsHandler = new StationsHandler(vertx, stationRepository, sessionManager);
+        StationDetailHandler stationDetailHandler = new StationDetailHandler(vertx, stationRepository, sessionManager);
         SseHandler sseHandler = new SseHandler(vertx, stationRepository, sessionManager);
         ErrorHandler errorHandler = new ErrorHandler();
 
@@ -59,14 +74,33 @@ public class WebUiVerticle extends AbstractVerticle {
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, dashboardHandler::showDashboard));
         router.get("/:tenantId/stations")
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, stationsHandler::listStations));
+        router.get("/:tenantId/stations/:stationId")
+                .handler(ctx -> contextExtractor.extractAndValidate(ctx, stationDetailHandler::showStation));
         router.get("/:tenantId/events/stations")
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, sseHandler::streamStationUpdates));
+
+        // Station command endpoints (POST)
+        if (commandSender != null) {
+            StationCommandHandler cmdHandler = new StationCommandHandler(commandSender);
+            router.post("/:tenantId/stations/:stationId/reset")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::reset));
+            router.post("/:tenantId/stations/:stationId/change-availability")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::changeAvailability));
+            router.post("/:tenantId/stations/:stationId/unlock-connector")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::unlockConnector));
+            router.post("/:tenantId/stations/:stationId/clear-cache")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::clearCache));
+            router.post("/:tenantId/stations/:stationId/remote-start")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::remoteStart));
+            router.post("/:tenantId/stations/:stationId/remote-stop")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler::remoteStop));
+        }
 
         // Root
         router.get("/").handler(ctx -> {
             ctx.response()
                     .putHeader("Content-Type", "text/html; charset=UTF-8")
-                    .end("<html><body><h1>evlibre</h1><p>Navigate to /{tenantId}/dashboard</p></body></html>");
+                    .end(buildWelcomePage());
         });
 
         // Error handling
@@ -87,5 +121,50 @@ public class WebUiVerticle extends AbstractVerticle {
 
     public int actualPort() {
         return httpServer != null ? httpServer.actualPort() : -1;
+    }
+
+    private String buildWelcomePage() {
+        return """
+                <!DOCTYPE html>
+                <html><head>
+                <meta charset="UTF-8">
+                <style>
+                    body {
+                        font-family: 'Courier New', monospace;
+                        background: #0a0a0a;
+                        color: #00ff88;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        margin: 0;
+                    }
+                    .welcome {
+                        border: 1px solid #333;
+                        padding: 32px 48px;
+                        text-align: center;
+                    }
+                    h1 { font-size: 24px; letter-spacing: 4px; margin-bottom: 16px; }
+                    p { color: #666; font-size: 12px; margin-bottom: 16px; }
+                    a {
+                        color: #00ff88;
+                        border: 1px solid #333;
+                        padding: 8px 20px;
+                        text-decoration: none;
+                        font-size: 11px;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    a:hover { border-color: #00ff88; }
+                </style>
+                </head>
+                <body>
+                <div class="welcome">
+                    <h1>evlibre</h1>
+                    <p>open source ev charging platform</p>
+                    <a href="/demo-tenant/dashboard">enter &gt;</a>
+                </div>
+                </body></html>
+                """;
     }
 }

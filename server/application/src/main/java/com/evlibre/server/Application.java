@@ -102,6 +102,7 @@ public class Application {
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
+        HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
 
         // OCPP WebSocket components
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -137,6 +138,8 @@ public class Application {
                 new StopTransactionHandler16(stopTransaction, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "MeterValues",
                 new MeterValuesHandler16(handleMeterValues, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "DataTransfer",
+                new DataTransferHandler16(handleDataTransfer, objectMapper));
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
@@ -164,7 +167,7 @@ public class Application {
         // Web UI
         WebUiVerticle webUiVerticle = new WebUiVerticle(
                 tenantRepo, stationRepo, transactionRepo, sessionManager,
-                config.webui().port());
+                commandSender, config.webui().port());
 
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
             log.info("OCPP server started on port {} (database: {})",

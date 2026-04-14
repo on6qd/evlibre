@@ -2,40 +2,31 @@
 
 @args (DashboardStats stats)
 
-<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">Total Stations</dt>
-            <dd class="mt-1 text-3xl font-semibold text-gray-900">@stats.totalStations()</dd>
-        </div>
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="label">total stations</div>
+        <div class="value">@stats.totalStations()</div>
     </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">Online</dt>
-            <dd class="mt-1 text-3xl font-semibold text-green-600">@stats.onlineStations()</dd>
-        </div>
+    <div class="stat-card">
+        <div class="label">online</div>
+        <div class="value green">@stats.onlineStations()</div>
     </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">Offline</dt>
-            <dd class="mt-1 text-3xl font-semibold text-red-600">@stats.offlineStations()</dd>
-        </div>
+    <div class="stat-card">
+        <div class="label">offline</div>
+        <div class="value red">@stats.offlineStations()</div>
     </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">Uptime</dt>
-            <dd class="mt-1 text-3xl font-semibold text-blue-600">@stats.uptimePercentage()%</dd>
-        </div>
+    <div class="stat-card">
+        <div class="label">uptime</div>
+        <div class="value blue">@stats.uptimePercentage()%</div>
     </div>
 </div>
 
-<div class="bg-white shadow rounded-lg px-4 py-5 sm:p-6 mb-8">
-    <h2 class="text-lg font-medium text-gray-900 mb-4">Network Uptime</h2>
-    <div class="w-full bg-gray-200 rounded-full h-2.5">
-        <div class="bg-blue-600 h-2.5 rounded-full" style="width: @stats.uptimePercentage()%"></div>
+<div class="panel">
+    <div class="panel-header">network uptime</div>
+    <div class="panel-body">
+        <div class="progress-bar">
+            <div class="fill" style="width: @stats.uptimePercentage()%"></div>
+        </div>
+        <div style="color:var(--fg-dim);font-size:11px;margin-top:6px;">@stats.uptimePercentage()% uptime across all stations</div>
     </div>
-    <p class="mt-2 text-sm text-gray-600">@stats.uptimePercentage()% uptime across all stations</p>
 </div>

@@ -1,0 +1,5 @@
+@args (String command, String status, boolean success)
+
+<div class="cmd-result @if (success) {ok} else {err}">
+    &gt; @command: @status
+</div>

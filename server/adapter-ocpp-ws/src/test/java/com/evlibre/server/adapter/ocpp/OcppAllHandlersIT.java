@@ -231,7 +231,7 @@ class OcppAllHandlersIT {
 
     @Test
     void unknown_action_returns_not_implemented(Vertx vertx, VertxTestContext ctx) {
-        harness.send16(vertx, "CHARGER-001", OcppMessages.unknownAction("DataTransfer"))
+        harness.send16(vertx, "CHARGER-001", OcppMessages.unknownAction("NonExistentAction"))
                 .whenComplete((response, err) -> ctx.verify(() -> {
                     assertThat(err).isNull();
                     assertThat(response.get(0).asInt()).isEqualTo(4);

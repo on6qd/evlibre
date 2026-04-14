@@ -36,6 +36,8 @@ public class OcppTestHarness {
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
+    public final OcppSessionManager sessionManager;
+    public final OcppStationCommandSender commandSender;
 
     public OcppTestHarness() {
         objectMapper = new ObjectMapper();
@@ -58,14 +60,16 @@ public class OcppTestHarness {
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
+        HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
 
         // OCPP infrastructure
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
         OcppSchemaValidator schemaValidator = new OcppSchemaValidator();
         OcppMessageDispatcher dispatcher = new OcppMessageDispatcher();
-        OcppSessionManager sessionManager = new OcppSessionManager();
+        sessionManager = new OcppSessionManager();
         OcppProtocolNegotiator negotiator = new OcppProtocolNegotiator();
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
+        commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper);
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
@@ -82,6 +86,8 @@ public class OcppTestHarness {
                 new StopTransactionHandler16(stopTransaction, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "MeterValues",
                 new MeterValuesHandler16(handleMeterValues, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_16, "DataTransfer",
+                new DataTransferHandler16(handleDataTransfer, objectMapper));
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",

@@ -71,7 +71,7 @@ public class SseHandler {
             List<StationView> views = stations.stream()
                     .map(s -> StationView.fromDomain(s, connected))
                     .toList();
-            String tableHtml = partials.stationsTableBody.template(views)
+            String tableHtml = partials.stationsTableBody.template(views, tenantId.value())
                     .render()
                     .toString();
 

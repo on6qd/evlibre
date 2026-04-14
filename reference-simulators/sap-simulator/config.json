@@ -3,12 +3,8 @@
   "supervisionUrlDistribution": "round-robin",
   "stationTemplateUrls": [
     {
-      "file": "abb-atg.station-template.json",
-      "numberOfStations": 1
-    },
-    {
-      "file": "evlibre-201.json",
-      "numberOfStations": 1
+      "file": "evlibre-16.json",
+      "numberOfStations": 10
     }
   ],
   "log": {
@@ -24,7 +20,7 @@
     "processType": "workerSet",
     "startDelay": 500,
     "elementsPerWorker": "auto",
-    "elementAddDelay": 100
+    "elementAddDelay": 500
   },
   "uiServer": {
     "enabled": false

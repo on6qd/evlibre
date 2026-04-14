@@ -5,25 +5,26 @@
 @args (List<StationView> stations, String tenantId)
 
 @main.template("Stations", tenantId) -> {
-    <div class="px-4 sm:px-0" hx-sse="connect:/@tenantId/events/stations">
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Charging Stations</h1>
-            <p class="mt-2 text-sm text-gray-600">@stations.size() station(s) registered</p>
+    <div hx-sse="connect:/@tenantId/events/stations">
+        <div class="page-header">
+            <h1>&gt; stations</h1>
+            <p>@stations.size() station(s) registered</p>
         </div>
 
-        <div class="bg-white shadow overflow-hidden rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="panel">
+            <table>
+                <thead>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor / Model</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
+                        <th>station id</th>
+                        <th>vendor / model</th>
+                        <th>protocol</th>
+                        <th>status</th>
+                        <th>registration</th>
+                        <th></th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200" hx-sse="swap:stations-table" hx-swap="innerHTML">
-                    @partials.stationsTableBody.template(stations)
+                <tbody hx-sse="swap:stations-table" hx-swap="innerHTML">
+                    @partials.stationsTableBody.template(stations, tenantId)
                 </tbody>
             </table>
         </div>

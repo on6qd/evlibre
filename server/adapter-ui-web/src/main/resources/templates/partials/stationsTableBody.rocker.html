@@ -1,32 +1,32 @@
 @import com.evlibre.server.adapter.webui.dto.StationView
 @import java.util.List
 
-@args (List<StationView> stations)
+@args (List<StationView> stations, String tenantId)
 
 @for (StationView station : stations) {
-    <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm font-medium text-gray-900">@station.stationId()</div>
+    <tr>
+        <td>
+            <a href="/@tenantId/stations/@station.stationId()">@station.stationId()</a>
             @if (!station.serialNumber().equals("-")) {
-                <div class="text-xs text-gray-500">S/N: @station.serialNumber()</div>
+                <div style="color:var(--fg-dim);font-size:10px;">S/N: @station.serialNumber()</div>
             }
         </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">@station.vendor()</div>
-            <div class="text-xs text-gray-500">@station.model()</div>
+        <td>
+            @station.vendor() / @station.model()
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            @station.protocol()
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @station.statusBadgeClass()">
-                @if (station.online()) {Online} else {Offline}
+        <td>@station.protocol()</td>
+        <td>
+            <span class="badge @station.statusBadgeClass()">
+                @if (station.online()) {online} else {offline}
             </span>
         </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @station.registrationBadgeClass()">
+        <td>
+            <span class="badge @station.registrationBadgeClass()">
                 @station.registrationStatus()
             </span>
+        </td>
+        <td>
+            <a href="/@tenantId/stations/@station.stationId()" class="btn" style="padding:3px 10px;font-size:10px;">detail</a>
         </td>
     </tr>
 }

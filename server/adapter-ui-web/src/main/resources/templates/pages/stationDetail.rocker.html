@@ -1,0 +1,114 @@
+@import com.evlibre.server.adapter.webui.dto.StationView
+@import layouts.main
+
+@args (StationView station, String tenantId)
+
+@main.template(station.stationId(), tenantId) -> {
+    <div class="page-header">
+        <p><a href="/@tenantId/stations">&lt; stations</a></p>
+        <h1>&gt; @station.stationId()</h1>
+    </div>
+
+    <div class="two-col">
+        <div>
+            <div class="panel">
+                <div class="panel-header">station info</div>
+                <div class="panel-body">
+                    <div class="detail-grid">
+                        <div class="key">station id</div>
+                        <div class="val">@station.stationId()</div>
+                        <div class="key">vendor</div>
+                        <div class="val">@station.vendor()</div>
+                        <div class="key">model</div>
+                        <div class="val">@station.model()</div>
+                        <div class="key">serial</div>
+                        <div class="val">@station.serialNumber()</div>
+                        <div class="key">firmware</div>
+                        <div class="val">@station.firmwareVersion()</div>
+                        <div class="key">protocol</div>
+                        <div class="val">@station.protocol()</div>
+                        <div class="key">status</div>
+                        <div class="val"><span class="badge @station.statusBadgeClass()">@if (station.online()) {online} else {offline}</span></div>
+                        <div class="key">registration</div>
+                        <div class="val"><span class="badge @station.registrationBadgeClass()">@station.registrationStatus()</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel">
+                <div class="panel-header">commands</div>
+                <div class="panel-body">
+                    @if (station.online()) {
+                        <div class="cmd-grid">
+                            <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/reset?type=Soft"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                soft reset
+                            </button>
+                            <button class="btn btn-danger"
+                                    hx-post="/@tenantId/stations/@station.stationId()/reset?type=Hard"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                hard reset
+                            </button>
+                            <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Operative"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                set operative
+                            </button>
+                            <button class="btn btn-warn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Inoperative"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                set inoperative
+                            </button>
+                            <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/unlock-connector?connectorId=1"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                unlock connector
+                            </button>
+                            <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/clear-cache"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                clear cache
+                            </button>
+                        </div>
+
+                        <div style="margin-top:16px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">remote start</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/remote-start"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" name="idTag" placeholder="id tag" value="TAG001" style="width:120px;">
+                                <input type="number" name="connectorId" placeholder="conn" value="1" style="width:70px;">
+                                <button type="submit" class="btn">start</button>
+                            </form>
+                        </div>
+
+                        <div style="margin-top:12px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">remote stop</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/remote-stop"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                <input type="number" name="transactionId" placeholder="tx id" style="width:100px;">
+                                <button type="submit" class="btn">stop</button>
+                            </form>
+                        </div>
+                    } else {
+                        <div style="color:var(--fg-dim);font-size:12px;">station is offline. commands unavailable.</div>
+                    }
+                </div>
+            </div>
+
+            <div id="cmd-result"></div>
+        </div>
+    </div>
+}

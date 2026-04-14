@@ -30,17 +30,17 @@ public record StationView(
                 station.protocol().name(),
                 station.registrationStatus().name(),
                 online,
-                online ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800",
+                online ? "badge-online" : "badge-offline",
                 getRegistrationBadgeClass(station.registrationStatus().name())
         );
     }
 
     private static String getRegistrationBadgeClass(String status) {
         return switch (status) {
-            case "ACCEPTED" -> "bg-green-100 text-green-800";
-            case "PENDING" -> "bg-yellow-100 text-yellow-800";
-            case "REJECTED" -> "bg-red-100 text-red-800";
-            default -> "bg-gray-100 text-gray-800";
+            case "ACCEPTED" -> "badge-accepted";
+            case "PENDING" -> "badge-pending";
+            case "REJECTED" -> "badge-rejected";
+            default -> "";
         };
     }
 }
