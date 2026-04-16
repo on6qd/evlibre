@@ -41,6 +41,20 @@ class ChangeConfigurationUseCaseTest {
         assertThat(configPort.savedKeys.get(0).value()).isEqualTo("300");
     }
 
+    // OCPP 1.6: configuration keys are case-insensitive. Updating "heartbeatinterval"
+    // must modify the same entry as an existing "HeartbeatInterval" — not create a duplicate.
+    @Test
+    void accepted_change_is_case_insensitive() {
+        commandSender.setNextResponse(Map.of("status", "Accepted"));
+
+        useCase.changeConfiguration(tenantId, station, "HeartbeatInterval", "300").join();
+        useCase.changeConfiguration(tenantId, station, "heartbeatinterval", "600").join();
+
+        assertThat(configPort.savedKeys).hasSize(1);
+        assertThat(configPort.savedKeys.get(0).key()).isEqualTo("HeartbeatInterval"); // original casing preserved
+        assertThat(configPort.savedKeys.get(0).value()).isEqualTo("600"); // value updated
+    }
+
     @Test
     void rejected_change_does_not_update_config() {
         commandSender.setNextResponse(Map.of("status", "Rejected"));
@@ -57,7 +71,21 @@ class ChangeConfigurationUseCaseTest {
         @Override
         public void saveConfiguration(TenantId tenantId, ChargePointIdentity stationIdentity,
                                        List<StationConfigurationKey> keys) {
+            savedKeys.clear();
             savedKeys.addAll(keys);
+        }
+
+        @Override
+        public void updateConfigurationKey(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                            StationConfigurationKey key) {
+            for (int i = 0; i < savedKeys.size(); i++) {
+                if (savedKeys.get(i).key().equalsIgnoreCase(key.key())) {
+                    savedKeys.set(i, new StationConfigurationKey(
+                            savedKeys.get(i).key(), key.value(), savedKeys.get(i).readonly()));
+                    return;
+                }
+            }
+            savedKeys.add(key);
         }
 
         @Override

@@ -74,7 +74,21 @@ class GetConfigurationUseCaseTest {
         @Override
         public void saveConfiguration(TenantId tenantId, ChargePointIdentity stationIdentity,
                                        List<StationConfigurationKey> keys) {
+            saved.clear();
             saved.addAll(keys);
+        }
+
+        @Override
+        public void updateConfigurationKey(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                            StationConfigurationKey key) {
+            for (int i = 0; i < saved.size(); i++) {
+                if (saved.get(i).key().equalsIgnoreCase(key.key())) {
+                    saved.set(i, new StationConfigurationKey(
+                            saved.get(i).key(), key.value(), saved.get(i).readonly()));
+                    return;
+                }
+            }
+            saved.add(key);
         }
 
         @Override

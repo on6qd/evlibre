@@ -10,7 +10,6 @@ import com.evlibre.server.core.domain.ports.outbound.StationConfigurationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +40,8 @@ public class ChangeConfigurationUseCase implements ChangeConfigurationPort {
                     log.info("ChangeConfiguration response from {}: {}", stationIdentity.value(), status);
 
                     if ("Accepted".equals(status)) {
-                        configurationPort.saveConfiguration(tenantId, stationIdentity,
-                                List.of(new StationConfigurationKey(key, value, false)));
+                        configurationPort.updateConfigurationKey(tenantId, stationIdentity,
+                                new StationConfigurationKey(key, value, false));
                     }
                     return new CommandResult(status, response);
                 });
