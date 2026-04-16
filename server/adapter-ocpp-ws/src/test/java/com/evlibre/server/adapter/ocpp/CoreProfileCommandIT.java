@@ -200,16 +200,16 @@ class CoreProfileCommandIT {
     }
 
     @Test
-    void data_transfer_cs_to_csms(Vertx vertx, VertxTestContext ctx) {
+    void data_transfer_unknown_vendor_returns_unknownVendor(Vertx vertx, VertxTestContext ctx) {
+        // Default wiring has no registered vendorIds, so any value returns UnknownVendor.
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
-                .thenCompose(client -> {
-                    return client.send(
-                            com.evlibre.server.adapter.ocpp.testutil.OcppMessages.dataTransfer16("TestVendor", "TestMsg", "hello"));
-                })
+                .thenCompose(client -> client.send(
+                        com.evlibre.server.adapter.ocpp.testutil.OcppMessages
+                                .dataTransfer16("com.unknown.vendor", "TestMsg", "hello")))
                 .whenComplete((response, err) -> ctx.verify(() -> {
                     assertThat(err).isNull();
                     assertThat(response.get(0).asInt()).isEqualTo(3); // CALLRESULT
-                    assertThat(response.get(2).get("status").asText()).isEqualTo("Accepted");
+                    assertThat(response.get(2).get("status").asText()).isEqualTo("UnknownVendor");
                     ctx.completeNow();
                 }));
     }
