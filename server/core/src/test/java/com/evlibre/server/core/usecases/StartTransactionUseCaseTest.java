@@ -101,6 +101,59 @@ class StartTransactionUseCaseTest {
         assertThat(stopped.get().stopReason()).isEqualTo("EVDisconnected");
     }
 
+    // OCPP 1.6 §6: a reservation bound to connector N can only be consumed by a tx on N.
+    // A mismatched connector must NOT flip the reservation to USED.
+    @Test
+    void reservation_on_connector_2_is_not_consumed_by_start_on_connector_1() {
+        var resRepo = new StubReservationRepository();
+        int rid = resRepo.nextReservationId();
+        resRepo.save(com.evlibre.server.core.domain.model.Reservation.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .stationIdentity(stationIdentity)
+                .connectorId(2)
+                .expiryDate(Instant.parse("2030-01-01T00:00:00Z"))
+                .idTag("TAG001")
+                .reservationId(rid)
+                .status(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE)
+                .createdAt(fixedTime)
+                .build());
+        var useCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo, resRepo);
+
+        var data = new StartTransactionData(
+                tenantId, stationIdentity, new ConnectorId(1), "TAG001", 1000L, fixedTime, rid);
+        useCase.startTransaction(data);
+
+        assertThat(resRepo.findByReservationId(tenantId, rid).get().status())
+                .isEqualTo(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE);
+    }
+
+    // OCPP 1.6 §6: a reservation with connectorId=0 is station-wide, can be consumed on any connector.
+    @Test
+    void reservation_on_connector_0_is_consumed_by_start_on_any_connector() {
+        var resRepo = new StubReservationRepository();
+        int rid = resRepo.nextReservationId();
+        resRepo.save(com.evlibre.server.core.domain.model.Reservation.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .stationIdentity(stationIdentity)
+                .connectorId(0)
+                .expiryDate(Instant.parse("2030-01-01T00:00:00Z"))
+                .idTag("TAG001")
+                .reservationId(rid)
+                .status(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE)
+                .createdAt(fixedTime)
+                .build());
+        var useCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo, resRepo);
+
+        var data = new StartTransactionData(
+                tenantId, stationIdentity, new ConnectorId(3), "TAG001", 1000L, fixedTime, rid);
+        useCase.startTransaction(data);
+
+        assertThat(resRepo.findByReservationId(tenantId, rid).get().status())
+                .isEqualTo(com.evlibre.server.core.domain.model.ReservationStatus.USED);
+    }
+
     // --- Fakes ---
 
     static class FakeTransactionRepository implements TransactionRepositoryPort {

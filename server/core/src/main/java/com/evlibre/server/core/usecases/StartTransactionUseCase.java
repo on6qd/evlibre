@@ -62,14 +62,21 @@ public class StartTransactionUseCase implements StartTransactionPort {
 
         // OCPP 1.6 §6: presence of reservationId in StartTransaction.req terminates the reservation.
         // Expired reservations cannot transition to USED; just mark them EXPIRED and move on.
+        // ConnectorId matching: reservation.connectorId=0 means station-wide (any connector OK),
+        // reservation.connectorId>0 requires an exact match with the StartTransaction connector.
         if (data.reservationId() != null) {
             reservationRepository.findByReservationId(data.tenantId(), data.reservationId())
                     .ifPresent(r -> {
                         ReservationStatus effective = r.effectiveStatus(data.timestamp());
-                        if (effective == ReservationStatus.ACTIVE) {
+                        boolean connectorMatches = r.connectorId() == 0
+                                || r.connectorId() == data.connectorId().value();
+                        if (effective == ReservationStatus.ACTIVE && connectorMatches) {
                             reservationRepository.save(r.withStatus(ReservationStatus.USED));
                         } else if (effective == ReservationStatus.EXPIRED && r.status() != ReservationStatus.EXPIRED) {
                             reservationRepository.save(r.withStatus(ReservationStatus.EXPIRED));
+                        } else if (effective == ReservationStatus.ACTIVE && !connectorMatches) {
+                            log.warn("StartTransaction reservationId={} bound to connector {} but tx on connector {} — not consuming reservation",
+                                    data.reservationId(), r.connectorId(), data.connectorId().value());
                         }
                     });
         }
