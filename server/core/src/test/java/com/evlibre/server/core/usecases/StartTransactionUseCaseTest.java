@@ -127,6 +127,16 @@ class StartTransactionUseCaseTest {
         }
 
         @Override
+        public Optional<Transaction> findActiveByIdTag(TenantId tenantId, String idTag) {
+            if (idTag == null) return Optional.empty();
+            return store.values().stream()
+                    .filter(tx -> tx.tenantId().equals(tenantId)
+                            && idTag.equalsIgnoreCase(tx.idTag())
+                            && tx.status() == TransactionStatus.IN_PROGRESS)
+                    .findFirst();
+        }
+
+        @Override
         public int nextOcppTransactionId() {
             return idSequence.getAndIncrement();
         }

@@ -2,6 +2,7 @@ package com.evlibre.server.adapter.persistence.inmemory;
 
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.model.Transaction;
+import com.evlibre.server.core.domain.model.TransactionStatus;
 import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
 
 import java.util.List;
@@ -33,6 +34,16 @@ public class InMemoryTransactionRepository implements TransactionRepositoryPort 
         return store.values().stream()
                 .filter(tx -> tx.stationId().equals(stationId))
                 .toList();
+    }
+
+    @Override
+    public Optional<Transaction> findActiveByIdTag(TenantId tenantId, String idTag) {
+        if (idTag == null) return Optional.empty();
+        return store.values().stream()
+                .filter(tx -> tx.tenantId().equals(tenantId)
+                        && idTag.equalsIgnoreCase(tx.idTag())
+                        && tx.status() == TransactionStatus.IN_PROGRESS)
+                .findFirst();
     }
 
     @Override

@@ -81,6 +81,24 @@ public class H2TransactionRepository implements TransactionRepositoryPort {
     }
 
     @Override
+    public Optional<Transaction> findActiveByIdTag(TenantId tenantId, String idTag) {
+        if (idTag == null) return Optional.empty();
+        // OCPP 1.6: IdToken is CiString20Type — case-insensitive.
+        String sql = "SELECT * FROM transactions WHERE tenant_id = ? AND LOWER(id_tag) = LOWER(?) "
+                + "AND status = 'IN_PROGRESS' LIMIT 1";
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId.value());
+            ps.setString(2, idTag);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return Optional.of(mapTransaction(rs));
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find active transaction by idTag", e);
+        }
+    }
+
+    @Override
     public int nextOcppTransactionId() {
         String sql = "SELECT NEXT VALUE FOR transaction_id_seq";
         try (Connection conn = db.getConnection();

@@ -67,6 +67,20 @@ class AuthorizeUseCaseTest {
         assertThat(result.parentIdTag()).isEqualTo("PARENT-X");
     }
 
+    // OCPP 1.6 §4.2: if a tag is already tied to an active transaction, the CSMS
+    // returns ConcurrentTx so the CP refuses the second session.
+    @Test
+    void authorize_with_active_tx_for_same_tag_returns_concurrentTx() {
+        authRepo.addAuthorization(tenantId, "TAG001", AuthorizationStatus.ACCEPTED);
+        var txRepo = new StubTransactionRepo();
+        txRepo.addActive(tenantId, "TAG001");
+        var useCaseWithTxRepo = new AuthorizeUseCase(authRepo, txRepo, java.time.Instant::now);
+
+        AuthorizationResult result = useCaseWithTxRepo.authorize(tenantId, "TAG001");
+
+        assertThat(result.status()).isEqualTo(AuthorizationStatus.CONCURRENT_TX);
+    }
+
     @Test
     void authorize_expired_tag_returns_expired_status() {
         var past = java.time.Instant.parse("2020-01-01T00:00:00Z");
@@ -84,6 +98,44 @@ class AuthorizeUseCaseTest {
     }
 
     // --- Fakes ---
+
+    static class StubTransactionRepo implements com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort {
+        private final java.util.Set<String> activeTags = new java.util.HashSet<>();
+
+        void addActive(TenantId t, String tag) {
+            activeTags.add(t.value() + ":" + tag.toLowerCase());
+        }
+
+        @Override public void save(com.evlibre.server.core.domain.model.Transaction tx) {}
+        @Override
+        public Optional<com.evlibre.server.core.domain.model.Transaction> findByOcppTransactionId(TenantId t, int id) {
+            return Optional.empty();
+        }
+        @Override
+        public java.util.List<com.evlibre.server.core.domain.model.Transaction> findByStation(java.util.UUID s) {
+            return java.util.List.of();
+        }
+        @Override
+        public Optional<com.evlibre.server.core.domain.model.Transaction> findActiveByIdTag(TenantId t, String tag) {
+            if (tag == null || !activeTags.contains(t.value() + ":" + tag.toLowerCase())) {
+                return Optional.empty();
+            }
+            return Optional.of(com.evlibre.server.core.domain.model.Transaction.builder()
+                    .id(java.util.UUID.randomUUID())
+                    .tenantId(t)
+                    .stationId(java.util.UUID.randomUUID())
+                    .stationIdentity(new com.evlibre.common.model.ChargePointIdentity("CHARGER-001"))
+                    .connectorId(new com.evlibre.common.model.ConnectorId(1))
+                    .ocppTransactionId(1)
+                    .idTag(tag)
+                    .meterStart(0L)
+                    .startTime(java.time.Instant.now())
+                    .status(com.evlibre.server.core.domain.model.TransactionStatus.IN_PROGRESS)
+                    .createdAt(java.time.Instant.now())
+                    .build());
+        }
+        @Override public int nextOcppTransactionId() { return 0; }
+    }
 
     static class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
         private final Map<String, com.evlibre.server.core.domain.model.IdTagInfo> store = new ConcurrentHashMap<>();

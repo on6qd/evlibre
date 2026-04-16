@@ -55,7 +55,7 @@ public class OcppTestHarness {
         HandleHeartbeatUseCase handleHeartbeat = new HandleHeartbeatUseCase(stationRepo, timeProvider,
                 (t, s) -> {});
         HandleStatusNotificationUseCase handleStatusNotification = new HandleStatusNotificationUseCase(eventLog);
-        AuthorizeUseCase authorize = new AuthorizeUseCase(authRepo);
+        AuthorizeUseCase authorize = new AuthorizeUseCase(authRepo, transactionRepo, timeProvider);
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo,
                 new FakeReservationRepository());
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo, authorize);

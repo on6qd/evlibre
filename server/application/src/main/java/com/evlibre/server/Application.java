@@ -97,7 +97,7 @@ public class Application {
         HandleHeartbeatUseCase handleHeartbeat = new HandleHeartbeatUseCase(stationRepo, timeProvider,
                 stationEventPublisher);
         HandleStatusNotificationUseCase handleStatusNotification = new HandleStatusNotificationUseCase(eventLog);
-        AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
+        AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo, transactionRepo, timeProvider);
         var reservationRepo = new InMemoryReservationRepository();
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo, reservationRepo);
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo, authorize);

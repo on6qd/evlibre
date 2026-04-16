@@ -15,5 +15,11 @@ public interface TransactionRepositoryPort {
 
     List<Transaction> findByStation(UUID stationId);
 
+    /**
+     * Returns the active (IN_PROGRESS) transaction for the given idTag, if any. Used by
+     * AuthorizeUseCase to decide whether to respond with ConcurrentTx (§4.2).
+     */
+    Optional<Transaction> findActiveByIdTag(TenantId tenantId, String idTag);
+
     int nextOcppTransactionId();
 }
