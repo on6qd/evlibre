@@ -161,14 +161,16 @@ class StartTransactionUseCaseTest {
     }
 
     static class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
-        private final Map<String, AuthorizationStatus> store = new ConcurrentHashMap<>();
+        private final Map<String, com.evlibre.server.core.domain.model.IdTagInfo> store = new ConcurrentHashMap<>();
 
         void addAuthorization(TenantId tenantId, String idTag, AuthorizationStatus status) {
-            store.put(tenantId.value() + ":" + idTag, status);
+            store.put(tenantId.value() + ":" + idTag,
+                    com.evlibre.server.core.domain.model.IdTagInfo.of(status));
         }
 
         @Override
-        public Optional<AuthorizationStatus> findStatusByIdTag(TenantId tenantId, String idTag) {
+        public Optional<com.evlibre.server.core.domain.model.IdTagInfo> findInfoByIdTag(
+                TenantId tenantId, String idTag) {
             return Optional.ofNullable(store.get(tenantId.value() + ":" + idTag));
         }
     }

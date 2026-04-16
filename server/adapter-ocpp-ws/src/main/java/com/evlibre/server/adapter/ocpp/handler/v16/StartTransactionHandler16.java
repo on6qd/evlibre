@@ -38,24 +38,11 @@ public class StartTransactionHandler16 implements OcppMessageHandler {
 
         StartTransactionResult result = startTransactionPort.startTransaction(data);
 
-        ObjectNode idTagInfo = objectMapper.createObjectNode();
-        idTagInfo.put("status", mapStatus(result.idTagStatus().name()));
-
         ObjectNode response = objectMapper.createObjectNode();
         response.put("transactionId", result.transactionId());
-        response.set("idTagInfo", idTagInfo);
+        response.set("idTagInfo",
+                AuthorizeHandler16.buildIdTagInfo(result.toAuthorizationResult(idTag), objectMapper));
 
         return response;
-    }
-
-    private String mapStatus(String status) {
-        return switch (status) {
-            case "ACCEPTED" -> "Accepted";
-            case "BLOCKED" -> "Blocked";
-            case "EXPIRED" -> "Expired";
-            case "INVALID" -> "Invalid";
-            case "CONCURRENT_TX" -> "ConcurrentTx";
-            default -> "Invalid";
-        };
     }
 }

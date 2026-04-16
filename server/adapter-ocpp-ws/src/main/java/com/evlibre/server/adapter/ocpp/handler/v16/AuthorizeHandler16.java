@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.time.format.DateTimeFormatter;
+
 public class AuthorizeHandler16 implements OcppMessageHandler {
 
     private final AuthorizePort authorizePort;
@@ -24,16 +26,25 @@ public class AuthorizeHandler16 implements OcppMessageHandler {
 
         AuthorizationResult result = authorizePort.authorize(session.tenantId(), idTag);
 
-        ObjectNode idTagInfo = objectMapper.createObjectNode();
-        idTagInfo.put("status", mapStatus(result.status().name()));
-
         ObjectNode response = objectMapper.createObjectNode();
-        response.set("idTagInfo", idTagInfo);
+        response.set("idTagInfo", buildIdTagInfo(result, objectMapper));
 
         return response;
     }
 
-    private String mapStatus(String status) {
+    static ObjectNode buildIdTagInfo(AuthorizationResult result, ObjectMapper objectMapper) {
+        ObjectNode idTagInfo = objectMapper.createObjectNode();
+        idTagInfo.put("status", mapStatus(result.status().name()));
+        if (result.expiryDate() != null) {
+            idTagInfo.put("expiryDate", DateTimeFormatter.ISO_INSTANT.format(result.expiryDate()));
+        }
+        if (result.parentIdTag() != null) {
+            idTagInfo.put("parentIdTag", result.parentIdTag());
+        }
+        return idTagInfo;
+    }
+
+    static String mapStatus(String status) {
         return switch (status) {
             case "ACCEPTED" -> "Accepted";
             case "BLOCKED" -> "Blocked";

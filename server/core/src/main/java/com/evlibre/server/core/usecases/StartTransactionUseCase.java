@@ -71,6 +71,7 @@ public class StartTransactionUseCase implements StartTransactionPort {
                 transaction.id(), ocppTransactionId,
                 data.stationIdentity().value(), data.connectorId().value(), data.idTag(), data.reservationId());
 
-        return new StartTransactionResult(ocppTransactionId, authResult.status());
+        return new StartTransactionResult(ocppTransactionId, authResult.status(),
+                authResult.expiryDate(), authResult.parentIdTag());
     }
 }

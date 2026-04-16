@@ -1,6 +1,7 @@
 package com.evlibre.server.test.fakes;
 
 import com.evlibre.server.core.domain.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.model.IdTagInfo;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
 
@@ -11,15 +12,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
 
-    private final Map<String, AuthorizationStatus> store = new ConcurrentHashMap<>();
+    private final Map<String, IdTagInfo> store = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<AuthorizationStatus> findStatusByIdTag(TenantId tenantId, String idTag) {
+    public Optional<IdTagInfo> findInfoByIdTag(TenantId tenantId, String idTag) {
         return Optional.ofNullable(store.get(key(tenantId, idTag)));
     }
 
     public void addAuthorization(TenantId tenantId, String idTag, AuthorizationStatus status) {
-        store.put(key(tenantId, idTag), status);
+        store.put(key(tenantId, idTag), IdTagInfo.of(status));
+    }
+
+    public void addAuthorization(TenantId tenantId, String idTag, IdTagInfo info) {
+        store.put(key(tenantId, idTag), info);
     }
 
     public void clear() {
