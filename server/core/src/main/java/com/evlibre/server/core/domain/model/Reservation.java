@@ -44,6 +44,19 @@ public class Reservation {
         return builder().from(this).status(newStatus).build();
     }
 
+    /**
+     * OCPP 1.6 §6: a reservation whose expiryDate is in the past is considered
+     * EXPIRED, regardless of what was persisted. Callers should treat this as the
+     * canonical status for business-logic decisions; a separate task can later
+     * normalize persisted rows.
+     */
+    public ReservationStatus effectiveStatus(Instant now) {
+        if (status == ReservationStatus.ACTIVE && expiryDate.isBefore(now)) {
+            return ReservationStatus.EXPIRED;
+        }
+        return status;
+    }
+
     public static Builder builder() { return new Builder(); }
 
     public static class Builder {

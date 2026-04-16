@@ -3,6 +3,7 @@ package com.evlibre.server.core.usecases;
 import com.evlibre.common.model.ChargePointIdentity;
 
 import com.evlibre.server.core.domain.dto.CommandResult;
+import com.evlibre.server.core.domain.model.Reservation;
 import com.evlibre.server.core.domain.model.ReservationStatus;
 import com.evlibre.server.core.domain.model.TenantId;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,29 @@ class ReserveNowUseCaseTest {
         var saved = reservationRepo.findByReservationId(tenantId, reservationId);
         assertThat(saved).isPresent();
         assertThat(saved.get().status()).isEqualTo(ReservationStatus.ACTIVE);
+    }
+
+    // OCPP 1.6 §6: effective status of a reservation whose expiryDate has passed
+    // must be EXPIRED regardless of the persisted status.
+    @Test
+    void effectiveStatus_returns_expired_after_expiry() {
+        var r = Reservation.builder()
+                .id(java.util.UUID.randomUUID())
+                .tenantId(tenantId)
+                .stationIdentity(station)
+                .connectorId(1)
+                .expiryDate(Instant.parse("2020-01-01T00:00:00Z"))
+                .idTag("TAG001")
+                .reservationId(1)
+                .status(ReservationStatus.ACTIVE)
+                .createdAt(Instant.parse("2019-12-31T23:00:00Z"))
+                .build();
+
+        assertThat(r.status()).isEqualTo(ReservationStatus.ACTIVE);
+        assertThat(r.effectiveStatus(Instant.parse("2025-01-01T00:00:00Z")))
+                .isEqualTo(ReservationStatus.EXPIRED);
+        assertThat(r.effectiveStatus(Instant.parse("2019-12-31T23:30:00Z")))
+                .isEqualTo(ReservationStatus.ACTIVE);
     }
 
     @Test

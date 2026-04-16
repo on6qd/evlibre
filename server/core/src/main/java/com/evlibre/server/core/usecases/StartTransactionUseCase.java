@@ -61,10 +61,17 @@ public class StartTransactionUseCase implements StartTransactionPort {
         transactionRepository.save(transaction);
 
         // OCPP 1.6 §6: presence of reservationId in StartTransaction.req terminates the reservation.
+        // Expired reservations cannot transition to USED; just mark them EXPIRED and move on.
         if (data.reservationId() != null) {
             reservationRepository.findByReservationId(data.tenantId(), data.reservationId())
-                    .filter(r -> r.status() == ReservationStatus.ACTIVE)
-                    .ifPresent(r -> reservationRepository.save(r.withStatus(ReservationStatus.USED)));
+                    .ifPresent(r -> {
+                        ReservationStatus effective = r.effectiveStatus(data.timestamp());
+                        if (effective == ReservationStatus.ACTIVE) {
+                            reservationRepository.save(r.withStatus(ReservationStatus.USED));
+                        } else if (effective == ReservationStatus.EXPIRED && r.status() != ReservationStatus.EXPIRED) {
+                            reservationRepository.save(r.withStatus(ReservationStatus.EXPIRED));
+                        }
+                    });
         }
 
         log.info("StartTransaction id={} ocppTxId={} station={} connector={} idTag={} reservationId={}",
