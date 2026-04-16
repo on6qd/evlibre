@@ -63,6 +63,20 @@ class RemoteStartTransactionUseCaseTest {
         assertThat(commandSender.commands()).isEmpty();
     }
 
+    // OCPP 1.6 §4.2: CSMS SHALL NOT send RemoteStart while station registration is Pending.
+    @Test
+    void rejects_when_station_registration_is_pending() {
+        var stationRepo = new StubStationRepo();
+        stationRepo.putRegistration(tenantId, station,
+                com.evlibre.server.core.domain.model.RegistrationStatus.PENDING);
+        var gated = new RemoteStartTransactionUseCase(commandSender, stationRepo);
+
+        var future = gated.remoteStart(tenantId, station, "TAG001", 1);
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
     @Test
     void accepts_chargingProfile_with_TxProfile_purpose() {
         commandSender.setNextResponse(Map.of("status", "Accepted"));
@@ -77,5 +91,39 @@ class RemoteStartTransactionUseCaseTest {
         assertThat(result.isAccepted()).isTrue();
         var cmd = commandSender.commands().get(0);
         assertThat(cmd.payload()).containsKey("chargingProfile");
+    }
+
+    // --- Fakes ---
+
+    static class StubStationRepo implements com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort {
+        private final java.util.Map<String, com.evlibre.server.core.domain.model.ChargingStation> byIdentity = new java.util.HashMap<>();
+
+        void putRegistration(TenantId t, ChargePointIdentity id,
+                              com.evlibre.server.core.domain.model.RegistrationStatus status) {
+            byIdentity.put(t.value() + ":" + id.value(),
+                    com.evlibre.server.core.domain.model.ChargingStation.builder()
+                            .id(java.util.UUID.randomUUID())
+                            .tenantId(t)
+                            .identity(id)
+                            .protocol(com.evlibre.common.ocpp.OcppProtocol.OCPP_16)
+                            .vendor("V").model("M")
+                            .registrationStatus(status)
+                            .createdAt(java.time.Instant.now())
+                            .build());
+        }
+
+        @Override public void save(com.evlibre.server.core.domain.model.ChargingStation s) {
+            byIdentity.put(s.tenantId().value() + ":" + s.identity().value(), s);
+        }
+        @Override public java.util.Optional<com.evlibre.server.core.domain.model.ChargingStation> findById(java.util.UUID id) {
+            return byIdentity.values().stream().filter(s -> s.id().equals(id)).findFirst();
+        }
+        @Override public java.util.Optional<com.evlibre.server.core.domain.model.ChargingStation> findByTenantAndIdentity(
+                TenantId t, ChargePointIdentity id) {
+            return java.util.Optional.ofNullable(byIdentity.get(t.value() + ":" + id.value()));
+        }
+        @Override public java.util.List<com.evlibre.server.core.domain.model.ChargingStation> findByTenant(TenantId t) {
+            return byIdentity.values().stream().filter(s -> s.tenantId().equals(t)).toList();
+        }
     }
 }

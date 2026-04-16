@@ -2,9 +2,11 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.dto.CommandResult;
+import com.evlibre.server.core.domain.model.RegistrationStatus;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.inbound.RemoteStartTransactionPort;
 import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +20,16 @@ public class RemoteStartTransactionUseCase implements RemoteStartTransactionPort
     private static final Logger log = LoggerFactory.getLogger(RemoteStartTransactionUseCase.class);
 
     private final StationCommandSender commandSender;
+    private final StationRepositoryPort stationRepository;
 
     public RemoteStartTransactionUseCase(StationCommandSender commandSender) {
+        this(commandSender, null);
+    }
+
+    public RemoteStartTransactionUseCase(StationCommandSender commandSender,
+                                          StationRepositoryPort stationRepository) {
         this.commandSender = Objects.requireNonNull(commandSender);
+        this.stationRepository = stationRepository;
     }
 
     @Override
@@ -33,6 +42,17 @@ public class RemoteStartTransactionUseCase implements RemoteStartTransactionPort
     public CompletableFuture<CommandResult> remoteStart(TenantId tenantId, ChargePointIdentity stationIdentity,
                                                          String idTag, Integer connectorId,
                                                          Map<String, Object> chargingProfile) {
+        // OCPP 1.6 §4.2: CSMS SHALL NOT initiate RemoteStart/RemoteStop while the station's
+        // registration is Pending — it is not yet fully onboarded.
+        if (stationRepository != null) {
+            var station = stationRepository.findByTenantAndIdentity(tenantId, stationIdentity);
+            if (station.isPresent() && station.get().registrationStatus() == RegistrationStatus.PENDING) {
+                return CompletableFuture.failedFuture(new IllegalStateException(
+                        "Cannot send RemoteStartTransaction to a station in Pending registration: "
+                                + stationIdentity.value()));
+            }
+        }
+
         log.info("Sending RemoteStartTransaction to {} (tenant: {}, idTag: {})",
                 stationIdentity.value(), tenantId.value(), idTag);
 
