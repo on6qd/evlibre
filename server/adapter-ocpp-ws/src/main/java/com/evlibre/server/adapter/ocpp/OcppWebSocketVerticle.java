@@ -6,6 +6,7 @@ import com.evlibre.common.ocpp.OcppErrorCode;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.ports.inbound.HandleHeartbeatPort;
 import com.evlibre.server.core.domain.ports.outbound.StationEventPublisher;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AbstractVerticle;
@@ -34,6 +35,7 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
     private final OcppProtocolNegotiator protocolNegotiator;
     private final OcppPendingCallManager pendingCallManager;
     private final StationEventPublisher stationEventPublisher;
+    private final HandleHeartbeatPort heartbeatPort;
     private HttpServer httpServer;
 
     public OcppWebSocketVerticle(int port,
@@ -45,6 +47,20 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
                                   OcppProtocolNegotiator protocolNegotiator,
                                   OcppPendingCallManager pendingCallManager,
                                   StationEventPublisher stationEventPublisher) {
+        this(port, pingInterval, codec, schemaValidator, dispatcher, sessionManager,
+                protocolNegotiator, pendingCallManager, stationEventPublisher, null);
+    }
+
+    public OcppWebSocketVerticle(int port,
+                                  int pingInterval,
+                                  OcppMessageCodec codec,
+                                  OcppSchemaValidator schemaValidator,
+                                  OcppMessageDispatcher dispatcher,
+                                  OcppSessionManager sessionManager,
+                                  OcppProtocolNegotiator protocolNegotiator,
+                                  OcppPendingCallManager pendingCallManager,
+                                  StationEventPublisher stationEventPublisher,
+                                  HandleHeartbeatPort heartbeatPort) {
         this.port = port;
         this.pingInterval = pingInterval;
         this.codec = codec;
@@ -54,6 +70,7 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
         this.protocolNegotiator = protocolNegotiator;
         this.pendingCallManager = pendingCallManager;
         this.stationEventPublisher = stationEventPublisher;
+        this.heartbeatPort = heartbeatPort;
     }
 
     @Override
@@ -204,6 +221,13 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
         } catch (OcppMessageCodec.OcppMessageParseException e) {
             log.warn("Failed to parse OCPP message from {}: {}", session.stationIdentity().value(), e.getMessage());
             return;
+        }
+
+        // OCPP 1.6 §4.5.1: the CSMS SHOULD treat any PDU as a liveness signal — just as
+        // it would a Heartbeat. Update lastSeen eagerly so the dashboard reflects actual
+        // recent activity, not only explicit Heartbeats.
+        if (heartbeatPort != null && sessionManager.isAccepted(session.tenantId(), session.stationIdentity())) {
+            heartbeatPort.heartbeat(session.tenantId(), session.stationIdentity());
         }
 
         if (parsed.typeId() == MessageTypeId.CALL) {

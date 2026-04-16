@@ -169,7 +169,7 @@ public class Application {
                 config.ocpp().websocketPort(), config.ocpp().pingInterval(),
                 codec, schemaValidator,
                 dispatcher, sessionManager, protocolNegotiator, pendingCallManager,
-                stationEventPublisher);
+                stationEventPublisher, handleHeartbeat);
 
         // Web UI
         WebUiVerticle webUiVerticle = new WebUiVerticle(

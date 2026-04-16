@@ -110,7 +110,7 @@ public class OcppTestHarness {
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues, objectMapper));
 
-        verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {});
+        verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
 
     /**
