@@ -47,4 +47,35 @@ class RemoteStartTransactionUseCaseTest {
         assertThat(cmd.payload()).doesNotContainKey("connectorId");
         assertThat(cmd.payload()).containsEntry("idTag", "TAG001");
     }
+
+    // OCPP 1.6 §5.15: RemoteStartTransaction.chargingProfile MUST have purpose=TxProfile.
+    @Test
+    void rejects_chargingProfile_with_wrong_purpose() {
+        Map<String, Object> profile = Map.of(
+                "chargingProfileId", 1,
+                "stackLevel", 0,
+                "chargingProfilePurpose", "TxDefaultProfile",
+                "chargingProfileKind", "Absolute");
+
+        var future = useCase.remoteStart(tenantId, station, "TAG001", 1, profile);
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
+    @Test
+    void accepts_chargingProfile_with_TxProfile_purpose() {
+        commandSender.setNextResponse(Map.of("status", "Accepted"));
+        Map<String, Object> profile = Map.of(
+                "chargingProfileId", 1,
+                "stackLevel", 0,
+                "chargingProfilePurpose", "TxProfile",
+                "chargingProfileKind", "Absolute");
+
+        CommandResult result = useCase.remoteStart(tenantId, station, "TAG001", 1, profile).join();
+
+        assertThat(result.isAccepted()).isTrue();
+        var cmd = commandSender.commands().get(0);
+        assertThat(cmd.payload()).containsKey("chargingProfile");
+    }
 }
