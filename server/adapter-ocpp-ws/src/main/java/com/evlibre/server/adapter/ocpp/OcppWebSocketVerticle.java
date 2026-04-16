@@ -222,7 +222,7 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
             log.warn("Schema validation failed for {} from {}: {}",
                     call.action(), session.stationIdentity().value(), validationResult.errorMessage());
             String error = codec.buildCallError(call.messageId(),
-                    OcppErrorCode.FORMATION_VIOLATION, validationResult.errorMessage());
+                    validationResult.errorCode(), validationResult.errorMessage());
             log.debug("OCPP OUT [{}] {}", session.stationIdentity().value(), error);
             session.webSocket().writeTextMessage(error);
             return;

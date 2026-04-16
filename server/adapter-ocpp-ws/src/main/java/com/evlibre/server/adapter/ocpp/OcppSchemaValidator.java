@@ -1,5 +1,6 @@
 package com.evlibre.server.adapter.ocpp;
 
+import com.evlibre.common.ocpp.OcppErrorCode;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +37,30 @@ public class OcppSchemaValidator {
         String errorMessage = errors.stream()
                 .map(ValidationMessage::getMessage)
                 .collect(Collectors.joining("; "));
-        return ValidationResult.invalid(errorMessage);
+
+        // OCPP 1.6 RPC Framework error codes:
+        //   - ProtocolError: payload is incomplete (missing required field)
+        //   - PropertyConstraintViolation: value does not meet the constraint for its type
+        //   - FormationViolation: payload does not conform to the PDU structure
+        OcppErrorCode errorCode = classify(errors);
+        return new ValidationResult(false, errorMessage, errorCode);
+    }
+
+    private static OcppErrorCode classify(Set<ValidationMessage> errors) {
+        boolean hasMissingRequired = errors.stream().anyMatch(vm ->
+                "required".equals(vm.getType()) || vm.getMessage().contains("required"));
+        if (hasMissingRequired) {
+            return OcppErrorCode.PROTOCOL_ERROR;
+        }
+        boolean hasConstraintViolation = errors.stream().anyMatch(vm -> {
+            String t = vm.getType();
+            return "maxLength".equals(t) || "minLength".equals(t) || "enum".equals(t)
+                    || "pattern".equals(t) || "maximum".equals(t) || "minimum".equals(t);
+        });
+        if (hasConstraintViolation) {
+            return OcppErrorCode.PROPERTY_CONSTRAINT_VIOLATION;
+        }
+        return OcppErrorCode.FORMATION_VIOLATION;
     }
 
     private JsonSchema getSchema(OcppProtocol protocol, String action) {
@@ -82,13 +106,13 @@ public class OcppSchemaValidator {
         }
     }
 
-    public record ValidationResult(boolean isValid, String errorMessage) {
+    public record ValidationResult(boolean isValid, String errorMessage, OcppErrorCode errorCode) {
         public static ValidationResult valid() {
-            return new ValidationResult(true, null);
+            return new ValidationResult(true, null, null);
         }
 
         public static ValidationResult invalid(String errorMessage) {
-            return new ValidationResult(false, errorMessage);
+            return new ValidationResult(false, errorMessage, OcppErrorCode.FORMATION_VIOLATION);
         }
     }
 }

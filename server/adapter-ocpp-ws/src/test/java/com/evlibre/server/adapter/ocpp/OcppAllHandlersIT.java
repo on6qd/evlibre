@@ -269,12 +269,27 @@ class OcppAllHandlersIT {
     }
 
     @Test
-    void invalid_payload_returns_formation_violation(Vertx vertx, VertxTestContext ctx) {
+    void missing_required_field_returns_protocol_error(Vertx vertx, VertxTestContext ctx) {
+        // OCPP 1.6 §3.2.5: missing required property → ProtocolError (not FormationViolation).
         harness.send16(vertx, "CHARGER-001", OcppMessages.malformedCall("bad-1"))
                 .whenComplete((response, err) -> ctx.verify(() -> {
                     assertThat(err).isNull();
                     assertThat(response.get(0).asInt()).isEqualTo(4);
-                    assertThat(response.get(2).asText()).isEqualTo("FormationViolation");
+                    assertThat(response.get(2).asText()).isEqualTo("ProtocolError");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void constraint_violation_returns_property_constraint_violation(Vertx vertx, VertxTestContext ctx) {
+        // StatusNotification with status value not in the enum — schema 'enum' violation.
+        String req = "[2,\"bad-enum\",\"StatusNotification\","
+                + "{\"connectorId\":1,\"errorCode\":\"NoError\",\"status\":\"NotARealStatus\"}]";
+        harness.send16(vertx, "CHARGER-001", req)
+                .whenComplete((response, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(response.get(0).asInt()).isEqualTo(4);
+                    assertThat(response.get(2).asText()).isEqualTo("PropertyConstraintViolation");
                     ctx.completeNow();
                 }));
     }

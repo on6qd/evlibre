@@ -109,7 +109,7 @@ class OcppWebSocketIntegrationTest {
     }
 
     @Test
-    void invalid_payload_returns_formationViolation(Vertx vertx, VertxTestContext ctx) {
+    void missing_required_field_returns_protocolError(Vertx vertx, VertxTestContext ctx) {
         WebSocketClient client = vertx.createWebSocketClient();
         WebSocketConnectOptions options = new WebSocketConnectOptions()
                 .setPort(verticle.actualPort())
@@ -125,7 +125,7 @@ class OcppWebSocketIntegrationTest {
             ws.textMessageHandler(msg -> ctx.verify(() -> {
                 JsonNode response = objectMapper.readTree(msg);
                 assertThat(response.get(0).asInt()).isEqualTo(4); // CALLERROR
-                assertThat(response.get(2).asText()).isEqualTo("FormationViolation");
+                assertThat(response.get(2).asText()).isEqualTo("ProtocolError");
                 ws.close();
                 ctx.completeNow();
             }));
