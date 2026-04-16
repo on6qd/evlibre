@@ -13,5 +13,14 @@ public record StatusNotificationData(
         ConnectorId connectorId,
         ConnectorStatus status,
         String errorCode,
-        Instant timestamp
-) {}
+        Instant timestamp,
+        String info,
+        String vendorId,
+        String vendorErrorCode
+) {
+    public StatusNotificationData(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                   ConnectorId connectorId, ConnectorStatus status,
+                                   String errorCode, Instant timestamp) {
+        this(tenantId, stationIdentity, connectorId, status, errorCode, timestamp, null, null, null);
+    }
+}

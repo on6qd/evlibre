@@ -28,10 +28,16 @@ public class StatusNotificationHandler16 implements OcppMessageHandler {
         String errorCode = payload.path("errorCode").asText("NoError");
         String timestampStr = payload.path("timestamp").asText(null);
         Instant timestamp = timestampStr != null ? Instant.parse(timestampStr) : Instant.now();
+        // OCPP 1.6 §4.9: optional diagnostic fields — preserve them so operators can see
+        // vendor-specific error detail alongside the generic errorCode.
+        String info = payload.hasNonNull("info") ? payload.get("info").asText() : null;
+        String vendorId = payload.hasNonNull("vendorId") ? payload.get("vendorId").asText() : null;
+        String vendorErrorCode = payload.hasNonNull("vendorErrorCode") ? payload.get("vendorErrorCode").asText() : null;
 
         StatusNotificationData data = new StatusNotificationData(
                 session.tenantId(), session.stationIdentity(),
-                connectorId, status, errorCode, timestamp
+                connectorId, status, errorCode, timestamp,
+                info, vendorId, vendorErrorCode
         );
 
         statusPort.statusNotification(data);

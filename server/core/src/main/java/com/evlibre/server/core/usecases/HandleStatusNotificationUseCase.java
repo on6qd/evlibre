@@ -18,17 +18,22 @@ public class HandleStatusNotificationUseCase implements HandleStatusNotification
 
     @Override
     public void statusNotification(StatusNotificationData data) {
-        log.info("StatusNotification from {} connector {}: {} (error: {})",
-                data.stationIdentity().value(), data.connectorId().value(),
-                data.status(), data.errorCode());
+        StringBuilder detail = new StringBuilder()
+                .append("connector=").append(data.connectorId().value())
+                .append(" status=").append(data.status())
+                .append(" error=").append(data.errorCode());
+        if (data.info() != null) detail.append(" info=").append(data.info());
+        if (data.vendorId() != null) detail.append(" vendorId=").append(data.vendorId());
+        if (data.vendorErrorCode() != null) detail.append(" vendorErrorCode=").append(data.vendorErrorCode());
+
+        log.info("StatusNotification from {}: {}", data.stationIdentity().value(), detail);
 
         eventLog.logEvent(
                 data.stationIdentity().value(),
                 null,
                 "StatusNotification",
                 "IN",
-                String.format("connector=%d status=%s error=%s",
-                        data.connectorId().value(), data.status(), data.errorCode())
+                detail.toString()
         );
     }
 }
