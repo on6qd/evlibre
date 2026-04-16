@@ -37,6 +37,7 @@ class StartTransactionUseCaseTest {
         transactionRepo = new FakeTransactionRepository();
         stationRepo = new FakeStationRepository();
         authRepo = new FakeAuthorizationRepository();
+        authRepo.addAuthorization(tenantId, "TAG001", AuthorizationStatus.ACCEPTED);
 
         // Seed a known station
         stationRepo.save(ChargingStation.builder()
@@ -51,7 +52,8 @@ class StartTransactionUseCaseTest {
                 .build());
 
         authorizeUseCase = new AuthorizeUseCase(authRepo);
-        startTransactionUseCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo);
+        startTransactionUseCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo,
+                new StubReservationRepository());
         stopTransactionUseCase = new StopTransactionUseCase(transactionRepo);
     }
 
@@ -160,6 +162,10 @@ class StartTransactionUseCaseTest {
 
     static class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
         private final Map<String, AuthorizationStatus> store = new ConcurrentHashMap<>();
+
+        void addAuthorization(TenantId tenantId, String idTag, AuthorizationStatus status) {
+            store.put(tenantId.value() + ":" + idTag, status);
+        }
 
         @Override
         public Optional<AuthorizationStatus> findStatusByIdTag(TenantId tenantId, String idTag) {

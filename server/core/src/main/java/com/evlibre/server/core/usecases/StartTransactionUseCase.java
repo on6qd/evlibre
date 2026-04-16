@@ -2,10 +2,12 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.server.core.domain.dto.StartTransactionData;
 import com.evlibre.server.core.domain.dto.StartTransactionResult;
+import com.evlibre.server.core.domain.model.ReservationStatus;
 import com.evlibre.server.core.domain.model.Transaction;
 import com.evlibre.server.core.domain.model.TransactionStatus;
 import com.evlibre.server.core.domain.ports.inbound.AuthorizePort;
 import com.evlibre.server.core.domain.ports.inbound.StartTransactionPort;
+import com.evlibre.server.core.domain.ports.outbound.ReservationRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
 import org.slf4j.Logger;
@@ -21,13 +23,16 @@ public class StartTransactionUseCase implements StartTransactionPort {
     private final AuthorizePort authorizePort;
     private final TransactionRepositoryPort transactionRepository;
     private final StationRepositoryPort stationRepository;
+    private final ReservationRepositoryPort reservationRepository;
 
     public StartTransactionUseCase(AuthorizePort authorizePort,
                                    TransactionRepositoryPort transactionRepository,
-                                   StationRepositoryPort stationRepository) {
+                                   StationRepositoryPort stationRepository,
+                                   ReservationRepositoryPort reservationRepository) {
         this.authorizePort = Objects.requireNonNull(authorizePort);
         this.transactionRepository = Objects.requireNonNull(transactionRepository);
         this.stationRepository = Objects.requireNonNull(stationRepository);
+        this.reservationRepository = Objects.requireNonNull(reservationRepository);
     }
 
     @Override
@@ -55,9 +60,16 @@ public class StartTransactionUseCase implements StartTransactionPort {
 
         transactionRepository.save(transaction);
 
-        log.info("StartTransaction id={} ocppTxId={} station={} connector={} idTag={}",
+        // OCPP 1.6 §6: presence of reservationId in StartTransaction.req terminates the reservation.
+        if (data.reservationId() != null) {
+            reservationRepository.findByReservationId(data.tenantId(), data.reservationId())
+                    .filter(r -> r.status() == ReservationStatus.ACTIVE)
+                    .ifPresent(r -> reservationRepository.save(r.withStatus(ReservationStatus.USED)));
+        }
+
+        log.info("StartTransaction id={} ocppTxId={} station={} connector={} idTag={} reservationId={}",
                 transaction.id(), ocppTransactionId,
-                data.stationIdentity().value(), data.connectorId().value(), data.idTag());
+                data.stationIdentity().value(), data.connectorId().value(), data.idTag(), data.reservationId());
 
         return new StartTransactionResult(ocppTransactionId, authResult.status());
     }

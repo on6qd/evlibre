@@ -17,7 +17,8 @@ public class H2AuthorizationRepository implements AuthorizationRepositoryPort {
 
     @Override
     public Optional<AuthorizationStatus> findStatusByIdTag(TenantId tenantId, String idTag) {
-        String sql = "SELECT status FROM authorizations WHERE tenant_id = ? AND id_tag = ?";
+        // OCPP 1.6: IdToken is CiString20Type — case-insensitive.
+        String sql = "SELECT status FROM authorizations WHERE tenant_id = ? AND LOWER(id_tag) = LOWER(?)";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, tenantId.value());

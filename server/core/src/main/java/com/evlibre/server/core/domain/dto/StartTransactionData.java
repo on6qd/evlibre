@@ -12,5 +12,11 @@ public record StartTransactionData(
         ConnectorId connectorId,
         String idTag,
         long meterStart,
-        Instant timestamp
-) {}
+        Instant timestamp,
+        Integer reservationId
+) {
+    public StartTransactionData(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                ConnectorId connectorId, String idTag, long meterStart, Instant timestamp) {
+        this(tenantId, stationIdentity, connectorId, idTag, meterStart, timestamp, null);
+    }
+}

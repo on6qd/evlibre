@@ -23,7 +23,7 @@ public class AuthorizeUseCase implements AuthorizePort {
     @Override
     public AuthorizationResult authorize(TenantId tenantId, String idTag) {
         var status = authorizationRepository.findStatusByIdTag(tenantId, idTag)
-                .orElse(AuthorizationStatus.ACCEPTED);
+                .orElse(AuthorizationStatus.INVALID);
 
         log.info("Authorize idTag={} tenant={} -> {}", idTag, tenantId.value(), status);
 

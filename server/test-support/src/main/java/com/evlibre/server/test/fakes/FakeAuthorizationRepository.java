@@ -4,6 +4,7 @@ import com.evlibre.server.core.domain.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +26,8 @@ public class FakeAuthorizationRepository implements AuthorizationRepositoryPort 
         store.clear();
     }
 
+    // OCPP 1.6: IdToken is CiString20Type — case-insensitive.
     private String key(TenantId tenantId, String idTag) {
-        return tenantId.value() + ":" + idTag;
+        return tenantId.value() + ":" + (idTag == null ? "" : idTag.toLowerCase(Locale.ROOT));
     }
 }

@@ -98,7 +98,8 @@ public class Application {
                 stationEventPublisher);
         HandleStatusNotificationUseCase handleStatusNotification = new HandleStatusNotificationUseCase(eventLog);
         AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
-        StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo);
+        var reservationRepo = new InMemoryReservationRepository();
+        StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo, reservationRepo);
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);

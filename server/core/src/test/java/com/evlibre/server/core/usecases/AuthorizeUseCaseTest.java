@@ -36,10 +36,10 @@ class AuthorizeUseCaseTest {
     }
 
     @Test
-    void unknown_tag_defaults_to_accepted() {
+    void unknown_tag_defaults_to_invalid() {
         AuthorizationResult result = useCase.authorize(tenantId, "UNKNOWN-TAG");
 
-        assertThat(result.status()).isEqualTo(AuthorizationStatus.ACCEPTED);
+        assertThat(result.status()).isEqualTo(AuthorizationStatus.INVALID);
         assertThat(result.idTag()).isEqualTo("UNKNOWN-TAG");
     }
 

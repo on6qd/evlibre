@@ -9,10 +9,11 @@ public enum OcppErrorCode {
     SECURITY_ERROR("SecurityError"),
     FORMATION_VIOLATION("FormationViolation"),
     PROPERTY_CONSTRAINT_VIOLATION("PropertyConstraintViolation"),
-    OCCURRENCE_CONSTRAINT_VIOLATION("OccurrenceConstraintViolation"),
+    // OCPP 1.6 errata mandates the misspelled form "Occurence" (single r)
+    // and explicitly forbids fixing it to preserve interoperability.
+    OCCURENCE_CONSTRAINT_VIOLATION("OccurenceConstraintViolation"),
     TYPE_CONSTRAINT_VIOLATION("TypeConstraintViolation"),
-    GENERIC_ERROR("GenericError"),
-    MESSAGE_TYPE_NOT_SUPPORTED("MessageTypeNotSupported");
+    GENERIC_ERROR("GenericError");
 
     private final String value;
 

@@ -29,10 +29,11 @@ public class StartTransactionHandler16 implements OcppMessageHandler {
         long meterStart = payload.path("meterStart").asLong();
         String timestampStr = payload.path("timestamp").asText(null);
         Instant timestamp = timestampStr != null ? Instant.parse(timestampStr) : Instant.now();
+        Integer reservationId = payload.hasNonNull("reservationId") ? payload.get("reservationId").asInt() : null;
 
         StartTransactionData data = new StartTransactionData(
                 session.tenantId(), session.stationIdentity(),
-                connectorId, idTag, meterStart, timestamp
+                connectorId, idTag, meterStart, timestamp, reservationId
         );
 
         StartTransactionResult result = startTransactionPort.startTransaction(data);

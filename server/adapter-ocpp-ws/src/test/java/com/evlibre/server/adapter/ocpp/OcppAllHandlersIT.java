@@ -70,13 +70,13 @@ class OcppAllHandlersIT {
     }
 
     @Test
-    void authorize_unknown_tag_defaults_to_accepted_v16(Vertx vertx, VertxTestContext ctx) {
+    void authorize_unknown_tag_defaults_to_invalid_v16(Vertx vertx, VertxTestContext ctx) {
         harness.send16(vertx, "CHARGER-001", OcppMessages.bootNotification16("ABB", "Terra AC"))
                 .thenCompose(boot -> harness.send16(vertx, "CHARGER-001", OcppMessages.authorize16("auth-2", "UNKNOWN")))
                 .whenComplete((response, err) -> ctx.verify(() -> {
                     assertThat(err).isNull();
                     assertThat(response.get(0).asInt()).isEqualTo(3);
-                    assertThat(response.get(2).get("idTagInfo").get("status").asText()).isEqualTo("Accepted");
+                    assertThat(response.get(2).get("idTagInfo").get("status").asText()).isEqualTo("Invalid");
                     ctx.completeNow();
                 }));
     }
