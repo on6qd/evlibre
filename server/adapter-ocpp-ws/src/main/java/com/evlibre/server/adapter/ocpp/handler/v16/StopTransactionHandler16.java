@@ -34,15 +34,12 @@ public class StopTransactionHandler16 implements OcppMessageHandler {
                 transactionId, idTag, meterStop, timestamp, reason
         );
 
-        stopTransactionPort.stopTransaction(data);
+        var authResult = stopTransactionPort.stopTransaction(data);
 
-        // OCPP 1.6 spec: StopTransaction.conf must include idTagInfo if idTag was provided
+        // OCPP 1.6 §5.28: StopTransaction.conf carries idTagInfo iff an idTag was provided.
         ObjectNode response = objectMapper.createObjectNode();
-        if (idTag != null) {
-            ObjectNode idTagInfo = objectMapper.createObjectNode();
-            idTagInfo.put("status", "Accepted");
-            response.set("idTagInfo", idTagInfo);
-        }
+        authResult.ifPresent(r -> response.set("idTagInfo",
+                AuthorizeHandler16.buildIdTagInfo(r, objectMapper)));
         return response;
     }
 }

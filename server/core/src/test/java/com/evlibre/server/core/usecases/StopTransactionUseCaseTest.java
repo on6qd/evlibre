@@ -86,6 +86,39 @@ class StopTransactionUseCaseTest {
         assertThat(transactionRepo.findByOcppTransactionId(tenantId, -1)).isEmpty();
     }
 
+    // OCPP 1.6 §5.28: when an idTag is supplied in StopTransaction.req the CSMS
+    // authorizes it and returns the result in StopTransaction.conf.idTagInfo.
+    @Test
+    void stop_transaction_with_idTag_returns_auth_result() {
+        int ocppTxId = seedTransaction();
+        var authRepo = new StubAuthRepo();
+        authRepo.addAuthorization(tenantId, "TAG001", AuthorizationStatus.ACCEPTED);
+        var useCaseWithAuth = new StopTransactionUseCase(transactionRepo, new AuthorizeUseCase(authRepo));
+
+        var stopData = new StopTransactionData(
+                tenantId, stationIdentity, ocppTxId, "TAG001", 5000L, stopTime, "Local"
+        );
+        var result = useCaseWithAuth.stopTransaction(stopData);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().status()).isEqualTo(AuthorizationStatus.ACCEPTED);
+        assertThat(result.get().idTag()).isEqualTo("TAG001");
+    }
+
+    @Test
+    void stop_transaction_without_idTag_returns_empty() {
+        int ocppTxId = seedTransaction();
+        var useCaseWithAuth = new StopTransactionUseCase(transactionRepo,
+                new AuthorizeUseCase(new StubAuthRepo()));
+
+        var stopData = new StopTransactionData(
+                tenantId, stationIdentity, ocppTxId, null, 5000L, stopTime, "EVDisconnected"
+        );
+        var result = useCaseWithAuth.stopTransaction(stopData);
+
+        assertThat(result).isEmpty();
+    }
+
     private int seedTransaction() {
         int ocppTxId = transactionRepo.nextOcppTransactionId();
         var tx = Transaction.builder()
@@ -106,6 +139,17 @@ class StopTransactionUseCaseTest {
     }
 
     // --- Fakes ---
+
+    static class StubAuthRepo implements com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort {
+        private final Map<String, IdTagInfo> store = new ConcurrentHashMap<>();
+        void addAuthorization(TenantId t, String tag, AuthorizationStatus s) {
+            store.put(t.value() + ":" + tag, IdTagInfo.of(s));
+        }
+        @Override
+        public Optional<IdTagInfo> findInfoByIdTag(TenantId t, String tag) {
+            return Optional.ofNullable(store.get(t.value() + ":" + tag));
+        }
+    }
 
     static class FakeTransactionRepository implements TransactionRepositoryPort {
         private final Map<UUID, Transaction> store = new ConcurrentHashMap<>();

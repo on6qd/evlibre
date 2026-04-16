@@ -58,7 +58,7 @@ public class OcppTestHarness {
         AuthorizeUseCase authorize = new AuthorizeUseCase(authRepo);
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo,
                 new FakeReservationRepository());
-        StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
+        StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo, authorize);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
         HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);

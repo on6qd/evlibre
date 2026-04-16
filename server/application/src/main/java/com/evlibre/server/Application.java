@@ -100,7 +100,7 @@ public class Application {
         AuthorizeUseCase authorize = new AuthorizeUseCase(authorizationRepo);
         var reservationRepo = new InMemoryReservationRepository();
         StartTransactionUseCase startTransaction = new StartTransactionUseCase(authorize, transactionRepo, stationRepo, reservationRepo);
-        StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo);
+        StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo, authorize);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
         HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
