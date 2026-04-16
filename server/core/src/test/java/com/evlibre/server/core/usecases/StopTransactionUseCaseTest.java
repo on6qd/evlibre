@@ -73,6 +73,19 @@ class StopTransactionUseCaseTest {
         assertThat(transactionRepo.findByOcppTransactionId(tenantId, 999)).isEmpty();
     }
 
+    // OCPP 1.6 §5.27 / errata: a CP uses transactionId=-1 when StartTransaction.conf was lost.
+    // The CSMS SHALL respond as if the id were valid — i.e. must not throw or return an error.
+    @Test
+    void stop_transaction_with_minus_one_does_not_throw() {
+        var stopData = new StopTransactionData(
+                tenantId, stationIdentity, -1, "TAG001", 5000L, stopTime, "PowerLoss"
+        );
+
+        useCase.stopTransaction(stopData);
+
+        assertThat(transactionRepo.findByOcppTransactionId(tenantId, -1)).isEmpty();
+    }
+
     private int seedTransaction() {
         int ocppTxId = transactionRepo.nextOcppTransactionId();
         var tx = Transaction.builder()
