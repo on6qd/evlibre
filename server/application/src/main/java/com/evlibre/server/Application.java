@@ -128,7 +128,7 @@ public class Application {
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
-                new BootNotificationHandler16(registerStation, postBootActionService, objectMapper));
+                new BootNotificationHandler16(registerStation, postBootActionService, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "Heartbeat",
                 new HeartbeatHandler16(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "StatusNotification",
@@ -150,7 +150,7 @@ public class Application {
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
-                new BootNotificationHandler201(registerStation, postBootActionService, objectMapper));
+                new BootNotificationHandler201(registerStation, postBootActionService, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
                 new HeartbeatHandler201(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",

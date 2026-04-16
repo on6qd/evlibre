@@ -76,7 +76,7 @@ public class OcppTestHarness {
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
-                new BootNotificationHandler16(registerStation, null, objectMapper));
+                new BootNotificationHandler16(registerStation, null, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "Heartbeat",
                 new HeartbeatHandler16(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "StatusNotification",
@@ -98,7 +98,7 @@ public class OcppTestHarness {
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
-                new BootNotificationHandler201(registerStation, null, objectMapper));
+                new BootNotificationHandler201(registerStation, null, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
                 new HeartbeatHandler201(handleHeartbeat, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",
@@ -126,6 +126,9 @@ public class OcppTestHarness {
 
     /**
      * Connect a WebSocket client and send a message, returning the parsed response.
+     * Per OCPP 1.6 §4.2 the CP must send BootNotification before anything else. This
+     * helper auto-boots (on the same connection) whenever the caller's message is not
+     * itself a BootNotification, so unit tests can focus on a single action.
      */
     public CompletableFuture<JsonNode> sendAndReceive(Vertx vertx, String tenantId, String stationId,
                                                        String subProtocol, String message) {
@@ -137,22 +140,44 @@ public class OcppTestHarness {
                 .setURI("/ocpp/" + tenantId + "/" + stationId)
                 .addSubProtocol(subProtocol);
 
+        boolean isBoot = message.contains("\"BootNotification\"");
+
         client.connect(options).onComplete(ar -> {
             if (ar.failed()) {
                 future.completeExceptionally(ar.cause());
                 return;
             }
             var ws = ar.result();
-            ws.textMessageHandler(msg -> {
-                try {
-                    JsonNode parsed = objectMapper.readTree(msg);
-                    // Close and wait for server to unregister before completing
-                    ws.close().onComplete(closeAr -> future.complete(parsed));
-                } catch (Exception e) {
-                    future.completeExceptionally(e);
-                }
-            });
-            ws.writeTextMessage(message);
+            if (isBoot) {
+                ws.textMessageHandler(msg -> {
+                    try {
+                        JsonNode parsed = objectMapper.readTree(msg);
+                        ws.close().onComplete(closeAr -> future.complete(parsed));
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                });
+                ws.writeTextMessage(message);
+            } else {
+                String bootMsg = "ocpp1.6".equals(subProtocol)
+                        ? OcppMessages.bootNotification16("prelim-boot", "ABB", "Terra AC")
+                        : OcppMessages.bootNotification201("prelim-boot", "ABB", "Terra AC");
+                boolean[] bootSeen = {false};
+                ws.textMessageHandler(msg -> {
+                    try {
+                        JsonNode parsed = objectMapper.readTree(msg);
+                        if (!bootSeen[0]) {
+                            bootSeen[0] = true;
+                            ws.writeTextMessage(message);
+                            return;
+                        }
+                        ws.close().onComplete(closeAr -> future.complete(parsed));
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                });
+                ws.writeTextMessage(bootMsg);
+            }
         });
 
         return future.orTimeout(5, TimeUnit.SECONDS);

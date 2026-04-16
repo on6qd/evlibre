@@ -46,10 +46,10 @@ class OcppWebSocketIntegrationTest {
                 tenantRepo, stationRepo, eventLog, timeProvider, 900,
                 (t, s) -> {});
 
-        BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, null, objectMapper);
+        BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, null, sessionManager, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification", bootHandler);
 
-        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, null, objectMapper);
+        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, null, sessionManager, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification", bootHandler201);
 
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
@@ -85,8 +85,10 @@ class OcppWebSocketIntegrationTest {
         }));
     }
 
+    // OCPP 1.6 §4.2: any action other than BootNotification before the station has
+    // been accepted must be rejected with SecurityError.
     @Test
-    void unknown_action_returns_notImplemented(Vertx vertx, VertxTestContext ctx) {
+    void non_boot_action_before_boot_returns_securityError(Vertx vertx, VertxTestContext ctx) {
         WebSocketClient client = vertx.createWebSocketClient();
         WebSocketConnectOptions options = new WebSocketConnectOptions()
                 .setPort(verticle.actualPort())
@@ -95,13 +97,13 @@ class OcppWebSocketIntegrationTest {
                 .addSubProtocol("ocpp1.6");
 
         client.connect(options).onComplete(ctx.succeeding(ws -> {
-            String req = "[2,\"msg-2\",\"DataTransfer\",{\"vendorId\":\"test\"}]";
+            String req = "[2,\"msg-2\",\"Heartbeat\",{}]";
             ws.writeTextMessage(req);
 
             ws.textMessageHandler(msg -> ctx.verify(() -> {
                 JsonNode response = objectMapper.readTree(msg);
                 assertThat(response.get(0).asInt()).isEqualTo(4); // CALLERROR
-                assertThat(response.get(2).asText()).isEqualTo("NotImplemented");
+                assertThat(response.get(2).asText()).isEqualTo("SecurityError");
                 ws.close();
                 ctx.completeNow();
             }));

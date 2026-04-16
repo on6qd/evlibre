@@ -216,6 +216,19 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
     }
 
     private void handleCall(OcppSession session, OcppCallMessage call) {
+        // OCPP 1.6 §4.2: reject any action other than BootNotification from a station
+        // that hasn't been accepted yet. Recommended error: SecurityError.
+        if (!"BootNotification".equals(call.action())
+                && !sessionManager.isAccepted(session.tenantId(), session.stationIdentity())) {
+            log.warn("Pre-boot message {} from {} rejected with SecurityError",
+                    call.action(), session.stationIdentity().value());
+            String error = codec.buildCallError(call.messageId(),
+                    OcppErrorCode.SECURITY_ERROR,
+                    "Station must send BootNotification before any other action");
+            session.webSocket().writeTextMessage(error);
+            return;
+        }
+
         // Validate schema
         var validationResult = schemaValidator.validate(session.protocol(), call.action(), call.payload());
         if (!validationResult.isValid()) {

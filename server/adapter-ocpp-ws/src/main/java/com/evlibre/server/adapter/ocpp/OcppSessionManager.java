@@ -17,10 +17,14 @@ public class OcppSessionManager {
 
     private final Map<String, OcppSession> sessions = new ConcurrentHashMap<>();
     private final Map<String, PingState> pingStates = new ConcurrentHashMap<>();
+    // OCPP 1.6 §4.2: until BootNotification is accepted (or set Pending) the CP SHALL NOT
+    // send any other request. Tracks per-session acceptance.
+    private final Map<String, Boolean> accepted = new ConcurrentHashMap<>();
 
     public void register(OcppSession session) {
         String key = sessionKey(session.tenantId(), session.stationIdentity());
         sessions.put(key, session);
+        accepted.put(key, false);
         log.info("Station connected: {} (tenant: {}, protocol: {})",
                 session.stationIdentity().value(), session.tenantId().value(), session.protocol());
     }
@@ -29,8 +33,17 @@ public class OcppSessionManager {
         String key = sessionKey(tenantId, stationIdentity);
         sessions.remove(key);
         pingStates.remove(key);
+        accepted.remove(key);
         log.info("Station disconnected: {} (tenant: {})",
                 stationIdentity.value(), tenantId.value());
+    }
+
+    public void markAccepted(TenantId tenantId, ChargePointIdentity stationIdentity) {
+        accepted.put(sessionKey(tenantId, stationIdentity), true);
+    }
+
+    public boolean isAccepted(TenantId tenantId, ChargePointIdentity stationIdentity) {
+        return Boolean.TRUE.equals(accepted.get(sessionKey(tenantId, stationIdentity)));
     }
 
     public Optional<OcppSession> getSession(TenantId tenantId, ChargePointIdentity stationIdentity) {
