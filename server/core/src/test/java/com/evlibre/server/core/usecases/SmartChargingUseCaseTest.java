@@ -42,6 +42,38 @@ class SmartChargingUseCaseTest {
         assertThat(cmd.payload()).containsKey("csChargingProfiles");
     }
 
+    // OCPP 1.6 §5.16: ChargePointMaxProfile binds to the whole station — connectorId MUST be 0.
+    @Test
+    void setChargingProfile_rejects_chargePointMaxProfile_on_connector_gt_zero() {
+        var useCase = new SetChargingProfileUseCase(commandSender);
+        Map<String, Object> profile = Map.of(
+                "chargingProfileId", 1,
+                "stackLevel", 0,
+                "chargingProfilePurpose", "ChargePointMaxProfile",
+                "chargingProfileKind", "Absolute");
+
+        var future = useCase.setChargingProfile(tenantId, station, 1, profile);
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
+    // OCPP 1.6 §5.16: TxProfile binds to a running transaction on a specific connector.
+    @Test
+    void setChargingProfile_rejects_txProfile_on_connector_zero() {
+        var useCase = new SetChargingProfileUseCase(commandSender);
+        Map<String, Object> profile = Map.of(
+                "chargingProfileId", 1,
+                "stackLevel", 0,
+                "chargingProfilePurpose", "TxProfile",
+                "chargingProfileKind", "Absolute");
+
+        var future = useCase.setChargingProfile(tenantId, station, 0, profile);
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
     @Test
     void clearChargingProfile_sends_filters() {
         commandSender.setNextResponse(Map.of("status", "Accepted"));

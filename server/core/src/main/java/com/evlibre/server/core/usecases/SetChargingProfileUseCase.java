@@ -24,6 +24,22 @@ public class SetChargingProfileUseCase implements SetChargingProfilePort {
     @Override
     public CompletableFuture<CommandResult> setChargingProfile(TenantId tenantId, ChargePointIdentity stationIdentity,
                                                                  int connectorId, Map<String, Object> csChargingProfiles) {
+        // OCPP 1.6 §5.16 / §3.13: connectorId-to-purpose rules.
+        //   ChargePointMaxProfile  → connectorId MUST be 0 (station-wide limit)
+        //   TxDefaultProfile       → any connectorId (0 = all; >0 = specific)
+        //   TxProfile              → connectorId MUST be > 0 (binds to a running tx)
+        if (csChargingProfiles != null) {
+            Object purpose = csChargingProfiles.get("chargingProfilePurpose");
+            if ("ChargePointMaxProfile".equals(purpose) && connectorId != 0) {
+                return CompletableFuture.failedFuture(new IllegalArgumentException(
+                        "ChargePointMaxProfile requires connectorId=0, was " + connectorId));
+            }
+            if ("TxProfile".equals(purpose) && connectorId <= 0) {
+                return CompletableFuture.failedFuture(new IllegalArgumentException(
+                        "TxProfile requires connectorId>0, was " + connectorId));
+            }
+        }
+
         log.info("Sending SetChargingProfile to {} (tenant: {})", stationIdentity.value(), tenantId.value());
 
         Map<String, Object> payload = Map.of(
