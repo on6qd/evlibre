@@ -67,6 +67,22 @@ class HandleMeterValuesUseCaseTest {
         assertThat(eventLog.events.get(0)).contains("readings=2");
     }
 
+    // OCPP 1.6 §5.27 / errata: the CP uses transactionId=-1 when StartTransaction.conf was lost.
+    // The CSMS SHALL accept MeterValues with tx=-1 as if valid — no error, no rejection.
+    @Test
+    void meter_values_with_minus_one_transaction_id_is_accepted() {
+        var meterValues = List.of(
+                new MeterValue(fixedTime, List.of(
+                        new SampledValue("1500", null, null, null, null, null, "Wh")))
+        );
+        var data = new MeterValuesData(tenantId, stationIdentity, new ConnectorId(1), -1, meterValues);
+
+        useCase.meterValues(data);
+
+        assertThat(eventLog.events).hasSize(1);
+        assertThat(eventLog.events.get(0)).contains("tx=-1");
+    }
+
     // --- Fakes ---
 
     static class FakeEventLog implements OcppEventLogPort {
