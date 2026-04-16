@@ -25,6 +25,12 @@ public class SendLocalListUseCase implements SendLocalListPort {
     public CompletableFuture<CommandResult> sendLocalList(TenantId tenantId, ChargePointIdentity stationIdentity,
                                                            int listVersion, String updateType,
                                                            List<Map<String, Object>> localAuthorizationList) {
+        // OCPP 1.6 §5.20: listVersion SHALL NOT be -1 or 0 — those values are reserved.
+        if (listVersion <= 0) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(
+                    "SendLocalList.listVersion must be a positive integer, was " + listVersion));
+        }
+
         log.info("Sending SendLocalList to {} (tenant: {}, version: {}, type: {})",
                 stationIdentity.value(), tenantId.value(), listVersion, updateType);
 

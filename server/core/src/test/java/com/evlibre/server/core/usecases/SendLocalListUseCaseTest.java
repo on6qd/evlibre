@@ -44,6 +44,24 @@ class SendLocalListUseCaseTest {
         assertThat(cmd.payload()).containsKey("localAuthorizationList");
     }
 
+    // OCPP 1.6 §5.20: listVersion of 0 or -1 is reserved — the use case must reject them
+    // locally so we never ship a malformed SendLocalList to the station.
+    @Test
+    void rejects_zero_listVersion() {
+        var future = useCase.sendLocalList(tenantId, station, 0, "Full", List.of());
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
+    @Test
+    void rejects_negative_listVersion() {
+        var future = useCase.sendLocalList(tenantId, station, -1, "Full", List.of());
+
+        assertThat(future).isCompletedExceptionally();
+        assertThat(commandSender.commands()).isEmpty();
+    }
+
     @Test
     void sends_differential_without_list() {
         commandSender.setNextResponse(Map.of("status", "Accepted"));
