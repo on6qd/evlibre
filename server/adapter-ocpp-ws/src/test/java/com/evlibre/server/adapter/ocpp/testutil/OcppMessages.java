@@ -143,6 +143,22 @@ public final class OcppMessages {
                 msgId, evseId, timestamp, value);
     }
 
+    public static String notifyReport201(int requestId, int seqNo, Instant generatedAt,
+                                          String componentName, String variableName) {
+        return notifyReport201(nextId(), requestId, seqNo, generatedAt, componentName, variableName);
+    }
+
+    public static String notifyReport201(String msgId, int requestId, int seqNo, Instant generatedAt,
+                                          String componentName, String variableName) {
+        return String.format("[2,\"%s\",\"NotifyReport\","
+                + "{\"requestId\":%d,\"generatedAt\":\"%s\",\"seqNo\":%d,"
+                + "\"reportData\":[{\"component\":{\"name\":\"%s\"},"
+                + "\"variable\":{\"name\":\"%s\"},"
+                + "\"variableCharacteristics\":{\"dataType\":\"string\",\"supportsMonitoring\":false},"
+                + "\"variableAttribute\":[{\"type\":\"Actual\",\"value\":\"42\"}]}]}]",
+                msgId, requestId, generatedAt, seqNo, componentName, variableName);
+    }
+
     // --- OCPP 1.6 additional CS→CSMS messages ---
 
     public static String dataTransfer16(String vendorId, String messageId, String data) {
