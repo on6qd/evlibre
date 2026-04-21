@@ -2,7 +2,7 @@ package com.evlibre.server.adapter.ocpp.handler.v16;
 
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.ports.inbound.HandleDiagnosticsStatusPort;
+import com.evlibre.server.core.domain.v16.ports.inbound.HandleDiagnosticsStatusPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -4,7 +4,7 @@ import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.handler.v16.BootNotificationHandler16;
 import com.evlibre.server.adapter.ocpp.handler.v201.BootNotificationHandler201;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.usecases.RegisterStationUseCase;
+import com.evlibre.server.core.usecases.v16.RegisterStationUseCase;
 import com.evlibre.server.test.fakes.*;
 import com.evlibre.server.test.fixtures.Tenants;
 import com.fasterxml.jackson.databind.JsonNode;

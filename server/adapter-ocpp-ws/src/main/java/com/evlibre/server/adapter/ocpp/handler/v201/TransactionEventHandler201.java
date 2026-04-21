@@ -7,7 +7,7 @@ import com.evlibre.common.model.SampledValue;
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.v201.dto.TransactionEventData;
-import com.evlibre.server.core.domain.ports.inbound.HandleTransactionEventPort;
+import com.evlibre.server.core.domain.v201.ports.inbound.HandleTransactionEventPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

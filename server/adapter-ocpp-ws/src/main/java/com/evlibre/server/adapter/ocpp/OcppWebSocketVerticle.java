@@ -6,7 +6,7 @@ import com.evlibre.common.ocpp.OcppErrorCode;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.inbound.HandleHeartbeatPort;
+import com.evlibre.server.core.domain.v16.ports.inbound.HandleHeartbeatPort;
 import com.evlibre.server.core.domain.shared.ports.outbound.StationEventPublisher;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AbstractVerticle;

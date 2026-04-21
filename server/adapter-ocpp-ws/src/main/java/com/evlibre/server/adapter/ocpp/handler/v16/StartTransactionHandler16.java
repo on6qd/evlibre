@@ -5,7 +5,7 @@ import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.v16.dto.StartTransactionData;
 import com.evlibre.server.core.domain.v16.dto.StartTransactionResult;
-import com.evlibre.server.core.domain.ports.inbound.StartTransactionPort;
+import com.evlibre.server.core.domain.v16.ports.inbound.StartTransactionPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

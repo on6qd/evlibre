@@ -4,7 +4,7 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.usecases.TriggerMessageUseCase;
+import com.evlibre.server.core.usecases.v16.TriggerMessageUseCase;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;

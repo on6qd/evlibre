@@ -3,7 +3,7 @@ package com.evlibre.server.adapter.ocpp.handler.v16;
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.v16.dto.StopTransactionData;
-import com.evlibre.server.core.domain.ports.inbound.StopTransactionPort;
+import com.evlibre.server.core.domain.v16.ports.inbound.StopTransactionPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

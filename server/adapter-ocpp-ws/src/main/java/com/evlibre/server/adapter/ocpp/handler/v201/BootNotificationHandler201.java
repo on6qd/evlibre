@@ -8,7 +8,7 @@ import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
 import com.evlibre.server.core.domain.shared.dto.RegistrationResult;
 import com.evlibre.server.core.domain.shared.dto.StationRegistration;
 import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
-import com.evlibre.server.core.domain.ports.inbound.RegisterStationPort;
+import com.evlibre.server.core.domain.v16.ports.inbound.RegisterStationPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
