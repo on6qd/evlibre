@@ -2,8 +2,8 @@ package com.evlibre.server.adapter.ocpp.handler.v201;
 
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.model.DeviceModelVariable;
-import com.evlibre.server.core.domain.ports.outbound.DeviceModelPort;
+import com.evlibre.server.core.domain.v201.model.DeviceModelVariable;
+import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

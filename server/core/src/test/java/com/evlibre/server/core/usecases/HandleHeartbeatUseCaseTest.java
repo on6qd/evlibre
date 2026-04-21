@@ -12,6 +12,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
 
 class HandleHeartbeatUseCaseTest {
 

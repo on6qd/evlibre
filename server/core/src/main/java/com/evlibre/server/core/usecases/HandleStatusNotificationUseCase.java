@@ -1,9 +1,9 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.StatusNotificationData;
-import com.evlibre.server.core.domain.model.ConnectorStatus;
+import com.evlibre.server.core.domain.v16.dto.StatusNotificationData;
+import com.evlibre.server.core.domain.shared.model.ConnectorStatus;
 import com.evlibre.server.core.domain.ports.inbound.HandleStatusNotificationPort;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

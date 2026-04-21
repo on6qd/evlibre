@@ -1,9 +1,9 @@
 package com.evlibre.server.adapter.persistence.inmemory;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.model.DeviceModelVariable;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.DeviceModelPort;
+import com.evlibre.server.core.domain.v201.model.DeviceModelVariable;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort;
 
 import java.util.ArrayList;
 import java.util.List;

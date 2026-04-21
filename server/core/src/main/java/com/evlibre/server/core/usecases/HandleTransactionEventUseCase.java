@@ -1,9 +1,9 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.TransactionEventData;
-import com.evlibre.server.core.domain.dto.TransactionEventResult;
+import com.evlibre.server.core.domain.v201.dto.TransactionEventData;
+import com.evlibre.server.core.domain.v201.dto.TransactionEventResult;
 import com.evlibre.server.core.domain.ports.inbound.HandleTransactionEventPort;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

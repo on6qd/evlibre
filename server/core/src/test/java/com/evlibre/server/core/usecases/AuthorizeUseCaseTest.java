@@ -1,8 +1,8 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.AuthorizationResult;
+import com.evlibre.server.core.domain.v16.dto.AuthorizationResult;
 import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +11,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
+import com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.v16.model.IdTagInfo;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 
 class AuthorizeUseCaseTest {
 
@@ -57,7 +64,7 @@ class AuthorizeUseCaseTest {
     void authorize_returns_expiry_and_parent() {
         var expiry = java.time.Instant.parse("2030-01-01T00:00:00Z");
         authRepo.addAuthorization(tenantId, "TAG-A",
-                new com.evlibre.server.core.domain.model.IdTagInfo(
+                new com.evlibre.server.core.domain.v16.model.IdTagInfo(
                         AuthorizationStatus.ACCEPTED, expiry, "PARENT-X"));
 
         AuthorizationResult result = useCase.authorize(tenantId, "TAG-A");
@@ -84,12 +91,12 @@ class AuthorizeUseCaseTest {
     @Test
     void authorize_expired_tag_returns_expired_status() {
         var past = java.time.Instant.parse("2020-01-01T00:00:00Z");
-        var fixedClock = new com.evlibre.server.core.domain.ports.outbound.TimeProvider() {
+        var fixedClock = new com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider() {
             @Override public java.time.Instant now() { return java.time.Instant.parse("2025-01-15T10:00:00Z"); }
         };
         var useCaseWithClock = new AuthorizeUseCase(authRepo, fixedClock);
         authRepo.addAuthorization(tenantId, "TAG-B",
-                new com.evlibre.server.core.domain.model.IdTagInfo(
+                new com.evlibre.server.core.domain.v16.model.IdTagInfo(
                         AuthorizationStatus.ACCEPTED, past, null));
 
         AuthorizationResult result = useCaseWithClock.authorize(tenantId, "TAG-B");
@@ -99,28 +106,28 @@ class AuthorizeUseCaseTest {
 
     // --- Fakes ---
 
-    static class StubTransactionRepo implements com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort {
+    static class StubTransactionRepo implements com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort {
         private final java.util.Set<String> activeTags = new java.util.HashSet<>();
 
         void addActive(TenantId t, String tag) {
             activeTags.add(t.value() + ":" + tag.toLowerCase());
         }
 
-        @Override public void save(com.evlibre.server.core.domain.model.Transaction tx) {}
+        @Override public void save(com.evlibre.server.core.domain.v16.model.Transaction tx) {}
         @Override
-        public Optional<com.evlibre.server.core.domain.model.Transaction> findByOcppTransactionId(TenantId t, int id) {
+        public Optional<com.evlibre.server.core.domain.v16.model.Transaction> findByOcppTransactionId(TenantId t, int id) {
             return Optional.empty();
         }
         @Override
-        public java.util.List<com.evlibre.server.core.domain.model.Transaction> findByStation(java.util.UUID s) {
+        public java.util.List<com.evlibre.server.core.domain.v16.model.Transaction> findByStation(java.util.UUID s) {
             return java.util.List.of();
         }
         @Override
-        public Optional<com.evlibre.server.core.domain.model.Transaction> findActiveByIdTag(TenantId t, String tag) {
+        public Optional<com.evlibre.server.core.domain.v16.model.Transaction> findActiveByIdTag(TenantId t, String tag) {
             if (tag == null || !activeTags.contains(t.value() + ":" + tag.toLowerCase())) {
                 return Optional.empty();
             }
-            return Optional.of(com.evlibre.server.core.domain.model.Transaction.builder()
+            return Optional.of(com.evlibre.server.core.domain.v16.model.Transaction.builder()
                     .id(java.util.UUID.randomUUID())
                     .tenantId(t)
                     .stationId(java.util.UUID.randomUUID())
@@ -130,7 +137,7 @@ class AuthorizeUseCaseTest {
                     .idTag(tag)
                     .meterStart(0L)
                     .startTime(java.time.Instant.now())
-                    .status(com.evlibre.server.core.domain.model.TransactionStatus.IN_PROGRESS)
+                    .status(com.evlibre.server.core.domain.shared.model.TransactionStatus.IN_PROGRESS)
                     .createdAt(java.time.Instant.now())
                     .build());
         }
@@ -138,20 +145,20 @@ class AuthorizeUseCaseTest {
     }
 
     static class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
-        private final Map<String, com.evlibre.server.core.domain.model.IdTagInfo> store = new ConcurrentHashMap<>();
+        private final Map<String, com.evlibre.server.core.domain.v16.model.IdTagInfo> store = new ConcurrentHashMap<>();
 
         void addAuthorization(TenantId tenantId, String idTag, AuthorizationStatus status) {
             store.put(tenantId.value() + ":" + idTag,
-                    com.evlibre.server.core.domain.model.IdTagInfo.of(status));
+                    com.evlibre.server.core.domain.v16.model.IdTagInfo.of(status));
         }
 
         void addAuthorization(TenantId tenantId, String idTag,
-                               com.evlibre.server.core.domain.model.IdTagInfo info) {
+                               com.evlibre.server.core.domain.v16.model.IdTagInfo info) {
             store.put(tenantId.value() + ":" + idTag, info);
         }
 
         @Override
-        public Optional<com.evlibre.server.core.domain.model.IdTagInfo> findInfoByIdTag(
+        public Optional<com.evlibre.server.core.domain.v16.model.IdTagInfo> findInfoByIdTag(
                 TenantId tenantId, String idTag) {
             return Optional.ofNullable(store.get(tenantId.value() + ":" + idTag));
         }

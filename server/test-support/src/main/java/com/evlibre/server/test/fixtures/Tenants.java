@@ -1,7 +1,7 @@
 package com.evlibre.server.test.fixtures;
 
-import com.evlibre.server.core.domain.model.Tenant;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 
 import java.time.Instant;
 import java.util.UUID;

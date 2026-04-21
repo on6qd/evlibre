@@ -1,0 +1,22 @@
+package com.evlibre.server.core.domain.v16.dto;
+
+import com.evlibre.common.model.ChargePointIdentity;
+import com.evlibre.common.model.ConnectorId;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+
+import java.time.Instant;
+
+public record StartTransactionData(
+        TenantId tenantId,
+        ChargePointIdentity stationIdentity,
+        ConnectorId connectorId,
+        String idTag,
+        long meterStart,
+        Instant timestamp,
+        Integer reservationId
+) {
+    public StartTransactionData(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                ConnectorId connectorId, String idTag, long meterStart, Instant timestamp) {
+        this(tenantId, stationIdentity, connectorId, idTag, meterStart, timestamp, null);
+    }
+}

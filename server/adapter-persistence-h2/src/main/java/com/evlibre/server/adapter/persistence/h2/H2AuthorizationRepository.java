@@ -1,9 +1,9 @@
 package com.evlibre.server.adapter.persistence.h2;
 
-import com.evlibre.server.core.domain.model.AuthorizationStatus;
-import com.evlibre.server.core.domain.model.IdTagInfo;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.v16.model.IdTagInfo;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
 
 import java.sql.*;
 import java.util.Optional;

@@ -1,6 +1,6 @@
 package com.evlibre.server.test.fakes;
 
-import com.evlibre.server.core.domain.ports.outbound.TimeProvider;
+import com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -1,8 +1,8 @@
 package com.evlibre.server.adapter.persistence.h2;
 
-import com.evlibre.server.core.domain.model.Tenant;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
 
 import java.sql.*;
 import java.util.Optional;

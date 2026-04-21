@@ -2,10 +2,10 @@ package com.evlibre.server.adapter.persistence.h2;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.model.Transaction;
-import com.evlibre.server.core.domain.model.TransactionStatus;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 
 import java.sql.*;
 import java.util.ArrayList;

@@ -5,7 +5,7 @@ import com.evlibre.common.model.MeterValue;
 import com.evlibre.common.model.SampledValue;
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.dto.MeterValuesData;
+import com.evlibre.server.core.domain.v16.dto.MeterValuesData;
 import com.evlibre.server.core.domain.ports.inbound.HandleMeterValuesPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

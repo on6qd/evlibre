@@ -1,15 +1,15 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.RegistrationResult;
-import com.evlibre.server.core.domain.dto.StationRegistration;
-import com.evlibre.server.core.domain.model.ChargingStation;
-import com.evlibre.server.core.domain.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.dto.RegistrationResult;
+import com.evlibre.server.core.domain.shared.dto.StationRegistration;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
 import com.evlibre.server.core.domain.ports.inbound.RegisterStationPort;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
-import com.evlibre.server.core.domain.ports.outbound.StationEventPublisher;
-import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TimeProvider;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationEventPublisher;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

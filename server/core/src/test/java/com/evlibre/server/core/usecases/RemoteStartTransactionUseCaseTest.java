@@ -1,14 +1,17 @@
 package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.dto.CommandResult;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.dto.CommandResult;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
 
 class RemoteStartTransactionUseCaseTest {
 
@@ -68,7 +71,7 @@ class RemoteStartTransactionUseCaseTest {
     void rejects_when_station_registration_is_pending() {
         var stationRepo = new StubStationRepo();
         stationRepo.putRegistration(tenantId, station,
-                com.evlibre.server.core.domain.model.RegistrationStatus.PENDING);
+                com.evlibre.server.core.domain.shared.model.RegistrationStatus.PENDING);
         var gated = new RemoteStartTransactionUseCase(commandSender, stationRepo);
 
         var future = gated.remoteStart(tenantId, station, "TAG001", 1);
@@ -95,13 +98,13 @@ class RemoteStartTransactionUseCaseTest {
 
     // --- Fakes ---
 
-    static class StubStationRepo implements com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort {
-        private final java.util.Map<String, com.evlibre.server.core.domain.model.ChargingStation> byIdentity = new java.util.HashMap<>();
+    static class StubStationRepo implements com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort {
+        private final java.util.Map<String, com.evlibre.server.core.domain.shared.model.ChargingStation> byIdentity = new java.util.HashMap<>();
 
         void putRegistration(TenantId t, ChargePointIdentity id,
-                              com.evlibre.server.core.domain.model.RegistrationStatus status) {
+                              com.evlibre.server.core.domain.shared.model.RegistrationStatus status) {
             byIdentity.put(t.value() + ":" + id.value(),
-                    com.evlibre.server.core.domain.model.ChargingStation.builder()
+                    com.evlibre.server.core.domain.shared.model.ChargingStation.builder()
                             .id(java.util.UUID.randomUUID())
                             .tenantId(t)
                             .identity(id)
@@ -112,17 +115,17 @@ class RemoteStartTransactionUseCaseTest {
                             .build());
         }
 
-        @Override public void save(com.evlibre.server.core.domain.model.ChargingStation s) {
+        @Override public void save(com.evlibre.server.core.domain.shared.model.ChargingStation s) {
             byIdentity.put(s.tenantId().value() + ":" + s.identity().value(), s);
         }
-        @Override public java.util.Optional<com.evlibre.server.core.domain.model.ChargingStation> findById(java.util.UUID id) {
+        @Override public java.util.Optional<com.evlibre.server.core.domain.shared.model.ChargingStation> findById(java.util.UUID id) {
             return byIdentity.values().stream().filter(s -> s.id().equals(id)).findFirst();
         }
-        @Override public java.util.Optional<com.evlibre.server.core.domain.model.ChargingStation> findByTenantAndIdentity(
+        @Override public java.util.Optional<com.evlibre.server.core.domain.shared.model.ChargingStation> findByTenantAndIdentity(
                 TenantId t, ChargePointIdentity id) {
             return java.util.Optional.ofNullable(byIdentity.get(t.value() + ":" + id.value()));
         }
-        @Override public java.util.List<com.evlibre.server.core.domain.model.ChargingStation> findByTenant(TenantId t) {
+        @Override public java.util.List<com.evlibre.server.core.domain.shared.model.ChargingStation> findByTenant(TenantId t) {
             return byIdentity.values().stream().filter(s -> s.tenantId().equals(t)).toList();
         }
     }

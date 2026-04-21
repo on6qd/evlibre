@@ -1,15 +1,15 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.StartTransactionData;
-import com.evlibre.server.core.domain.dto.StartTransactionResult;
-import com.evlibre.server.core.domain.model.ReservationStatus;
-import com.evlibre.server.core.domain.model.Transaction;
-import com.evlibre.server.core.domain.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.dto.StartTransactionData;
+import com.evlibre.server.core.domain.v16.dto.StartTransactionResult;
+import com.evlibre.server.core.domain.v16.model.ReservationStatus;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
 import com.evlibre.server.core.domain.ports.inbound.AuthorizePort;
 import com.evlibre.server.core.domain.ports.inbound.StartTransactionPort;
-import com.evlibre.server.core.domain.ports.outbound.ReservationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.ReservationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

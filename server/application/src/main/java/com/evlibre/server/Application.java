@@ -12,9 +12,9 @@ import com.evlibre.server.adapter.persistence.h2.*;
 import com.evlibre.server.adapter.persistence.inmemory.*;
 import com.evlibre.server.config.ConfigLoader;
 import com.evlibre.server.config.ServerConfig;
-import com.evlibre.server.core.domain.model.AuthorizationStatus;
-import com.evlibre.server.core.domain.model.Tenant;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.*;
 import com.evlibre.server.core.usecases.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
 
 public class Application {
 

@@ -2,7 +2,7 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import io.vertx.core.http.ServerWebSocket;
 
 public record OcppSession(

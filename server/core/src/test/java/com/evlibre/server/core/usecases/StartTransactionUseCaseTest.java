@@ -2,13 +2,13 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
-import com.evlibre.server.core.domain.dto.StartTransactionData;
-import com.evlibre.server.core.domain.dto.StartTransactionResult;
-import com.evlibre.server.core.domain.dto.StopTransactionData;
+import com.evlibre.server.core.domain.v16.dto.StartTransactionData;
+import com.evlibre.server.core.domain.v16.dto.StartTransactionResult;
+import com.evlibre.server.core.domain.v16.dto.StopTransactionData;
 import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.StationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +18,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.v16.model.IdTagInfo;
+import com.evlibre.server.core.domain.v16.model.Reservation;
+import com.evlibre.server.core.domain.v16.model.ReservationStatus;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
 
 class StartTransactionUseCaseTest {
 
@@ -107,7 +116,7 @@ class StartTransactionUseCaseTest {
     void reservation_on_connector_2_is_not_consumed_by_start_on_connector_1() {
         var resRepo = new StubReservationRepository();
         int rid = resRepo.nextReservationId();
-        resRepo.save(com.evlibre.server.core.domain.model.Reservation.builder()
+        resRepo.save(com.evlibre.server.core.domain.v16.model.Reservation.builder()
                 .id(UUID.randomUUID())
                 .tenantId(tenantId)
                 .stationIdentity(stationIdentity)
@@ -115,7 +124,7 @@ class StartTransactionUseCaseTest {
                 .expiryDate(Instant.parse("2030-01-01T00:00:00Z"))
                 .idTag("TAG001")
                 .reservationId(rid)
-                .status(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE)
+                .status(com.evlibre.server.core.domain.v16.model.ReservationStatus.ACTIVE)
                 .createdAt(fixedTime)
                 .build());
         var useCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo, resRepo);
@@ -125,7 +134,7 @@ class StartTransactionUseCaseTest {
         useCase.startTransaction(data);
 
         assertThat(resRepo.findByReservationId(tenantId, rid).get().status())
-                .isEqualTo(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE);
+                .isEqualTo(com.evlibre.server.core.domain.v16.model.ReservationStatus.ACTIVE);
     }
 
     // OCPP 1.6 §6: a reservation with connectorId=0 is station-wide, can be consumed on any connector.
@@ -133,7 +142,7 @@ class StartTransactionUseCaseTest {
     void reservation_on_connector_0_is_consumed_by_start_on_any_connector() {
         var resRepo = new StubReservationRepository();
         int rid = resRepo.nextReservationId();
-        resRepo.save(com.evlibre.server.core.domain.model.Reservation.builder()
+        resRepo.save(com.evlibre.server.core.domain.v16.model.Reservation.builder()
                 .id(UUID.randomUUID())
                 .tenantId(tenantId)
                 .stationIdentity(stationIdentity)
@@ -141,7 +150,7 @@ class StartTransactionUseCaseTest {
                 .expiryDate(Instant.parse("2030-01-01T00:00:00Z"))
                 .idTag("TAG001")
                 .reservationId(rid)
-                .status(com.evlibre.server.core.domain.model.ReservationStatus.ACTIVE)
+                .status(com.evlibre.server.core.domain.v16.model.ReservationStatus.ACTIVE)
                 .createdAt(fixedTime)
                 .build());
         var useCase = new StartTransactionUseCase(authorizeUseCase, transactionRepo, stationRepo, resRepo);
@@ -151,7 +160,7 @@ class StartTransactionUseCaseTest {
         useCase.startTransaction(data);
 
         assertThat(resRepo.findByReservationId(tenantId, rid).get().status())
-                .isEqualTo(com.evlibre.server.core.domain.model.ReservationStatus.USED);
+                .isEqualTo(com.evlibre.server.core.domain.v16.model.ReservationStatus.USED);
     }
 
     // --- Fakes ---
@@ -224,15 +233,15 @@ class StartTransactionUseCaseTest {
     }
 
     static class FakeAuthorizationRepository implements AuthorizationRepositoryPort {
-        private final Map<String, com.evlibre.server.core.domain.model.IdTagInfo> store = new ConcurrentHashMap<>();
+        private final Map<String, com.evlibre.server.core.domain.v16.model.IdTagInfo> store = new ConcurrentHashMap<>();
 
         void addAuthorization(TenantId tenantId, String idTag, AuthorizationStatus status) {
             store.put(tenantId.value() + ":" + idTag,
-                    com.evlibre.server.core.domain.model.IdTagInfo.of(status));
+                    com.evlibre.server.core.domain.v16.model.IdTagInfo.of(status));
         }
 
         @Override
-        public Optional<com.evlibre.server.core.domain.model.IdTagInfo> findInfoByIdTag(
+        public Optional<com.evlibre.server.core.domain.v16.model.IdTagInfo> findInfoByIdTag(
                 TenantId tenantId, String idTag) {
             return Optional.ofNullable(store.get(tenantId.value() + ":" + idTag));
         }

@@ -2,10 +2,10 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
-import com.evlibre.server.core.domain.model.StationConfigurationKey;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.v16.model.StationConfigurationKey;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
-import com.evlibre.server.core.domain.ports.outbound.StationConfigurationPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.StationConfigurationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package com.evlibre.server.adapter.persistence.inmemory;
 
-import com.evlibre.server.core.domain.model.Tenant;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

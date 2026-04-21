@@ -1,7 +1,7 @@
 package com.evlibre.server.core.domain.ports.inbound;
 
-import com.evlibre.server.core.domain.dto.AuthorizationResult;
-import com.evlibre.server.core.domain.dto.StopTransactionData;
+import com.evlibre.server.core.domain.v16.dto.AuthorizationResult;
+import com.evlibre.server.core.domain.v16.dto.StopTransactionData;
 
 import java.util.Optional;
 

@@ -1,6 +1,6 @@
 package com.evlibre.server.adapter.persistence.h2;
 
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 
 import java.sql.*;
 import java.util.UUID;

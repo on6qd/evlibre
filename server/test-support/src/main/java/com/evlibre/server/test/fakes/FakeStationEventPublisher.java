@@ -1,8 +1,8 @@
 package com.evlibre.server.test.fakes;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationEventPublisher;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,7 +1,7 @@
 package com.evlibre.server.core.domain.ports.inbound;
 
-import com.evlibre.server.core.domain.dto.RegistrationResult;
-import com.evlibre.server.core.domain.dto.StationRegistration;
+import com.evlibre.server.core.domain.shared.dto.RegistrationResult;
+import com.evlibre.server.core.domain.shared.dto.StationRegistration;
 
 public interface RegisterStationPort {
 

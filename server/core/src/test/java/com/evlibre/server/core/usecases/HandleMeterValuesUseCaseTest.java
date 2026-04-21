@@ -4,9 +4,9 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
 import com.evlibre.common.model.MeterValue;
 import com.evlibre.common.model.SampledValue;
-import com.evlibre.server.core.domain.dto.MeterValuesData;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.v16.dto.MeterValuesData;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

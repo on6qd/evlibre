@@ -1,8 +1,8 @@
 package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.dto.CommandResult;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.dto.CommandResult;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

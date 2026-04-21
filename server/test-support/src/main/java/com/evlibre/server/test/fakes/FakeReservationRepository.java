@@ -1,8 +1,8 @@
 package com.evlibre.server.test.fakes;
 
-import com.evlibre.server.core.domain.model.Reservation;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.ReservationRepositoryPort;
+import com.evlibre.server.core.domain.v16.model.Reservation;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v16.ports.outbound.ReservationRepositoryPort;
 
 import java.util.Map;
 import java.util.Optional;

@@ -1,9 +1,9 @@
 package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.model.StationConfigurationKey;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationConfigurationPort;
+import com.evlibre.server.core.domain.v16.model.StationConfigurationKey;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v16.ports.outbound.StationConfigurationPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

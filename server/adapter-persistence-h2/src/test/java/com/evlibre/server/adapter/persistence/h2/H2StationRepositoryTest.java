@@ -2,9 +2,9 @@ package com.evlibre.server.adapter.persistence.h2;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
-import com.evlibre.server.core.domain.model.ChargingStation;
-import com.evlibre.server.core.domain.model.RegistrationStatus;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

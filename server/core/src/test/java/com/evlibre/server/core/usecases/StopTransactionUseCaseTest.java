@@ -2,9 +2,9 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
-import com.evlibre.server.core.domain.dto.StopTransactionData;
+import com.evlibre.server.core.domain.v16.dto.StopTransactionData;
 import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +14,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.v16.model.IdTagInfo;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
 
 class StopTransactionUseCaseTest {
 
@@ -140,7 +146,7 @@ class StopTransactionUseCaseTest {
 
     // --- Fakes ---
 
-    static class StubAuthRepo implements com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort {
+    static class StubAuthRepo implements com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort {
         private final Map<String, IdTagInfo> store = new ConcurrentHashMap<>();
         void addAuthorization(TenantId t, String tag, AuthorizationStatus s) {
             store.put(t.value() + ":" + tag, IdTagInfo.of(s));

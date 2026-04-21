@@ -1,6 +1,6 @@
 package com.evlibre.server.adapter.persistence.inmemory;
 
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

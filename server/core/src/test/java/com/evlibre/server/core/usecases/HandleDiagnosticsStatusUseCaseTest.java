@@ -1,8 +1,8 @@
 package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

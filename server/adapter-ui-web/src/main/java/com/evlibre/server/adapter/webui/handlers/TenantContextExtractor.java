@@ -1,7 +1,7 @@
 package com.evlibre.server.adapter.webui.handlers;
 
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.TenantRepositoryPort;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.function.BiConsumer;

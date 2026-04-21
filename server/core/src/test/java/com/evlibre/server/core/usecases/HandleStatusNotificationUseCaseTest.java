@@ -2,9 +2,9 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
-import com.evlibre.server.core.domain.dto.StatusNotificationData;
+import com.evlibre.server.core.domain.v16.dto.StatusNotificationData;
 import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.ConnectorStatus;
 
 class HandleStatusNotificationUseCaseTest {
 

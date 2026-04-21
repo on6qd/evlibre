@@ -1,13 +1,13 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.AuthorizationResult;
-import com.evlibre.server.core.domain.model.AuthorizationStatus;
-import com.evlibre.server.core.domain.model.IdTagInfo;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.v16.dto.AuthorizationResult;
+import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
+import com.evlibre.server.core.domain.v16.model.IdTagInfo;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.ports.inbound.AuthorizePort;
-import com.evlibre.server.core.domain.ports.outbound.AuthorizationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.TimeProvider;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.AuthorizationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.TimeProvider;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

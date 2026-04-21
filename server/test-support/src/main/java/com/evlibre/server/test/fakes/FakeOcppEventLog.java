@@ -1,6 +1,6 @@
 package com.evlibre.server.test.fakes;
 
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 
 import java.util.ArrayList;
 import java.util.Collections;

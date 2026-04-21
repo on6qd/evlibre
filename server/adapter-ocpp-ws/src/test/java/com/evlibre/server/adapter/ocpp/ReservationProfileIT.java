@@ -4,7 +4,7 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.test.fakes.FakeReservationRepository;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.usecases.CancelReservationUseCase;
 import com.evlibre.server.core.usecases.ReserveNowUseCase;
 import io.vertx.core.Vertx;

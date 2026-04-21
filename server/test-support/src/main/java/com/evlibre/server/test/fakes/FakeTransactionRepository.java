@@ -1,9 +1,9 @@
 package com.evlibre.server.test.fakes;
 
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.model.Transaction;
-import com.evlibre.server.core.domain.model.TransactionStatus;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

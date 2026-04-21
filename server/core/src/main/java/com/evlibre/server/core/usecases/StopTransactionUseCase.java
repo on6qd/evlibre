@@ -1,12 +1,12 @@
 package com.evlibre.server.core.usecases;
 
-import com.evlibre.server.core.domain.dto.AuthorizationResult;
-import com.evlibre.server.core.domain.dto.StopTransactionData;
-import com.evlibre.server.core.domain.model.Transaction;
-import com.evlibre.server.core.domain.model.TransactionStatus;
+import com.evlibre.server.core.domain.v16.dto.AuthorizationResult;
+import com.evlibre.server.core.domain.v16.dto.StopTransactionData;
+import com.evlibre.server.core.domain.v16.model.Transaction;
+import com.evlibre.server.core.domain.shared.model.TransactionStatus;
 import com.evlibre.server.core.domain.ports.inbound.AuthorizePort;
 import com.evlibre.server.core.domain.ports.inbound.StopTransactionPort;
-import com.evlibre.server.core.domain.ports.outbound.TransactionRepositoryPort;
+import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

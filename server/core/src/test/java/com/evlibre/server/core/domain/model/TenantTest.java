@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 
 class TenantTest {
 

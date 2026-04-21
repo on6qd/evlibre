@@ -3,10 +3,10 @@ package com.evlibre.server.core.usecases;
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.model.ConnectorId;
 import com.evlibre.common.model.EvseId;
-import com.evlibre.server.core.domain.dto.TransactionEventData;
-import com.evlibre.server.core.domain.dto.TransactionEventResult;
-import com.evlibre.server.core.domain.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.OcppEventLogPort;
+import com.evlibre.server.core.domain.v201.dto.TransactionEventData;
+import com.evlibre.server.core.domain.v201.dto.TransactionEventResult;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -2,8 +2,8 @@ package com.evlibre.server.core.usecases;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
-import com.evlibre.server.core.domain.dto.RegistrationResult;
-import com.evlibre.server.core.domain.dto.StationRegistration;
+import com.evlibre.server.core.domain.shared.dto.RegistrationResult;
+import com.evlibre.server.core.domain.shared.dto.StationRegistration;
 import com.evlibre.server.core.domain.model.*;
 import com.evlibre.server.core.domain.ports.outbound.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +14,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.evlibre.server.core.domain.shared.model.ChargingStation;
+import com.evlibre.server.core.domain.shared.model.Tenant;
+import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
+import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
+import com.evlibre.server.core.domain.shared.ports.outbound.OcppEventLogPort;
 
 class RegisterStationUseCaseTest {
 

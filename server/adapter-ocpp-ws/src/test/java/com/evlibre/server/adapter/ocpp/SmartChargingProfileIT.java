@@ -3,7 +3,7 @@ package com.evlibre.server.adapter.ocpp;
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
-import com.evlibre.server.core.domain.model.TenantId;
+import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.usecases.ClearChargingProfileUseCase;
 import com.evlibre.server.core.usecases.GetCompositeScheduleUseCase;
 import com.evlibre.server.core.usecases.SetChargingProfileUseCase;
