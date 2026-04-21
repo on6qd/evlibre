@@ -66,4 +66,36 @@ class OcppSchemaValidatorTest {
 
         assertThat(result.isValid()).isTrue();
     }
+
+    @Test
+    void ocpp201_notifyReport_request_valid() throws Exception {
+        // Minimal NotifyReport that has the three required top-level fields.
+        var payload = mapper.readTree(
+                "{\"requestId\":1,\"generatedAt\":\"2026-04-21T10:00:00Z\",\"seqNo\":0,\"reportData\":[]}");
+
+        var result = validator.validateRequest(OcppProtocol.OCPP_201, "NotifyReport", payload);
+
+        assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void ocpp201_notifyReport_request_missingRequired() throws Exception {
+        var payload = mapper.readTree("{\"requestId\":1}");
+
+        var result = validator.validateRequest(OcppProtocol.OCPP_201, "NotifyReport", payload);
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.errorMessage()).contains("generatedAt");
+    }
+
+    @Test
+    void validateResponse_missingSchema_passes() throws Exception {
+        // No response schema authored yet — contract is "missing schema = valid" so
+        // partial coverage can't block the server.
+        var payload = mapper.readTree("{\"status\":\"Accepted\"}");
+
+        var result = validator.validateResponse(OcppProtocol.OCPP_201, "BootNotification", payload);
+
+        assertThat(result.isValid()).isTrue();
+    }
 }

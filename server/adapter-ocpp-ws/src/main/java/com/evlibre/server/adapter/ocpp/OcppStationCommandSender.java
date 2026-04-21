@@ -27,6 +27,7 @@ public class OcppStationCommandSender {
     private final OcppMessageCodec codec;
     private final OcppPendingCallManager pendingCallManager;
     private final ObjectMapper objectMapper;
+    private final OcppSchemaValidator schemaValidator;
 
     private final Ocpp16StationCommandSender v16Port = this::send16;
     private final Ocpp201StationCommandSender v201Port = this::send201;
@@ -35,10 +36,19 @@ public class OcppStationCommandSender {
                                      OcppMessageCodec codec,
                                      OcppPendingCallManager pendingCallManager,
                                      ObjectMapper objectMapper) {
+        this(sessionManager, codec, pendingCallManager, objectMapper, null);
+    }
+
+    public OcppStationCommandSender(OcppSessionManager sessionManager,
+                                     OcppMessageCodec codec,
+                                     OcppPendingCallManager pendingCallManager,
+                                     ObjectMapper objectMapper,
+                                     OcppSchemaValidator schemaValidator) {
         this.sessionManager = sessionManager;
         this.codec = codec;
         this.pendingCallManager = pendingCallManager;
         this.objectMapper = objectMapper;
+        this.schemaValidator = schemaValidator;
     }
 
     public Ocpp16StationCommandSender v16() {
@@ -82,7 +92,19 @@ public class OcppStationCommandSender {
         }
 
         JsonNode payloadNode = objectMapper.valueToTree(payload);
-        var pendingCall = pendingCallManager.createPendingCall();
+
+        // Validate the outgoing request payload if a schema is available. Warn-only
+        // today — partial schema coverage shouldn't block commands that the spec
+        // actually permits but we haven't authored a schema for yet.
+        if (schemaValidator != null) {
+            var outboundCheck = schemaValidator.validateRequest(requiredProtocol, action, payloadNode);
+            if (!outboundCheck.isValid()) {
+                log.warn("Outbound {} ({}) payload failed schema validation: {}",
+                        action, requiredProtocol, outboundCheck.errorMessage());
+            }
+        }
+
+        var pendingCall = pendingCallManager.createPendingCall(action, requiredProtocol);
         String message = codec.buildCall(pendingCall.messageId(), action, payloadNode);
 
         log.info("Sending {} to {} (msgId: {})", action, stationIdentity.value(), pendingCall.messageId());

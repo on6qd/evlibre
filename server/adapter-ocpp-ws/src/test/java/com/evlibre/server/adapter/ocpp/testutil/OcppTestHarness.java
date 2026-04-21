@@ -88,8 +88,8 @@ public class OcppTestHarness {
         OcppMessageDispatcher dispatcher = new OcppMessageDispatcher();
         sessionManager = new OcppSessionManager();
         OcppProtocolNegotiator negotiator = new OcppProtocolNegotiator();
-        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
-        commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper);
+        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager(schemaValidator);
+        commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper, schemaValidator);
         commandSender16 = commandSender.v16();
         commandSender201 = commandSender.v201();
 

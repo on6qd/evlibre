@@ -279,6 +279,16 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
         try {
             OcppMessageHandler h = handler.get();
             JsonNode responsePayload = h.handle(session, call.messageId(), call.payload());
+
+            // Self-check: the payload we're about to send to the station must itself
+            // conform to the response schema. Warn-only for now since response schemas
+            // are still being backfilled.
+            var responseCheck = schemaValidator.validateResponse(session.protocol(), call.action(), responsePayload);
+            if (!responseCheck.isValid()) {
+                log.warn("Our {} response to {} failed schema validation: {}",
+                        call.action(), session.stationIdentity().value(), responseCheck.errorMessage());
+            }
+
             String response = codec.buildCallResult(call.messageId(), responsePayload);
             log.debug("OCPP OUT [{}] {}", session.stationIdentity().value(), response);
             session.webSocket().writeTextMessage(response);

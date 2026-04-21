@@ -17,14 +17,51 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * Validates OCPP CALL and CALL_RESULT payloads against JSON schemas on the
+ * classpath. Schema lookup uses {@code schemas/{protocol}/{Action}[Request|Response].json}
+ * — inbound requests validate against {@code Request}, responses against {@code Response}.
+ *
+ * <p>When a schema is missing the validator returns {@link ValidationResult#valid()}
+ * so partial coverage is non-blocking; fill gaps by dropping schema files next to the
+ * existing ones.
+ */
 public class OcppSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(OcppSchemaValidator.class);
 
+    private enum Direction {
+        REQUEST, RESPONSE
+    }
+
     private final Map<String, JsonSchema> schemaCache = new ConcurrentHashMap<>();
 
+    /**
+     * Validates an inbound CALL payload (station → CSMS request, or a CSMS-initiated
+     * request about to go out). Kept as the primary entry point for backward compat.
+     */
     public ValidationResult validate(OcppProtocol protocol, String action, JsonNode payload) {
-        JsonSchema schema = getSchema(protocol, action);
+        return validateAgainst(protocol, action, payload, Direction.REQUEST);
+    }
+
+    /**
+     * Validates a request payload. Same as {@link #validate} but named clearly.
+     */
+    public ValidationResult validateRequest(OcppProtocol protocol, String action, JsonNode payload) {
+        return validateAgainst(protocol, action, payload, Direction.REQUEST);
+    }
+
+    /**
+     * Validates a response (CALL_RESULT) payload — either our own outbound response
+     * to the station, or the station's response to our outbound CALL.
+     */
+    public ValidationResult validateResponse(OcppProtocol protocol, String action, JsonNode payload) {
+        return validateAgainst(protocol, action, payload, Direction.RESPONSE);
+    }
+
+    private ValidationResult validateAgainst(OcppProtocol protocol, String action,
+                                              JsonNode payload, Direction direction) {
+        JsonSchema schema = getSchema(protocol, action, direction);
         if (schema == null) {
             return ValidationResult.valid();
         }
@@ -38,10 +75,6 @@ public class OcppSchemaValidator {
                 .map(ValidationMessage::getMessage)
                 .collect(Collectors.joining("; "));
 
-        // OCPP 1.6 RPC Framework error codes:
-        //   - ProtocolError: payload is incomplete (missing required field)
-        //   - PropertyConstraintViolation: value does not meet the constraint for its type
-        //   - FormationViolation: payload does not conform to the PDU structure
         OcppErrorCode errorCode = classify(errors);
         return new ValidationResult(false, errorMessage, errorCode);
     }
@@ -63,16 +96,16 @@ public class OcppSchemaValidator {
         return OcppErrorCode.FORMATION_VIOLATION;
     }
 
-    private JsonSchema getSchema(OcppProtocol protocol, String action) {
-        String key = protocol.name() + ":" + action;
-        return schemaCache.computeIfAbsent(key, k -> loadSchema(protocol, action));
+    private JsonSchema getSchema(OcppProtocol protocol, String action, Direction direction) {
+        String key = protocol.name() + ":" + action + ":" + direction;
+        return schemaCache.computeIfAbsent(key, k -> loadSchema(protocol, action, direction));
     }
 
-    private JsonSchema loadSchema(OcppProtocol protocol, String action) {
-        String path = schemaPath(protocol, action);
+    private JsonSchema loadSchema(OcppProtocol protocol, String action, Direction direction) {
+        String path = schemaPath(protocol, action, direction);
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
         if (is == null) {
-            log.debug("No schema found for {} {}", protocol, action);
+            log.debug("No schema found for {} {} {}", protocol, action, direction);
             return null;
         }
 
@@ -81,7 +114,6 @@ public class OcppSchemaValidator {
                     ? SpecVersion.VersionFlag.V4
                     : SpecVersion.VersionFlag.V6;
 
-            // Parse the schema JSON ourselves so we can pass a JsonNode
             ObjectMapper mapper = new ObjectMapper();
             JsonNode schemaNode = mapper.readTree(is);
 
@@ -93,16 +125,20 @@ public class OcppSchemaValidator {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
             return factory.getSchema(schemaNode);
         } catch (Exception e) {
-            log.warn("Failed to load schema for {} {}: {}", protocol, action, e.getMessage());
+            log.warn("Failed to load schema for {} {} {}: {}", protocol, action, direction, e.getMessage());
             return null;
         }
     }
 
-    private String schemaPath(OcppProtocol protocol, String action) {
+    private String schemaPath(OcppProtocol protocol, String action, Direction direction) {
+        // v1.6 convention today: <Action>.json = request; <Action>Response.json = response.
+        // v2.0.1 convention: <Action>Request.json = request; <Action>Response.json = response.
         if (protocol == OcppProtocol.OCPP_16) {
-            return "schemas/ocpp16/" + action + ".json";
+            String suffix = direction == Direction.RESPONSE ? "Response" : "";
+            return "schemas/ocpp16/" + action + suffix + ".json";
         } else {
-            return "schemas/ocpp201/" + action + "Request.json";
+            String suffix = direction == Direction.RESPONSE ? "Response" : "Request";
+            return "schemas/ocpp201/" + action + suffix + ".json";
         }
     }
 

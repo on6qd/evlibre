@@ -1,0 +1,92 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$id": "urn:OCPP:Cp:2:2020:3:NotifyReportRequest",
+    "title": "NotifyReportRequest",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "requestId": {
+            "type": "integer"
+        },
+        "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "reportData": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "component": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": { "type": "string", "maxLength": 50 },
+                            "instance": { "type": "string", "maxLength": 50 },
+                            "evse": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "id": { "type": "integer", "minimum": 0 },
+                                    "connectorId": { "type": "integer", "minimum": 1 }
+                                },
+                                "required": ["id"]
+                            }
+                        },
+                        "required": ["name"]
+                    },
+                    "variable": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": { "type": "string", "maxLength": 50 },
+                            "instance": { "type": "string", "maxLength": 50 }
+                        },
+                        "required": ["name"]
+                    },
+                    "variableCharacteristics": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "dataType": {
+                                "type": "string",
+                                "enum": ["string", "decimal", "integer", "dateTime", "boolean", "OptionList", "SequenceList", "MemberList"]
+                            },
+                            "supportsMonitoring": { "type": "boolean" },
+                            "unit": { "type": "string", "maxLength": 16 },
+                            "minLimit": { "type": "number" },
+                            "maxLimit": { "type": "number" },
+                            "valuesList": { "type": "string", "maxLength": 1000 }
+                        },
+                        "required": ["dataType", "supportsMonitoring"]
+                    },
+                    "variableAttribute": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": ["Actual", "Target", "MinSet", "MaxSet"]
+                                },
+                                "value": { "type": "string", "maxLength": 2500 },
+                                "mutability": {
+                                    "type": "string",
+                                    "enum": ["ReadOnly", "WriteOnly", "ReadWrite"]
+                                },
+                                "persistent": { "type": "boolean" },
+                                "constant": { "type": "boolean" }
+                            }
+                        }
+                    }
+                },
+                "required": ["component", "variable"]
+            }
+        },
+        "seqNo": { "type": "integer", "minimum": 0 },
+        "tbc": { "type": "boolean" }
+    },
+    "required": ["requestId", "generatedAt", "seqNo"]
+}

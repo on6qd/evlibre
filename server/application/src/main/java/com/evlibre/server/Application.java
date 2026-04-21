@@ -141,9 +141,9 @@ public class Application {
         OcppProtocolNegotiator protocolNegotiator = new OcppProtocolNegotiator();
 
         // CSMS -> CS command support
-        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
+        OcppPendingCallManager pendingCallManager = new OcppPendingCallManager(schemaValidator);
         OcppStationCommandSender commandSender = new OcppStationCommandSender(
-                sessionManager, codec, pendingCallManager, objectMapper);
+                sessionManager, codec, pendingCallManager, objectMapper, schemaValidator);
 
         // Station configuration storage
         var stationConfigRepo = new InMemoryStationConfigurationRepository();
