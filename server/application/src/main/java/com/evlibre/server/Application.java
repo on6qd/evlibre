@@ -17,7 +17,12 @@ import com.evlibre.server.core.domain.shared.model.Tenant;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.ports.outbound.*;
 import com.evlibre.server.core.usecases.v16.*;
+import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
+import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.Vertx;
@@ -110,6 +115,18 @@ public class Application {
         StopTransactionUseCase stopTransaction = new StopTransactionUseCase(transactionRepo, authorize);
         HandleMeterValuesUseCase handleMeterValues = new HandleMeterValuesUseCase(eventLog);
         HandleTransactionEventUseCase handleTransactionEvent = new HandleTransactionEventUseCase(eventLog);
+
+        // v2.0.1 use cases (siblings of the v1.6 ones above; kept separate per the
+        // strict 1.6 / 2.0.1 separation rule — v201 handlers must not reach into
+        // v16 use cases even when the business logic is currently identical).
+        RegisterStationUseCaseV201 registerStation201 = new RegisterStationUseCaseV201(
+                tenantRepo, stationRepo, eventLog, timeProvider,
+                config.ocpp().heartbeatInterval(), stationEventPublisher);
+        HandleHeartbeatUseCaseV201 handleHeartbeat201 = new HandleHeartbeatUseCaseV201(stationRepo, timeProvider,
+                stationEventPublisher);
+        HandleStatusNotificationUseCaseV201 handleStatusNotification201 = new HandleStatusNotificationUseCaseV201(eventLog);
+        AuthorizeUseCaseV201 authorize201 = new AuthorizeUseCaseV201(authorizationRepo, transactionRepo, timeProvider);
+        HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
         HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
         HandleDiagnosticsStatusUseCase handleDiagnosticsStatus = new HandleDiagnosticsStatusUseCase(eventLog);
         HandleFirmwareStatusUseCase handleFirmwareStatus = new HandleFirmwareStatusUseCase(eventLog);
@@ -157,17 +174,17 @@ public class Application {
 
         // Register OCPP 2.0.1 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
-                new BootNotificationHandler201(registerStation, postBootActionService, sessionManager, objectMapper));
+                new BootNotificationHandler201(registerStation201, postBootActionService, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
-                new HeartbeatHandler201(handleHeartbeat, objectMapper));
+                new HeartbeatHandler201(handleHeartbeat201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",
-                new StatusNotificationHandler201(handleStatusNotification, objectMapper));
+                new StatusNotificationHandler201(handleStatusNotification201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Authorize",
-                new AuthorizeHandler201(authorize, objectMapper));
+                new AuthorizeHandler201(authorize201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "TransactionEvent",
                 new TransactionEventHandler201(handleTransactionEvent, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
-                new MeterValuesHandler201(handleMeterValues, objectMapper));
+                new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
                 new NotifyReportHandler201(deviceModelRepo, objectMapper));
 

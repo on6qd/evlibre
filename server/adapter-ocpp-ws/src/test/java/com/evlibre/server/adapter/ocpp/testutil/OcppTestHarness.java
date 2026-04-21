@@ -7,7 +7,12 @@ import com.evlibre.server.adapter.ocpp.handler.v201.*;
 import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.usecases.v16.*;
+import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
+import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
 import com.evlibre.server.test.fakes.*;
 import com.evlibre.server.test.fixtures.Tenants;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -66,6 +71,15 @@ public class OcppTestHarness {
         HandleDiagnosticsStatusUseCase handleDiagnosticsStatus = new HandleDiagnosticsStatusUseCase(eventLog);
         HandleFirmwareStatusUseCase handleFirmwareStatus = new HandleFirmwareStatusUseCase(eventLog);
 
+        // v2.0.1 use case siblings — wired to the same fakes so behavior matches v1.6 paths.
+        RegisterStationUseCaseV201 registerStation201 = new RegisterStationUseCaseV201(
+                tenantRepo, stationRepo, eventLog, timeProvider, 900, (t, s) -> {});
+        HandleHeartbeatUseCaseV201 handleHeartbeat201 = new HandleHeartbeatUseCaseV201(
+                stationRepo, timeProvider, (t, s) -> {});
+        HandleStatusNotificationUseCaseV201 handleStatusNotification201 = new HandleStatusNotificationUseCaseV201(eventLog);
+        AuthorizeUseCaseV201 authorize201 = new AuthorizeUseCaseV201(authRepo, transactionRepo, timeProvider);
+        HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
+
         // OCPP infrastructure
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
         OcppSchemaValidator schemaValidator = new OcppSchemaValidator();
@@ -97,19 +111,19 @@ public class OcppTestHarness {
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "FirmwareStatusNotification",
                 new FirmwareStatusNotificationHandler16(handleFirmwareStatus, objectMapper));
 
-        // Register OCPP 2.0.1 handlers
+        // Register OCPP 2.0.1 handlers — wired to the v201 use case siblings.
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification",
-                new BootNotificationHandler201(registerStation, null, sessionManager, objectMapper));
+                new BootNotificationHandler201(registerStation201, null, sessionManager, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Heartbeat",
-                new HeartbeatHandler201(handleHeartbeat, objectMapper));
+                new HeartbeatHandler201(handleHeartbeat201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "StatusNotification",
-                new StatusNotificationHandler201(handleStatusNotification, objectMapper));
+                new StatusNotificationHandler201(handleStatusNotification201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Authorize",
-                new AuthorizeHandler201(authorize, objectMapper));
+                new AuthorizeHandler201(authorize201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "TransactionEvent",
                 new TransactionEventHandler201(handleTransactionEvent, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
-                new MeterValuesHandler201(handleMeterValues, objectMapper));
+                new MeterValuesHandler201(handleMeterValues201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }

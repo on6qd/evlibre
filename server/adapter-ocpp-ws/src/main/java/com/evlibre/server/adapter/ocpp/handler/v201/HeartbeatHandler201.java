@@ -2,7 +2,7 @@ package com.evlibre.server.adapter.ocpp.handler.v201;
 
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.v16.ports.inbound.HandleHeartbeatPort;
+import com.evlibre.server.core.domain.v201.ports.inbound.HandleHeartbeatPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -5,6 +5,7 @@ import com.evlibre.server.adapter.ocpp.handler.v16.BootNotificationHandler16;
 import com.evlibre.server.adapter.ocpp.handler.v201.BootNotificationHandler201;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.usecases.v16.RegisterStationUseCase;
+import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
 import com.evlibre.server.test.fakes.*;
 import com.evlibre.server.test.fixtures.Tenants;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,11 +46,14 @@ class OcppWebSocketIntegrationTest {
         RegisterStationUseCase registerUseCase = new RegisterStationUseCase(
                 tenantRepo, stationRepo, eventLog, timeProvider, 900,
                 (t, s) -> {});
+        RegisterStationUseCaseV201 registerUseCase201 = new RegisterStationUseCaseV201(
+                tenantRepo, stationRepo, eventLog, timeProvider, 900,
+                (t, s) -> {});
 
         BootNotificationHandler16 bootHandler = new BootNotificationHandler16(registerUseCase, null, sessionManager, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification", bootHandler);
 
-        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase, null, sessionManager, objectMapper);
+        BootNotificationHandler201 bootHandler201 = new BootNotificationHandler201(registerUseCase201, null, sessionManager, objectMapper);
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "BootNotification", bootHandler201);
 
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
