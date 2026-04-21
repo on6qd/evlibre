@@ -93,6 +93,25 @@ public class OcppTestHarness {
         commandSender16 = commandSender.v16();
         commandSender201 = commandSender.v201();
 
+        // No-op DeviceModelPort so NotifyReportHandler201 can be registered without
+        // pulling the persistence-inmemory module into adapter-ocpp-ws's test classpath.
+        com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort deviceModelRepo =
+                new com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort() {
+                    @Override
+                    public void saveVariables(com.evlibre.server.core.domain.shared.model.TenantId t,
+                                              com.evlibre.common.model.ChargePointIdentity s,
+                                              java.util.List<com.evlibre.server.core.domain.v201.model.DeviceModelVariable> variables) {
+                        /* no-op */
+                    }
+
+                    @Override
+                    public java.util.Optional<java.util.List<com.evlibre.server.core.domain.v201.model.DeviceModelVariable>>
+                    getVariables(com.evlibre.server.core.domain.shared.model.TenantId t,
+                                 com.evlibre.common.model.ChargePointIdentity s) {
+                        return java.util.Optional.empty();
+                    }
+                };
+
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
                 new BootNotificationHandler16(registerStation, null, sessionManager, objectMapper));
@@ -128,6 +147,8 @@ public class OcppTestHarness {
                 new TransactionEventHandler201(handleTransactionEvent, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
+                new NotifyReportHandler201(deviceModelRepo, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
