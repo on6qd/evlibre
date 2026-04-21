@@ -2,7 +2,7 @@ package com.evlibre.server.core.usecases.v16;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Minimal stub for testing CSMS-to-CS command use cases within the core module.
  */
-class StubCommandSender implements StationCommandSender {
+class StubCommandSender implements Ocpp16StationCommandSender {
 
     record SentCommand(TenantId tenantId, ChargePointIdentity stationIdentity,
                        String action, Map<String, Object> payload) {}

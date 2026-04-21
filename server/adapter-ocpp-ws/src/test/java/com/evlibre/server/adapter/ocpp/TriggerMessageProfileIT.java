@@ -36,7 +36,7 @@ class TriggerMessageProfileIT {
         OcppTestClient.connect(vertx, harness, "TM-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("TriggerMessage", "Accepted");
-                    var useCase = new TriggerMessageUseCase(harness.commandSender);
+                    var useCase = new TriggerMessageUseCase(harness.commandSender16);
                     return useCase.triggerMessage(TENANT, STATION, "Heartbeat", null)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -60,7 +60,7 @@ class TriggerMessageProfileIT {
         OcppTestClient.connect(vertx, harness, "TM-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("TriggerMessage", "Accepted");
-                    var useCase = new TriggerMessageUseCase(harness.commandSender);
+                    var useCase = new TriggerMessageUseCase(harness.commandSender16);
                     return useCase.triggerMessage(TENANT, STATION, "StatusNotification", 1)
                             .thenApply(result -> {
                                 ctx.verify(() -> {

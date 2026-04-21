@@ -5,7 +5,7 @@ import com.evlibre.server.core.domain.shared.dto.CommandResult;
 import com.evlibre.server.core.domain.v16.model.StationConfigurationKey;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v16.ports.inbound.ChangeConfigurationPort;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.v16.ports.outbound.StationConfigurationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +18,10 @@ public class ChangeConfigurationUseCase implements ChangeConfigurationPort {
 
     private static final Logger log = LoggerFactory.getLogger(ChangeConfigurationUseCase.class);
 
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
     private final StationConfigurationPort configurationPort;
 
-    public ChangeConfigurationUseCase(StationCommandSender commandSender,
+    public ChangeConfigurationUseCase(Ocpp16StationCommandSender commandSender,
                                        StationConfigurationPort configurationPort) {
         this.commandSender = Objects.requireNonNull(commandSender);
         this.configurationPort = Objects.requireNonNull(configurationPort);

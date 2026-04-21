@@ -2,8 +2,8 @@ package com.evlibre.server.core.usecases.v16;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
-import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.*;
+import com.evlibre.server.core.domain.shared.model.*;
+import com.evlibre.server.core.domain.shared.ports.outbound.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

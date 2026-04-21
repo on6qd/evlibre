@@ -40,7 +40,7 @@ class LocalAuthListProfileIT {
                 .thenCompose(client -> {
                     client.onCommand("GetLocalListVersion", payload ->
                             Map.of("listVersion", 3));
-                    var useCase = new GetLocalListVersionUseCase(harness.commandSender);
+                    var useCase = new GetLocalListVersionUseCase(harness.commandSender16);
                     return useCase.getLocalListVersion(TENANT, STATION)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -62,7 +62,7 @@ class LocalAuthListProfileIT {
         OcppTestClient.connect(vertx, harness, "LAL-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("SendLocalList", "Accepted");
-                    var useCase = new SendLocalListUseCase(harness.commandSender);
+                    var useCase = new SendLocalListUseCase(harness.commandSender16);
                     List<Map<String, Object>> authList = List.of(
                             Map.of("idTag", "TAG001", "idTagInfo", Map.of("status", "Accepted")));
                     return useCase.sendLocalList(TENANT, STATION, 1, "Full", authList)

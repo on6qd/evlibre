@@ -44,6 +44,8 @@ public class OcppTestHarness {
     public final OcppWebSocketVerticle verticle;
     public final OcppSessionManager sessionManager;
     public final OcppStationCommandSender commandSender;
+    public final com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender commandSender16;
+    public final com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender commandSender201;
 
     public OcppTestHarness() {
         objectMapper = new ObjectMapper();
@@ -88,6 +90,8 @@ public class OcppTestHarness {
         OcppProtocolNegotiator negotiator = new OcppProtocolNegotiator();
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager();
         commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper);
+        commandSender16 = commandSender.v16();
+        commandSender201 = commandSender.v201();
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",

@@ -15,7 +15,9 @@ import com.evlibre.server.config.ServerConfig;
 import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.shared.model.Tenant;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.*;
+import com.evlibre.server.core.domain.shared.ports.outbound.*;
+import com.evlibre.server.core.domain.v16.ports.outbound.*;
+import com.evlibre.server.core.domain.v201.ports.outbound.*;
 import com.evlibre.server.core.usecases.v16.*;
 import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
@@ -148,7 +150,8 @@ public class Application {
         var deviceModelRepo = new InMemoryDeviceModelRepository();
 
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
-        PostBootActionService postBootActionService = new PostBootActionService(commandSender, stationConfigRepo);
+        PostBootActionService postBootActionService = new PostBootActionService(
+                commandSender.v16(), commandSender.v201(), stationConfigRepo);
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
@@ -195,10 +198,10 @@ public class Application {
                 dispatcher, sessionManager, protocolNegotiator, pendingCallManager,
                 stationEventPublisher, handleHeartbeat);
 
-        // Web UI
+        // Web UI — wired to the v1.6 sender for now; v2.0.1 remote commands land in a later phase.
         WebUiVerticle webUiVerticle = new WebUiVerticle(
                 tenantRepo, stationRepo, transactionRepo, sessionManager,
-                commandSender, config.webui().port());
+                commandSender.v16(), config.webui().port());
 
         vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
             log.info("OCPP server started on port {} (database: {})",

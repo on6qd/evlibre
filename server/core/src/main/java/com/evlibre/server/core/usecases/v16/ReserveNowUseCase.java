@@ -7,7 +7,7 @@ import com.evlibre.server.core.domain.v16.model.ReservationStatus;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v16.ports.inbound.ReserveNowPort;
 import com.evlibre.server.core.domain.v16.ports.outbound.ReservationRepositoryPort;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +21,10 @@ public class ReserveNowUseCase implements ReserveNowPort {
 
     private static final Logger log = LoggerFactory.getLogger(ReserveNowUseCase.class);
 
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
     private final ReservationRepositoryPort reservationRepo;
 
-    public ReserveNowUseCase(StationCommandSender commandSender, ReservationRepositoryPort reservationRepo) {
+    public ReserveNowUseCase(Ocpp16StationCommandSender commandSender, ReservationRepositoryPort reservationRepo) {
         this.commandSender = Objects.requireNonNull(commandSender);
         this.reservationRepo = Objects.requireNonNull(reservationRepo);
     }

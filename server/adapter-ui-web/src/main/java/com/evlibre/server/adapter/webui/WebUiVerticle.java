@@ -8,7 +8,7 @@ import com.evlibre.server.adapter.webui.handlers.StationCommandHandler;
 import com.evlibre.server.adapter.webui.handlers.StationDetailHandler;
 import com.evlibre.server.adapter.webui.handlers.StationsHandler;
 import com.evlibre.server.adapter.webui.handlers.TenantContextExtractor;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
 import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
@@ -29,7 +29,7 @@ public class WebUiVerticle extends AbstractVerticle {
     private final StationRepositoryPort stationRepository;
     private final TransactionRepositoryPort transactionRepository;
     private final OcppSessionManager sessionManager;
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
     private final int port;
     private HttpServer httpServer;
 
@@ -45,7 +45,7 @@ public class WebUiVerticle extends AbstractVerticle {
                          StationRepositoryPort stationRepository,
                          TransactionRepositoryPort transactionRepository,
                          OcppSessionManager sessionManager,
-                         StationCommandSender commandSender,
+                         Ocpp16StationCommandSender commandSender,
                          int port) {
         this.tenantRepository = tenantRepository;
         this.stationRepository = stationRepository;

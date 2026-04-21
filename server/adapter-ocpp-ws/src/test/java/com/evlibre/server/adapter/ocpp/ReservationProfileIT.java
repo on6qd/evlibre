@@ -41,7 +41,7 @@ class ReservationProfileIT {
         OcppTestClient.connect(vertx, harness, "RES-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("ReserveNow", "Accepted");
-                    var useCase = new ReserveNowUseCase(harness.commandSender, reservationRepo);
+                    var useCase = new ReserveNowUseCase(harness.commandSender16, reservationRepo);
                     return useCase.reserveNow(TENANT, STATION, 1,
                                     Instant.parse("2025-06-01T12:00:00Z"), "TAG001")
                             .thenApply(result -> {
@@ -68,8 +68,8 @@ class ReservationProfileIT {
                 .thenCompose(client -> {
                     client.onCommand("ReserveNow", "Accepted");
                     client.onCommand("CancelReservation", "Accepted");
-                    var reserveUseCase = new ReserveNowUseCase(harness.commandSender, reservationRepo);
-                    var cancelUseCase = new CancelReservationUseCase(harness.commandSender, reservationRepo);
+                    var reserveUseCase = new ReserveNowUseCase(harness.commandSender16, reservationRepo);
+                    var cancelUseCase = new CancelReservationUseCase(harness.commandSender16, reservationRepo);
 
                     return reserveUseCase.reserveNow(TENANT, STATION, 1,
                                     Instant.parse("2025-06-01T12:00:00Z"), "TAG001")

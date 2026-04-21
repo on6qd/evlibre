@@ -2,7 +2,7 @@ package com.evlibre.server.test.fakes;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class FakeStationCommandSender implements StationCommandSender {
+public class FakeStationCommandSender implements Ocpp16StationCommandSender {
 
     public record SentCommand(TenantId tenantId, ChargePointIdentity stationIdentity,
                               String action, Map<String, Object> payload) {}

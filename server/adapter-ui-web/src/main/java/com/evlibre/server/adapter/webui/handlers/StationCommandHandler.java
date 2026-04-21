@@ -3,7 +3,7 @@ package com.evlibre.server.adapter.webui.handlers;
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.dto.CommandResult;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +17,9 @@ public class StationCommandHandler {
 
     private static final Logger log = LoggerFactory.getLogger(StationCommandHandler.class);
 
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
 
-    public StationCommandHandler(StationCommandSender commandSender) {
+    public StationCommandHandler(Ocpp16StationCommandSender commandSender) {
         this.commandSender = commandSender;
     }
 

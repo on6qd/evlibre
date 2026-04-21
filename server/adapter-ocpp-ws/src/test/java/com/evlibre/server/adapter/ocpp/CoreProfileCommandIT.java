@@ -41,7 +41,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("Reset", "Accepted");
-                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender);
+                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender16);
                     return useCase.reset(TENANT, STATION, "Hard")
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -65,7 +65,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("Reset", "Accepted");
-                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender);
+                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender16);
                     return useCase.reset(TENANT, STATION, "Soft")
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -88,7 +88,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("RemoteStartTransaction", "Accepted");
-                    RemoteStartTransactionUseCase useCase = new RemoteStartTransactionUseCase(harness.commandSender);
+                    RemoteStartTransactionUseCase useCase = new RemoteStartTransactionUseCase(harness.commandSender16);
                     return useCase.remoteStart(TENANT, STATION, "TAG001", 1)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -112,7 +112,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("RemoteStopTransaction", "Accepted");
-                    RemoteStopTransactionUseCase useCase = new RemoteStopTransactionUseCase(harness.commandSender);
+                    RemoteStopTransactionUseCase useCase = new RemoteStopTransactionUseCase(harness.commandSender16);
                     return useCase.remoteStop(TENANT, STATION, 42)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -135,7 +135,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("ChangeAvailability", "Accepted");
-                    ChangeAvailabilityUseCase useCase = new ChangeAvailabilityUseCase(harness.commandSender);
+                    ChangeAvailabilityUseCase useCase = new ChangeAvailabilityUseCase(harness.commandSender16);
                     return useCase.changeAvailability(TENANT, STATION, 1, "Inoperative")
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -159,7 +159,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("UnlockConnector", "Unlocked");
-                    UnlockConnectorUseCase useCase = new UnlockConnectorUseCase(harness.commandSender);
+                    UnlockConnectorUseCase useCase = new UnlockConnectorUseCase(harness.commandSender16);
                     return useCase.unlockConnector(TENANT, STATION, 1)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -182,7 +182,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("ClearCache", "Accepted");
-                    ClearCacheUseCase useCase = new ClearCacheUseCase(harness.commandSender);
+                    ClearCacheUseCase useCase = new ClearCacheUseCase(harness.commandSender16);
                     return useCase.clearCache(TENANT, STATION)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -219,7 +219,7 @@ class CoreProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "CMD-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("Reset", "Rejected");
-                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender);
+                    ResetStationUseCase useCase = new ResetStationUseCase(harness.commandSender16);
                     return useCase.reset(TENANT, STATION, "Hard")
                             .thenApply(result -> {
                                 ctx.verify(() -> assertThat(result.isAccepted()).isFalse());

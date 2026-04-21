@@ -4,7 +4,7 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.dto.CommandResult;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v16.ports.inbound.ClearChargingProfilePort;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +16,9 @@ import java.util.concurrent.CompletableFuture;
 public class ClearChargingProfileUseCase implements ClearChargingProfilePort {
 
     private static final Logger log = LoggerFactory.getLogger(ClearChargingProfileUseCase.class);
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
 
-    public ClearChargingProfileUseCase(StationCommandSender commandSender) {
+    public ClearChargingProfileUseCase(Ocpp16StationCommandSender commandSender) {
         this.commandSender = Objects.requireNonNull(commandSender);
     }
 

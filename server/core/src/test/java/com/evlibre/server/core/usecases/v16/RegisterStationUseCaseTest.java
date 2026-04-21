@@ -4,8 +4,8 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.core.domain.shared.dto.RegistrationResult;
 import com.evlibre.server.core.domain.shared.dto.StationRegistration;
-import com.evlibre.server.core.domain.model.*;
-import com.evlibre.server.core.domain.ports.outbound.*;
+import com.evlibre.server.core.domain.shared.model.*;
+import com.evlibre.server.core.domain.shared.ports.outbound.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

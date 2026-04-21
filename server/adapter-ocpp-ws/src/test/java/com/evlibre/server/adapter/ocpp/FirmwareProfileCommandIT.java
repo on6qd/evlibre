@@ -38,7 +38,7 @@ class FirmwareProfileCommandIT {
                 .thenCompose(client -> {
                     client.onCommand("GetDiagnostics", payload ->
                             Map.of("fileName", "diag-20250601.tgz"));
-                    var useCase = new GetDiagnosticsUseCase(harness.commandSender);
+                    var useCase = new GetDiagnosticsUseCase(harness.commandSender16);
                     return useCase.getDiagnostics(TENANT, STATION,
                                     "ftp://example.com/diag", null, null, null, null)
                             .thenApply(result -> {
@@ -63,7 +63,7 @@ class FirmwareProfileCommandIT {
         OcppTestClient.connect(vertx, harness, "FW-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("UpdateFirmware", payload -> Map.of());
-                    var useCase = new UpdateFirmwareUseCase(harness.commandSender);
+                    var useCase = new UpdateFirmwareUseCase(harness.commandSender16);
                     return useCase.updateFirmware(TENANT, STATION,
                                     "ftp://example.com/fw.bin", "2025-06-01T00:00:00Z", 3, 120)
                             .thenApply(v -> {

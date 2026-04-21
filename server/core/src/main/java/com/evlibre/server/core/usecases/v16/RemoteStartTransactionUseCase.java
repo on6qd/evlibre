@@ -5,7 +5,7 @@ import com.evlibre.server.core.domain.shared.dto.CommandResult;
 import com.evlibre.server.core.domain.shared.model.RegistrationStatus;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v16.ports.inbound.RemoteStartTransactionPort;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +19,14 @@ public class RemoteStartTransactionUseCase implements RemoteStartTransactionPort
 
     private static final Logger log = LoggerFactory.getLogger(RemoteStartTransactionUseCase.class);
 
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender;
     private final StationRepositoryPort stationRepository;
 
-    public RemoteStartTransactionUseCase(StationCommandSender commandSender) {
+    public RemoteStartTransactionUseCase(Ocpp16StationCommandSender commandSender) {
         this(commandSender, null);
     }
 
-    public RemoteStartTransactionUseCase(StationCommandSender commandSender,
+    public RemoteStartTransactionUseCase(Ocpp16StationCommandSender commandSender,
                                           StationRepositoryPort stationRepository) {
         this.commandSender = Objects.requireNonNull(commandSender);
         this.stationRepository = stationRepository;

@@ -4,8 +4,9 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.core.domain.v16.model.StationConfigurationKey;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.ports.outbound.StationCommandSender;
+import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.v16.ports.outbound.StationConfigurationPort;
+import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,12 +25,15 @@ public class PostBootActionService {
 
     private static final Logger log = LoggerFactory.getLogger(PostBootActionService.class);
 
-    private final StationCommandSender commandSender;
+    private final Ocpp16StationCommandSender commandSender16;
+    private final Ocpp201StationCommandSender commandSender201;
     private final StationConfigurationPort configurationPort;
 
-    public PostBootActionService(StationCommandSender commandSender,
+    public PostBootActionService(Ocpp16StationCommandSender commandSender16,
+                                 Ocpp201StationCommandSender commandSender201,
                                  StationConfigurationPort configurationPort) {
-        this.commandSender = commandSender;
+        this.commandSender16 = commandSender16;
+        this.commandSender201 = commandSender201;
         this.configurationPort = configurationPort;
     }
 
@@ -44,7 +48,7 @@ public class PostBootActionService {
     private void sendGetConfiguration(TenantId tenantId, ChargePointIdentity stationIdentity) {
         log.info("Sending GetConfiguration to {} (tenant: {})", stationIdentity.value(), tenantId.value());
 
-        commandSender.sendCommand(tenantId, stationIdentity, "GetConfiguration", Collections.emptyMap())
+        commandSender16.sendCommand(tenantId, stationIdentity, "GetConfiguration", Collections.emptyMap())
                 .thenAccept(response -> handleGetConfigurationResponse(tenantId, stationIdentity, response))
                 .exceptionally(error -> {
                     log.warn("GetConfiguration failed for {}: {}", stationIdentity.value(), error.getMessage());
@@ -81,7 +85,7 @@ public class PostBootActionService {
                 "reportBase", "FullInventory"
         );
 
-        commandSender.sendCommand(tenantId, stationIdentity, "GetBaseReport", payload)
+        commandSender201.sendCommand(tenantId, stationIdentity, "GetBaseReport", payload)
                 .thenAccept(response -> {
                     String status = response.get("status") != null ? response.get("status").toString() : "unknown";
                     log.info("GetBaseReport response from {}: {}", stationIdentity.value(), status);

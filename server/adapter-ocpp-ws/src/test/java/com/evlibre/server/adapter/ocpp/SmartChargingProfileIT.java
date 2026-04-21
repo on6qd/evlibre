@@ -38,7 +38,7 @@ class SmartChargingProfileIT {
         OcppTestClient.connect(vertx, harness, "SC-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("SetChargingProfile", "Accepted");
-                    var useCase = new SetChargingProfileUseCase(harness.commandSender);
+                    var useCase = new SetChargingProfileUseCase(harness.commandSender16);
                     Map<String, Object> profile = Map.of(
                             "chargingProfileId", 1,
                             "stackLevel", 0,
@@ -65,7 +65,7 @@ class SmartChargingProfileIT {
         OcppTestClient.connect(vertx, harness, "SC-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("ClearChargingProfile", "Accepted");
-                    var useCase = new ClearChargingProfileUseCase(harness.commandSender);
+                    var useCase = new ClearChargingProfileUseCase(harness.commandSender16);
                     return useCase.clearChargingProfile(TENANT, STATION, null, 1, null, null)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
@@ -88,7 +88,7 @@ class SmartChargingProfileIT {
         OcppTestClient.connect(vertx, harness, "SC-STATION", "ocpp1.6")
                 .thenCompose(client -> {
                     client.onCommand("GetCompositeSchedule", "Accepted");
-                    var useCase = new GetCompositeScheduleUseCase(harness.commandSender);
+                    var useCase = new GetCompositeScheduleUseCase(harness.commandSender16);
                     return useCase.getCompositeSchedule(TENANT, STATION, 1, 3600, "W")
                             .thenApply(result -> {
                                 ctx.verify(() -> {
