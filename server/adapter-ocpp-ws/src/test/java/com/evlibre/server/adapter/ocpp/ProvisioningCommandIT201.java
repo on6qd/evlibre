@@ -4,8 +4,13 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v201.devicemodel.Component;
+import com.evlibre.server.core.domain.v201.devicemodel.ComponentCriterion;
+import com.evlibre.server.core.domain.v201.devicemodel.ComponentVariableSelector;
 import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
+import com.evlibre.server.core.domain.v201.devicemodel.Variable;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.GetReportUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -13,6 +18,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -76,6 +84,90 @@ class ProvisioningCommandIT201 {
                                 });
                                 client.close();
                                 return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_report_with_criteria_and_selector_accepted(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetReport", "Accepted");
+                    GetReportUseCaseV201 useCase = new GetReportUseCaseV201(harness.commandSender201);
+                    var selector = ComponentVariableSelector.of(
+                            Component.of("SecurityCtrlr"), Variable.of("BasicAuthPassword"));
+                    return useCase.getReport(TENANT, STATION, 99,
+                                    Set.of(ComponentCriterion.PROBLEM, ComponentCriterion.ACTIVE),
+                                    List.of(selector))
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    var cmd = client.receivedCommands("GetReport").get(0);
+                                    assertThat(cmd.payload().get("requestId").asInt()).isEqualTo(99);
+                                    var criteria = cmd.payload().get("componentCriteria");
+                                    assertThat(criteria.isArray()).isTrue();
+                                    assertThat(criteria.size()).isEqualTo(2);
+                                    var componentVariable = cmd.payload().get("componentVariable");
+                                    assertThat(componentVariable.size()).isEqualTo(1);
+                                    var entry = componentVariable.get(0);
+                                    assertThat(entry.get("component").get("name").asText())
+                                            .isEqualTo("SecurityCtrlr");
+                                    assertThat(entry.get("variable").get("name").asText())
+                                            .isEqualTo("BasicAuthPassword");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_report_empty_result_set_propagated(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetReport", "EmptyResultSet");
+                    GetReportUseCaseV201 useCase = new GetReportUseCaseV201(harness.commandSender201);
+                    return useCase.getReport(TENANT, STATION, 1,
+                                    Set.of(ComponentCriterion.ENABLED), List.of())
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.status()).isEqualTo("EmptyResultSet");
+                                    assertThat(result.isAccepted()).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_report_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    GetReportUseCaseV201 useCase = new GetReportUseCaseV201(harness.commandSender201);
+                    return useCase.getReport(TENANT, STATION, 1,
+                                    Set.of(ComponentCriterion.ACTIVE), List.of())
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send GetReport via OCPP_201");
+                                });
+                                client.close();
+                                return null;
                             });
                 })
                 .whenComplete((r, err) -> {

@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:GetReportRequest",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "ComponentCriterionEnumType": {
+      "description": "Filter components by one of the predefined criteria.",
+      "javaType": "ComponentCriterionEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Active",
+        "Available",
+        "Enabled",
+        "Problem"
+      ]
+    },
+    "EVSEType": {
+      "description": "EVSE (Electric Vehicle Supply Equipment) is part of a Charging Station that delivers energy to a single EV.",
+      "javaType": "EVSE",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "id": {
+          "description": "EVSE Identifier. When 0, the ID references the Charging Station as a whole.",
+          "type": "integer"
+        },
+        "connectorId": {
+          "description": "An id to designate a specific connector (on an EVSE) by connector index number.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "ComponentType": {
+      "description": "A physical or logical component.",
+      "javaType": "Component",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "evse": {
+          "$ref": "#/definitions/EVSEType"
+        },
+        "name": {
+          "description": "Name of the component. Name should be taken from the list of standardized component names whenever possible.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the component exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "VariableType": {
+      "description": "Reference key to a component-variable.",
+      "javaType": "Variable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "name": {
+          "description": "Name of the variable. Name should be taken from the list of standardized variable names whenever possible.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the variable exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "ComponentVariableType": {
+      "description": "Class to report components, variables and variable attributes and characteristics.",
+      "javaType": "ComponentVariable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "component": {
+          "$ref": "#/definitions/ComponentType"
+        },
+        "variable": {
+          "$ref": "#/definitions/VariableType"
+        }
+      },
+      "required": [
+        "component"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "componentVariable": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/ComponentVariableType"
+      },
+      "minItems": 1
+    },
+    "requestId": {
+      "description": "The Id of the request.",
+      "type": "integer"
+    },
+    "componentCriteria": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/ComponentCriterionEnumType"
+      },
+      "minItems": 1,
+      "maxItems": 4
+    }
+  },
+  "required": [
+    "requestId"
+  ]
+}
