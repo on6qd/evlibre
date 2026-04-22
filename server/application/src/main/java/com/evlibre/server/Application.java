@@ -20,6 +20,7 @@ import com.evlibre.server.core.domain.v16.ports.outbound.*;
 import com.evlibre.server.core.domain.v201.ports.outbound.*;
 import com.evlibre.server.core.usecases.v16.*;
 import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
+import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
@@ -149,9 +150,12 @@ public class Application {
         var stationConfigRepo = new InMemoryStationConfigurationRepository();
         var deviceModelRepo = new InMemoryDeviceModelRepository();
 
+        // CSMS-initiated v2.0.1 use cases
+        GetBaseReportUseCaseV201 getBaseReport = new GetBaseReportUseCaseV201(commandSender.v201());
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
-                commandSender.v16(), commandSender.v201(), stationConfigRepo);
+                commandSender.v16(), getBaseReport, stationConfigRepo);
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",

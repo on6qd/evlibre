@@ -6,7 +6,8 @@ import com.evlibre.server.core.domain.v16.model.StationConfigurationKey;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.v16.ports.outbound.StationConfigurationPort;
-import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
+import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
+import com.evlibre.server.core.domain.v201.ports.inbound.GetBaseReportPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,21 +20,21 @@ import java.util.Map;
  * Sends post-boot CSMS-initiated messages after a station's BootNotification is accepted.
  * <p>
  * OCPP 1.6: sends GetConfiguration (empty) to retrieve all configuration keys.
- * OCPP 2.0.1: sends GetBaseReport (FullInventory) to retrieve the device model.
+ * OCPP 2.0.1: invokes {@link GetBaseReportPort} with {@link ReportBase#FULL_INVENTORY}.
  */
 public class PostBootActionService {
 
     private static final Logger log = LoggerFactory.getLogger(PostBootActionService.class);
 
     private final Ocpp16StationCommandSender commandSender16;
-    private final Ocpp201StationCommandSender commandSender201;
+    private final GetBaseReportPort getBaseReportPort;
     private final StationConfigurationPort configurationPort;
 
     public PostBootActionService(Ocpp16StationCommandSender commandSender16,
-                                 Ocpp201StationCommandSender commandSender201,
+                                 GetBaseReportPort getBaseReportPort,
                                  StationConfigurationPort configurationPort) {
         this.commandSender16 = commandSender16;
-        this.commandSender201 = commandSender201;
+        this.getBaseReportPort = getBaseReportPort;
         this.configurationPort = configurationPort;
     }
 
@@ -78,18 +79,7 @@ public class PostBootActionService {
     }
 
     private void sendGetBaseReport(TenantId tenantId, ChargePointIdentity stationIdentity) {
-        log.info("Sending GetBaseReport to {} (tenant: {})", stationIdentity.value(), tenantId.value());
-
-        Map<String, Object> payload = Map.of(
-                "requestId", 0,
-                "reportBase", "FullInventory"
-        );
-
-        commandSender201.sendCommand(tenantId, stationIdentity, "GetBaseReport", payload)
-                .thenAccept(response -> {
-                    String status = response.get("status") != null ? response.get("status").toString() : "unknown";
-                    log.info("GetBaseReport response from {}: {}", stationIdentity.value(), status);
-                })
+        getBaseReportPort.getBaseReport(tenantId, stationIdentity, 0, ReportBase.FULL_INVENTORY)
                 .exceptionally(error -> {
                     log.warn("GetBaseReport failed for {}: {}", stationIdentity.value(), error.getMessage());
                     return null;

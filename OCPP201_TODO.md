@@ -95,7 +95,7 @@ plus full response-schema authoring and hard-reject validation, see 0.4).
 ## Phase 1 — Core Provisioning (Block B)
 Device Model is the biggest 2.0.1-only concept; foundational for everything else.
 - [ ] Device Model domain in `domain/v201/devicemodel/`: `Component`, `Evse`, `Variable`, `VariableAttribute`, `VariableCharacteristics`, `Monitor` + repository ports.
-- [ ] Outbound (new v201 use case + handler + schemas): `GetBaseReport`
+- [x] Outbound (new v201 use case + handler + schemas): `GetBaseReport` — `GetBaseReportUseCaseV201` + schemas; `PostBootActionService` now delegates to the use case.
 - [ ] Outbound (new v201 use case + handler + schemas): `GetReport`
 - [ ] Outbound (new v201 use case + handler + schemas): `GetVariables`
 - [ ] Outbound (new v201 use case + handler + schemas): `SetVariables`
