@@ -2,13 +2,22 @@ package com.evlibre.server.adapter.ocpp.handler.v201;
 
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.v201.model.DeviceModelVariable;
-import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort;
+import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
+import com.evlibre.server.core.domain.v201.devicemodel.Component;
+import com.evlibre.server.core.domain.v201.devicemodel.DataType;
+import com.evlibre.server.core.domain.v201.devicemodel.Evse;
+import com.evlibre.server.core.domain.v201.devicemodel.Mutability;
+import com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable;
+import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.devicemodel.VariableAttribute;
+import com.evlibre.server.core.domain.v201.devicemodel.VariableCharacteristics;
+import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +25,11 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(NotifyReportHandler201.class);
 
-    private final DeviceModelPort deviceModelPort;
+    private final DeviceModelRepositoryPort deviceModelRepository;
     private final ObjectMapper objectMapper;
 
-    public NotifyReportHandler201(DeviceModelPort deviceModelPort, ObjectMapper objectMapper) {
-        this.deviceModelPort = deviceModelPort;
+    public NotifyReportHandler201(DeviceModelRepositoryPort deviceModelRepository, ObjectMapper objectMapper) {
+        this.deviceModelRepository = deviceModelRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -31,60 +40,112 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
         boolean tbc = payload.path("tbc").asBoolean(false);
         JsonNode reportData = payload.path("reportData");
 
-        List<DeviceModelVariable> variables = new ArrayList<>();
-
+        List<ReportedVariable> reports = new ArrayList<>();
         if (reportData.isArray()) {
             for (JsonNode entry : reportData) {
-                JsonNode component = entry.path("component");
-                JsonNode variable = entry.path("variable");
-                JsonNode characteristics = entry.path("variableCharacteristics");
-
-                String componentName = component.path("name").asText();
-                String componentInstance = component.path("instance").asText(null);
-
-                // EVSE info (optional)
-                Integer evseId = null;
-                Integer connectorId = null;
-                JsonNode evseNode = component.path("evse");
-                if (!evseNode.isMissingNode()) {
-                    evseId = evseNode.path("id").asInt();
-                    if (evseNode.has("connectorId")) {
-                        connectorId = evseNode.path("connectorId").asInt();
-                    }
-                }
-
-                String variableName = variable.path("name").asText();
-                String variableInstance = variable.path("instance").asText(null);
-
-                String dataType = characteristics.path("dataType").asText(null);
-                boolean supportsMonitoring = characteristics.path("supportsMonitoring").asBoolean(false);
-
-                // Each reportData entry can have multiple variableAttributes
-                JsonNode attrs = entry.path("variableAttribute");
-                if (attrs.isArray()) {
-                    for (JsonNode attr : attrs) {
-                        String attrType = attr.path("type").asText("Actual");
-                        String value = attr.path("value").asText(null);
-
-                        variables.add(new DeviceModelVariable(
-                                componentName, componentInstance,
-                                evseId, connectorId,
-                                variableName, variableInstance,
-                                attrType, value,
-                                dataType, supportsMonitoring
-                        ));
-                    }
-                }
+                reports.add(toReportedVariable(entry));
             }
         }
 
-        if (!variables.isEmpty()) {
-            deviceModelPort.saveVariables(session.tenantId(), session.stationIdentity(), variables);
+        if (!reports.isEmpty()) {
+            deviceModelRepository.upsert(session.tenantId(), session.stationIdentity(), reports);
         }
 
-        log.info("NotifyReport from {} (requestId={}, seqNo={}, variables={}, tbc={})",
-                session.stationIdentity().value(), requestId, seqNo, variables.size(), tbc);
+        log.info("NotifyReport from {} (requestId={}, seqNo={}, reports={}, tbc={})",
+                session.stationIdentity().value(), requestId, seqNo, reports.size(), tbc);
 
         return objectMapper.createObjectNode();
+    }
+
+    private static ReportedVariable toReportedVariable(JsonNode entry) {
+        Component component = toComponent(entry.path("component"));
+        Variable variable = toVariable(entry.path("variable"));
+        List<VariableAttribute> attributes = toAttributes(entry.path("variableAttribute"));
+        VariableCharacteristics characteristics = entry.hasNonNull("variableCharacteristics")
+                ? toCharacteristics(entry.path("variableCharacteristics"))
+                : null;
+
+        return new ReportedVariable(component, variable, attributes, characteristics);
+    }
+
+    private static Component toComponent(JsonNode node) {
+        String name = node.path("name").asText();
+        String instance = node.hasNonNull("instance") ? node.path("instance").asText() : null;
+        Evse evse = node.hasNonNull("evse") ? toEvse(node.path("evse")) : null;
+        return new Component(name, instance, evse);
+    }
+
+    private static Evse toEvse(JsonNode node) {
+        int id = node.path("id").asInt();
+        Integer connectorId = node.hasNonNull("connectorId") ? node.path("connectorId").asInt() : null;
+        return new Evse(id, connectorId);
+    }
+
+    private static Variable toVariable(JsonNode node) {
+        String name = node.path("name").asText();
+        String instance = node.hasNonNull("instance") ? node.path("instance").asText() : null;
+        return new Variable(name, instance);
+    }
+
+    private static List<VariableAttribute> toAttributes(JsonNode node) {
+        List<VariableAttribute> out = new ArrayList<>();
+        if (node.isArray()) {
+            for (JsonNode attr : node) {
+                AttributeType type = attr.hasNonNull("type")
+                        ? attributeTypeFromWire(attr.path("type").asText())
+                        : AttributeType.DEFAULT;
+                String value = attr.hasNonNull("value") ? attr.path("value").asText() : null;
+                Mutability mutability = attr.hasNonNull("mutability")
+                        ? mutabilityFromWire(attr.path("mutability").asText())
+                        : Mutability.DEFAULT;
+                boolean persistent = attr.path("persistent").asBoolean(false);
+                boolean constant = attr.path("constant").asBoolean(false);
+                out.add(new VariableAttribute(type, value, mutability, persistent, constant));
+            }
+        }
+        return out;
+    }
+
+    private static VariableCharacteristics toCharacteristics(JsonNode node) {
+        String unit = node.hasNonNull("unit") ? node.path("unit").asText() : null;
+        DataType dataType = dataTypeFromWire(node.path("dataType").asText());
+        BigDecimal minLimit = node.hasNonNull("minLimit") ? node.path("minLimit").decimalValue() : null;
+        BigDecimal maxLimit = node.hasNonNull("maxLimit") ? node.path("maxLimit").decimalValue() : null;
+        String valuesList = node.hasNonNull("valuesList") ? node.path("valuesList").asText() : null;
+        boolean supportsMonitoring = node.path("supportsMonitoring").asBoolean(false);
+        return new VariableCharacteristics(unit, dataType, minLimit, maxLimit, valuesList, supportsMonitoring);
+    }
+
+    private static AttributeType attributeTypeFromWire(String wire) {
+        return switch (wire) {
+            case "Actual" -> AttributeType.ACTUAL;
+            case "Target" -> AttributeType.TARGET;
+            case "MinSet" -> AttributeType.MIN_SET;
+            case "MaxSet" -> AttributeType.MAX_SET;
+            default -> throw new IllegalArgumentException("Unknown AttributeEnumType: " + wire);
+        };
+    }
+
+    private static Mutability mutabilityFromWire(String wire) {
+        return switch (wire) {
+            case "ReadOnly" -> Mutability.READ_ONLY;
+            case "WriteOnly" -> Mutability.WRITE_ONLY;
+            case "ReadWrite" -> Mutability.READ_WRITE;
+            default -> throw new IllegalArgumentException("Unknown MutabilityEnumType: " + wire);
+        };
+    }
+
+    private static DataType dataTypeFromWire(String wire) {
+        return switch (wire) {
+            case "string" -> DataType.STRING;
+            case "decimal" -> DataType.DECIMAL;
+            case "integer" -> DataType.INTEGER;
+            case "dateTime" -> DataType.DATE_TIME;
+            case "boolean" -> DataType.BOOLEAN;
+            case "OptionList" -> DataType.OPTION_LIST;
+            case "SequenceList" -> DataType.SEQUENCE_LIST;
+            case "MemberList" -> DataType.MEMBER_LIST;
+            default -> throw new IllegalArgumentException("Unknown DataEnumType: " + wire);
+        };
     }
 }

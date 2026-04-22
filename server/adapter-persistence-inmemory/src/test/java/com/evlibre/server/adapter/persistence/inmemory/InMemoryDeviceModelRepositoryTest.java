@@ -18,15 +18,15 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class InMemoryDeviceModelStoreTest {
+class InMemoryDeviceModelRepositoryTest {
 
-    private InMemoryDeviceModelStore store;
+    private InMemoryDeviceModelRepository store;
     private TenantId tenant;
     private ChargePointIdentity station;
 
     @BeforeEach
     void setUp() {
-        store = new InMemoryDeviceModelStore();
+        store = new InMemoryDeviceModelRepository();
         tenant = new TenantId("demo-tenant");
         station = new ChargePointIdentity("CHARGER-001");
     }

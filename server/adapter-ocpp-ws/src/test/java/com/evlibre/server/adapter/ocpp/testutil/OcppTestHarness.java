@@ -93,22 +93,23 @@ public class OcppTestHarness {
         commandSender16 = commandSender.v16();
         commandSender201 = commandSender.v201();
 
-        // No-op DeviceModelPort so NotifyReportHandler201 can be registered without
-        // pulling the persistence-inmemory module into adapter-ocpp-ws's test classpath.
-        com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort deviceModelRepo =
-                new com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort() {
+        // No-op DeviceModelRepositoryPort so NotifyReportHandler201 can be registered
+        // without pulling the persistence-inmemory module into adapter-ocpp-ws's test
+        // classpath.
+        com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort deviceModelRepo =
+                new com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort() {
                     @Override
-                    public void saveVariables(com.evlibre.server.core.domain.shared.model.TenantId t,
-                                              com.evlibre.common.model.ChargePointIdentity s,
-                                              java.util.List<com.evlibre.server.core.domain.v201.model.DeviceModelVariable> variables) {
+                    public void upsert(com.evlibre.server.core.domain.shared.model.TenantId t,
+                                       com.evlibre.common.model.ChargePointIdentity s,
+                                       java.util.List<com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable> reports) {
                         /* no-op */
                     }
 
                     @Override
-                    public java.util.Optional<java.util.List<com.evlibre.server.core.domain.v201.model.DeviceModelVariable>>
-                    getVariables(com.evlibre.server.core.domain.shared.model.TenantId t,
-                                 com.evlibre.common.model.ChargePointIdentity s) {
-                        return java.util.Optional.empty();
+                    public java.util.List<com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable>
+                    findAll(com.evlibre.server.core.domain.shared.model.TenantId t,
+                            com.evlibre.common.model.ChargePointIdentity s) {
+                        return java.util.List.of();
                     }
                 };
 

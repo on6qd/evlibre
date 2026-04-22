@@ -1,38 +1,45 @@
 package com.evlibre.server.adapter.persistence.inmemory;
 
 import com.evlibre.common.model.ChargePointIdentity;
-import com.evlibre.server.core.domain.v201.model.DeviceModelVariable;
 import com.evlibre.server.core.domain.shared.model.TenantId;
-import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelPort;
+import com.evlibre.server.core.domain.v201.devicemodel.Component;
+import com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable;
+import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryDeviceModelRepository implements DeviceModelPort {
+/**
+ * In-memory {@link DeviceModelRepositoryPort}: upserts per
+ * (component, variable) locator so a replayed NotifyReport does not duplicate
+ * rows.
+ */
+public class InMemoryDeviceModelRepository implements DeviceModelRepositoryPort {
 
-    private final Map<String, List<DeviceModelVariable>> deviceModels = new ConcurrentHashMap<>();
+    private record StationKey(TenantId tenantId, ChargePointIdentity identity) {}
+    private record VariableKey(Component component, Variable variable) {}
 
-    private String key(TenantId tenantId, ChargePointIdentity stationIdentity) {
-        return tenantId.value() + ":" + stationIdentity.value();
+    private final Map<StationKey, Map<VariableKey, ReportedVariable>> store = new ConcurrentHashMap<>();
+
+    @Override
+    public void upsert(TenantId tenantId,
+                       ChargePointIdentity stationIdentity,
+                       List<ReportedVariable> reports) {
+        var perStation = store.computeIfAbsent(new StationKey(tenantId, stationIdentity),
+                k -> new ConcurrentHashMap<>());
+        for (ReportedVariable r : reports) {
+            perStation.put(new VariableKey(r.component(), r.variable()), r);
+        }
     }
 
     @Override
-    public void saveVariables(TenantId tenantId, ChargePointIdentity stationIdentity,
-                              List<DeviceModelVariable> variables) {
-        String k = key(tenantId, stationIdentity);
-        deviceModels.merge(k, List.copyOf(variables), (existing, incoming) -> {
-            var merged = new ArrayList<>(existing);
-            merged.addAll(incoming);
-            return List.copyOf(merged);
-        });
-    }
-
-    @Override
-    public Optional<List<DeviceModelVariable>> getVariables(TenantId tenantId,
-                                                             ChargePointIdentity stationIdentity) {
-        return Optional.ofNullable(deviceModels.get(key(tenantId, stationIdentity)));
+    public List<ReportedVariable> findAll(TenantId tenantId, ChargePointIdentity stationIdentity) {
+        var perStation = store.get(new StationKey(tenantId, stationIdentity));
+        if (perStation == null) {
+            return List.of();
+        }
+        return List.copyOf(perStation.values());
     }
 }
