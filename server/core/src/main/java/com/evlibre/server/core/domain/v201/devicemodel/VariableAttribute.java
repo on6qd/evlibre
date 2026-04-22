@@ -31,7 +31,7 @@ public record VariableAttribute(
             throw new IllegalArgumentException(
                     "VariableAttribute.value must be <= " + VALUE_MAX + " chars, got " + value.length());
         }
-        if (value == null && mutability != Mutability.WriteOnly) {
+        if (value == null && mutability != Mutability.WRITE_ONLY) {
             throw new IllegalArgumentException(
                     "VariableAttribute.value is required unless mutability is WriteOnly");
         }
@@ -39,6 +39,6 @@ public record VariableAttribute(
 
     /** Convenience: spec defaults for a simple actual reading. */
     public static VariableAttribute actual(String value) {
-        return new VariableAttribute(AttributeType.Actual, value, Mutability.ReadWrite, false, false);
+        return new VariableAttribute(AttributeType.ACTUAL, value, Mutability.READ_WRITE, false, false);
     }
 }
