@@ -14,14 +14,14 @@ class HandleDataTransferUseCaseTest {
     private final TenantId tenantId = new TenantId("demo-tenant");
     private final OcppEventLogPort noopLog = (s, m, a, d, p) -> {};
 
-    // OCPP 1.6 §5.13: unknown vendorId → UnknownVendor.
+    // OCPP 1.6 §5.13: unknown vendorId → UnknownVendorId.
     @Test
-    void unknown_vendor_returns_unknownVendor() {
+    void unknown_vendor_returns_unknownVendorId() {
         var useCase = new HandleDataTransferUseCase(noopLog);
 
         CommandResult result = useCase.handleDataTransfer(tenantId, "com.unknown.vendor", "ping", null);
 
-        assertThat(result.status()).isEqualTo("UnknownVendor");
+        assertThat(result.status()).isEqualTo("UnknownVendorId");
     }
 
     @Test

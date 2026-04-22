@@ -2,8 +2,8 @@
 
 Source: OCPP 2.0.1 Edition 4 Errata February 2026 (NotebookLM).
 Last audit: 2026-04-21.
-Phase 0 completed: 2026-04-21 (separation groundwork — validation plumbing in
-place, schema *authoring* for response / v1.6 coverage deferred; see 0.4 notes).
+Phase 0 completed: 2026-04-21 (all subsections done — separation groundwork
+plus full response-schema authoring and hard-reject validation, see 0.4).
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -77,11 +77,14 @@ place, schema *authoring* for response / v1.6 coverage deferred; see 0.4 notes).
 - [x] `OcppStationCommandSender` exposes `.v16()` / `.v201()` accessors; each enforces the session's negotiated protocol and rejects mismatched calls.
 - [x] All v1.6 outbound use cases now depend on `Ocpp16StationCommandSender` only.
 
-### 0.4 — Schema + validation hardening ⏳ (plumbing done; schema authoring deferred)
+### 0.4 — Schema + validation hardening ✅
 - [x] Register `NotifyReportHandler201` in the dispatcher + test harness.
 - [x] Add `NotifyReportRequest` schema.
-- [x] Extend `OcppSchemaValidator` with `validateRequest` / `validateResponse`; wire into outbound CALL (request schema), outbound CALL_RESULT (response schema), and station-sent CALL_RESULT (response schema via the pending-call manager). All validation failures are **warn-only** today because the schema library is incomplete.
-- [ ] **Deferred — bulk schema authoring**: add v2.0.1 response schemas for the 9 wired actions + v1.6 response schemas for parity. Once present, flip the warn-only checks in `OcppStationCommandSender`, `OcppWebSocketVerticle`, and `OcppPendingCallManager` to hard rejections.
+- [x] Extend `OcppSchemaValidator` with `validateRequest` / `validateResponse`; wire into outbound CALL (request schema), outbound CALL_RESULT (response schema), and station-sent CALL_RESULT (response schema via the pending-call manager).
+- [x] Author v2.0.1 response schemas for all 10 actions with request schemas on classpath (`BootNotification`, `Heartbeat`, `Authorize`, `StatusNotification`, `MeterValues`, `TransactionEvent`, `NotifyReport`, `RequestStartTransaction`, `RequestStopTransaction`, `Reset`).
+- [x] Author v1.6 response schemas for all 28 actions with request schemas on classpath (Core, Smart Charging, Local Auth, Reservation, Remote Trigger, Firmware, Diagnostics).
+- [x] Flip warn-only checks in `OcppStationCommandSender` (outbound CALL), `OcppWebSocketVerticle` (our CALL_RESULT self-check), and `OcppPendingCallManager` (station CALL_RESULT) to hard rejections — missing-schema contract remains "valid" so non-wired actions aren't blocked.
+- [x] Fixed pre-existing spec-violation while flipping: v1.6 DataTransfer use case now returns `UnknownVendorId` (spec value) rather than `UnknownVendor`.
 
 ### 0.5 — Test harness ✅
 - [x] `OcppTestHarness` wires v16 and v201 handlers from their respective use case sets (done as part of 0.2b).

@@ -57,15 +57,18 @@ public class OcppPendingCallManager {
             log.warn("No pending call for messageId: {}", messageId);
             return;
         }
-        // Validate the station's response against the expected schema if we know what
-        // to expect. Validation failure is logged but the future still completes — a
-        // partial schema library shouldn't crash callers that got a plausibly-correct
-        // response.
+        // Validate the station's response against the expected schema. A station
+        // replying with a non-conformant payload is a protocol violation — fail the
+        // pending call so the use case gets a clear error instead of corrupt data.
         if (schemaValidator != null && entry.action() != null && entry.protocol() != null) {
             var result = schemaValidator.validateResponse(entry.protocol(), entry.action(), payload);
             if (!result.isValid()) {
                 log.warn("Station response to {} ({}) failed schema validation: {}",
                         entry.action(), entry.protocol(), result.errorMessage());
+                entry.future().completeExceptionally(new RuntimeException(
+                        "Station response to " + entry.action() + " failed schema validation: "
+                                + result.errorMessage()));
+                return;
             }
         }
         entry.future().complete(payload);

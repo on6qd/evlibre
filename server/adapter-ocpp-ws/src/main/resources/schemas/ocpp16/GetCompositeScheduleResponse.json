@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "GetCompositeScheduleResponse",
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "additionalProperties": false,
+            "enum": [
+                "Accepted",
+                "Rejected"
+            ]
+        },
+        "connectorId": {
+            "type": "integer"
+        },
+        "scheduleStart": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "chargingSchedule": {
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "status"
+    ]
+}

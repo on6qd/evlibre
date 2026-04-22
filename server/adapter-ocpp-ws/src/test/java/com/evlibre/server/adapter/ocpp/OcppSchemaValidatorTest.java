@@ -90,12 +90,52 @@ class OcppSchemaValidatorTest {
 
     @Test
     void validateResponse_missingSchema_passes() throws Exception {
-        // No response schema authored yet — contract is "missing schema = valid" so
-        // partial coverage can't block the server.
+        // "No schema on classpath = valid" is the validator's contract so gaps in
+        // coverage never block the server; use an action we deliberately don't
+        // author a schema for.
         var payload = mapper.readTree("{\"status\":\"Accepted\"}");
+
+        var result = validator.validateResponse(OcppProtocol.OCPP_201, "UnknownAction", payload);
+
+        assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void ocpp201_bootNotification_response_valid() throws Exception {
+        var payload = mapper.readTree(
+                "{\"currentTime\":\"2026-04-21T10:00:00Z\",\"interval\":900,\"status\":\"Accepted\"}");
 
         var result = validator.validateResponse(OcppProtocol.OCPP_201, "BootNotification", payload);
 
         assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void ocpp201_bootNotification_response_missingRequired() throws Exception {
+        var payload = mapper.readTree("{\"status\":\"Accepted\"}");
+
+        var result = validator.validateResponse(OcppProtocol.OCPP_201, "BootNotification", payload);
+
+        assertThat(result.isValid()).isFalse();
+    }
+
+    @Test
+    void ocpp16_authorize_response_valid() throws Exception {
+        var payload = mapper.readTree(
+                "{\"idTagInfo\":{\"status\":\"Accepted\"}}");
+
+        var result = validator.validateResponse(OcppProtocol.OCPP_16, "Authorize", payload);
+
+        assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void ocpp16_authorize_response_invalidStatus() throws Exception {
+        var payload = mapper.readTree(
+                "{\"idTagInfo\":{\"status\":\"NotARealStatus\"}}");
+
+        var result = validator.validateResponse(OcppProtocol.OCPP_16, "Authorize", payload);
+
+        assertThat(result.isValid()).isFalse();
     }
 }

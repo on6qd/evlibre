@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:TransactionEventResponse",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "AuthorizationStatusEnumType": {
+      "description": "Current status of the ID Token.",
+      "javaType": "AuthorizationStatusEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Accepted",
+        "Blocked",
+        "ConcurrentTx",
+        "Expired",
+        "Invalid",
+        "NoCredit",
+        "NotAllowedTypeEVSE",
+        "NotAtThisLocation",
+        "NotAtThisTime",
+        "Unknown"
+      ]
+    },
+    "MessageFormatEnumType": {
+      "description": "Format of the message.",
+      "javaType": "MessageFormatEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "ASCII",
+        "HTML",
+        "URI",
+        "UTF8"
+      ]
+    },
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "AdditionalInfoType": {
+      "javaType": "AdditionalInfo",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "additionalIdToken": {
+          "type": "string",
+          "maxLength": 36
+        },
+        "type": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "additionalIdToken",
+        "type"
+      ]
+    },
+    "IdTokenType": {
+      "javaType": "IdToken",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "additionalInfo": {
+          "type": "array",
+          "additionalItems": false,
+          "items": {
+            "$ref": "#/definitions/AdditionalInfoType"
+          },
+          "minItems": 1
+        },
+        "idToken": {
+          "type": "string",
+          "maxLength": 36
+        },
+        "type": {
+          "type": "string",
+          "maxLength": 20
+        }
+      },
+      "required": [
+        "idToken",
+        "type"
+      ]
+    },
+    "MessageContentType": {
+      "javaType": "MessageContent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "format": {
+          "$ref": "#/definitions/MessageFormatEnumType"
+        },
+        "language": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "format",
+        "content"
+      ]
+    },
+    "IdTokenInfoType": {
+      "javaType": "IdTokenInfo",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "status": {
+          "$ref": "#/definitions/AuthorizationStatusEnumType"
+        },
+        "cacheExpiryDateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chargingPriority": {
+          "type": "integer"
+        },
+        "language1": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "evseId": {
+          "type": "array",
+          "additionalItems": false,
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1
+        },
+        "groupIdToken": {
+          "$ref": "#/definitions/IdTokenType"
+        },
+        "language2": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "personalMessage": {
+          "$ref": "#/definitions/MessageContentType"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "totalCost": {
+      "description": "Current total cost, based on the information known by the CSMS, of the transaction including taxes. In the currency configured with the Configuration Variable: Currency",
+      "type": "number"
+    },
+    "chargingPriority": {
+      "description": "Priority from a business point of view. Default priority is 0, The range is from -9 to 9. Higher values indicate a higher priority. The chargingPriority in TransactionEventResponse overrules this one.",
+      "type": "integer"
+    },
+    "idTokenInfo": {
+      "$ref": "#/definitions/IdTokenInfoType"
+    },
+    "updatedPersonalMessage": {
+      "$ref": "#/definitions/MessageContentType"
+    }
+  }
+}

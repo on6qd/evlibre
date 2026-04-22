@@ -93,14 +93,17 @@ public class OcppStationCommandSender {
 
         JsonNode payloadNode = objectMapper.valueToTree(payload);
 
-        // Validate the outgoing request payload if a schema is available. Warn-only
-        // today — partial schema coverage shouldn't block commands that the spec
-        // actually permits but we haven't authored a schema for yet.
+        // Reject any outbound CALL whose payload doesn't match the request schema.
+        // Missing schema still passes (see OcppSchemaValidator contract) so non-wired
+        // actions aren't blocked.
         if (schemaValidator != null) {
             var outboundCheck = schemaValidator.validateRequest(requiredProtocol, action, payloadNode);
             if (!outboundCheck.isValid()) {
                 log.warn("Outbound {} ({}) payload failed schema validation: {}",
                         action, requiredProtocol, outboundCheck.errorMessage());
+                return CompletableFuture.failedFuture(new IllegalArgumentException(
+                        "Outbound " + action + " payload failed schema validation: "
+                                + outboundCheck.errorMessage()));
             }
         }
 

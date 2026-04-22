@@ -19,7 +19,7 @@ public class HandleDataTransferUseCase implements HandleDataTransferPort {
     private final OcppEventLogPort eventLog;
     // Case-insensitive allow-list of vendorIds the CSMS recognizes. Reverse-DNS form
     // per OCPP 1.6 §5.13 (e.g. "com.vendor.product"). Empty by default — all incoming
-    // DataTransfer requests will be answered with UnknownVendor unless the operator
+    // DataTransfer requests will be answered with UnknownVendorId unless the operator
     // adds an entry here.
     private final Set<String> knownVendorIds;
 
@@ -41,10 +41,10 @@ public class HandleDataTransferUseCase implements HandleDataTransferPort {
         eventLog.logEvent(tenantId.value(), "DataTransfer", "DataTransfer", "CS->CSMS",
                 String.format("vendorId=%s, messageId=%s", vendorId, messageId));
 
-        // OCPP 1.6 §5.13: unknown vendorId MUST be answered with UnknownVendor.
+        // OCPP 1.6 §5.13: unknown vendorId MUST be answered with UnknownVendorId.
         String vendorKey = vendorId == null ? "" : vendorId.toLowerCase(Locale.ROOT);
         if (!knownVendorIds.contains(vendorKey)) {
-            return new CommandResult("UnknownVendor");
+            return new CommandResult("UnknownVendorId");
         }
 
         // Known vendor but no registered messageId handler → UnknownMessageId.
