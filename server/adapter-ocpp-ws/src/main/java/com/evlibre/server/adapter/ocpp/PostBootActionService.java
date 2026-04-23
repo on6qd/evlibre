@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Sends post-boot CSMS-initiated messages after a station's BootNotification is accepted.
@@ -29,6 +30,11 @@ public class PostBootActionService {
     private final Ocpp16StationCommandSender commandSender16;
     private final GetBaseReportPort getBaseReportPort;
     private final StationConfigurationPort configurationPort;
+    // Monotonic per-process requestId for post-boot GetBaseReport. B07.FR.04 only
+    // requires the station to echo the same id on its follow-up NotifyReport frames;
+    // uniqueness across simultaneous station boots lets log entries line up even
+    // though inbound aggregation is not wired yet.
+    private final AtomicInteger postBootRequestId = new AtomicInteger(1);
 
     public PostBootActionService(Ocpp16StationCommandSender commandSender16,
                                  GetBaseReportPort getBaseReportPort,
@@ -79,7 +85,8 @@ public class PostBootActionService {
     }
 
     private void sendGetBaseReport(TenantId tenantId, ChargePointIdentity stationIdentity) {
-        getBaseReportPort.getBaseReport(tenantId, stationIdentity, 0, ReportBase.FULL_INVENTORY)
+        int requestId = postBootRequestId.getAndIncrement();
+        getBaseReportPort.getBaseReport(tenantId, stationIdentity, requestId, ReportBase.FULL_INVENTORY)
                 .exceptionally(error -> {
                     log.warn("GetBaseReport failed for {}: {}", stationIdentity.value(), error.getMessage());
                     return null;

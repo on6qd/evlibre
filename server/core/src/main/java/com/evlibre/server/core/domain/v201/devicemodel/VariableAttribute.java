@@ -10,6 +10,13 @@ package com.evlibre.server.core.domain.v201.devicemodel;
  * corresponding argument is {@code null}; the wire form makes these fields
  * optional and callers should be able to pass {@code null} to mean "spec
  * default".
+ *
+ * <p>{@code value} is also nullable: per spec §2.41 it is an optional field on
+ * the wire for any mutability, not just {@code WriteOnly}. A {@code ReadOnly}
+ * attribute without a currently-assigned value legitimately reports no
+ * {@code value} in a {@code NotifyReport} — enforcing presence here would make
+ * the domain stricter than the spec and crash the inbound path for compliant
+ * stations.
  */
 public record VariableAttribute(
         AttributeType type,
@@ -30,10 +37,6 @@ public record VariableAttribute(
         if (value != null && value.length() > VALUE_MAX) {
             throw new IllegalArgumentException(
                     "VariableAttribute.value must be <= " + VALUE_MAX + " chars, got " + value.length());
-        }
-        if (value == null && mutability != Mutability.WRITE_ONLY) {
-            throw new IllegalArgumentException(
-                    "VariableAttribute.value is required unless mutability is WriteOnly");
         }
     }
 

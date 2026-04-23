@@ -18,6 +18,11 @@ import java.util.concurrent.CompletableFuture;
  * <p>Both filter lists are optional; passing an empty set/list omits the
  * respective field on the wire. At most four criteria may be combined per the
  * spec.
+ *
+ * <p><b>Correlation is not yet wired on the inbound side</b> — see
+ * {@link GetBaseReportPort} for the same caveat. The current
+ * {@code NotifyReportHandler201} fires each frame's {@code reportData} into the
+ * repo independently; request-scoped aggregation is a follow-up task.
  */
 public interface GetReportPort {
 

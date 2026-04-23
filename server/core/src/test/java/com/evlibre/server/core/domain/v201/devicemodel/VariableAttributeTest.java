@@ -33,18 +33,15 @@ class VariableAttributeTest {
     }
 
     @Test
-    void WriteOnly_allows_null_value() {
-        var attr = new VariableAttribute(AttributeType.ACTUAL, null, Mutability.WRITE_ONLY, false, false);
-
-        assertThat(attr.value()).isNull();
-        assertThat(attr.mutability()).isEqualTo(Mutability.WRITE_ONLY);
-    }
-
-    @Test
-    void null_value_with_non_WriteOnly_mutability_throws() {
-        assertThatThrownBy(() -> new VariableAttribute(AttributeType.ACTUAL, null, Mutability.READ_ONLY, false, false))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("WriteOnly");
+    void null_value_allowed_for_any_mutability() {
+        // Spec §2.41: attributeValue is optional on the wire for any mutability.
+        // ReadOnly / ReadWrite attributes without a currently-assigned value legitimately
+        // omit the field — the domain must not reject them.
+        for (Mutability m : Mutability.values()) {
+            var attr = new VariableAttribute(AttributeType.ACTUAL, null, m, false, false);
+            assertThat(attr.value()).isNull();
+            assertThat(attr.mutability()).isEqualTo(m);
+        }
     }
 
     @Test

@@ -149,6 +149,28 @@ class GetVariablesUseCaseV201Test {
     }
 
     @Test
+    void accepted_with_empty_attributeValue_is_preserved_as_empty_string() {
+        // Spec §1.26: an Accepted variable that currently has no assigned value
+        // (e.g. a Target not yet set) SHALL return attributeValue as "". The decoder
+        // must pass that through — collapsing it to null would make it
+        // indistinguishable from a non-Accepted entry whose value is legitimately absent.
+        Map<String, Object> entry = Map.of(
+                "attributeStatus", "Accepted",
+                "attributeValue", "",
+                "component", Map.of("name", "C"),
+                "variable", Map.of("name", "V"));
+        commandSender.setNextResponse(Map.of("getVariableResult", List.of(entry)));
+
+        List<GetVariableResult> results = useCase.getVariables(tenantId, station,
+                        List.of(GetVariableData.of(Component.of("C"), Variable.of("V"))))
+                .join();
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).status()).isEqualTo(GetVariableStatus.ACCEPTED);
+        assertThat(results.get(0).attributeValue()).isEqualTo("");
+    }
+
+    @Test
     void status_info_reason_propagated_when_present() {
         Map<String, Object> entry = Map.of(
                 "attributeStatus", "Rejected",

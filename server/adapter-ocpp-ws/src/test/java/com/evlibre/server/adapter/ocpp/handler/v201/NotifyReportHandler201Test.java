@@ -122,6 +122,28 @@ class NotifyReportHandler201Test {
     }
 
     @Test
+    void readOnly_attribute_with_missing_value_does_not_crash() throws Exception {
+        // Regression: VariableAttribute.value is optional on the wire for any
+        // mutability per spec §2.41. A compliant ReadOnly attribute with no
+        // currently-assigned value must not crash the handler.
+        JsonNode payload = objectMapper.readTree("""
+                {
+                  "requestId": 1, "seqNo": 0, "generatedAt": "2026-04-21T10:00:00Z",
+                  "reportData": [{
+                    "component": {"name": "EVSE"},
+                    "variable": {"name": "CableLength"},
+                    "variableAttribute": [{"type": "Actual", "mutability": "ReadOnly"}]
+                  }]
+                }""");
+
+        handler.handle(session, "msg-readonly-null", payload);
+
+        var attr = port.captured.get(0).attributes().get(0);
+        assertThat(attr.value()).isNull();
+        assertThat(attr.mutability()).isEqualTo(Mutability.READ_ONLY);
+    }
+
+    @Test
     void missing_characteristics_yields_null() throws Exception {
         JsonNode payload = objectMapper.readTree("""
                 {
