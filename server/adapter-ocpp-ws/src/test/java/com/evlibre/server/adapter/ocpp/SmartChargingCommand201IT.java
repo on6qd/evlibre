@@ -319,7 +319,9 @@ class SmartChargingCommand201IT {
                     client.onCommand("GetChargingProfiles", "NoProfiles");
                     GetChargingProfilesUseCaseV201 useCase =
                             new GetChargingProfilesUseCaseV201(harness.commandSender201);
-                    return useCase.getChargingProfiles(TENANT, STATION, 888, null, ChargingProfileCriterion.all())
+                    ChargingProfileCriterion everyPurpose = new ChargingProfileCriterion(
+                            null, null, null, 0);
+                    return useCase.getChargingProfiles(TENANT, STATION, 888, null, everyPurpose)
                             .thenApply(result -> {
                                 ctx.verify(() -> {
                                     assertThat(result.isAccepted()).isFalse();

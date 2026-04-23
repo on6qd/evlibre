@@ -32,8 +32,11 @@ class GetChargingProfilesUseCaseV201Test {
     }
 
     @Test
-    void payload_with_empty_criterion_omits_optional_fields() {
-        useCase.getChargingProfiles(tenantId, station, 101, null, ChargingProfileCriterion.all()).join();
+    void payload_with_single_field_criterion_omits_other_fields() {
+        ChargingProfileCriterion c = new ChargingProfileCriterion(
+                null, null, ChargingProfilePurpose.TX_DEFAULT_PROFILE, null);
+
+        useCase.getChargingProfiles(tenantId, station, 101, null, c).join();
 
         var cmd = commandSender.commands().get(0);
         assertThat(cmd.action()).isEqualTo("GetChargingProfiles");
@@ -43,15 +46,28 @@ class GetChargingProfilesUseCaseV201Test {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> criterionWire = (Map<String, Object>) cmd.payload().get("chargingProfile");
-        assertThat(criterionWire).isEmpty();
+        assertThat(criterionWire)
+                .containsEntry("chargingProfilePurpose", "TxDefaultProfile")
+                .doesNotContainKeys("chargingLimitSource", "chargingProfileId", "stackLevel");
     }
 
     @Test
     void payload_with_evse_id_zero_serialised() {
-        useCase.getChargingProfiles(tenantId, station, 42, 0, ChargingProfileCriterion.all()).join();
+        ChargingProfileCriterion c = new ChargingProfileCriterion(null, List.of(7), null, null);
+
+        useCase.getChargingProfiles(tenantId, station, 42, 0, c).join();
 
         var cmd = commandSender.commands().get(0);
         assertThat(cmd.payload()).containsEntry("evseId", 0);
+    }
+
+    @Test
+    void empty_criterion_rejected_k09_fr_03() {
+        ChargingProfileCriterion empty = new ChargingProfileCriterion(null, null, null, null);
+
+        assertThatThrownBy(() -> useCase.getChargingProfiles(tenantId, station, 1, null, empty))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("K09.FR.03");
     }
 
     @Test
@@ -82,8 +98,9 @@ class GetChargingProfilesUseCaseV201Test {
 
     @Test
     void accepted_status_parsed() {
+        ChargingProfileCriterion c = new ChargingProfileCriterion(null, List.of(1), null, null);
         GetChargingProfilesResult r = useCase.getChargingProfiles(
-                tenantId, station, 1, null, ChargingProfileCriterion.all()).join();
+                tenantId, station, 1, null, c).join();
 
         assertThat(r.isAccepted()).isTrue();
         assertThat(r.status()).isEqualTo(GetChargingProfilesStatus.ACCEPTED);
@@ -92,9 +109,10 @@ class GetChargingProfilesUseCaseV201Test {
     @Test
     void no_profiles_status_parsed() {
         commandSender.setNextResponse(Map.of("status", "NoProfiles"));
+        ChargingProfileCriterion c = new ChargingProfileCriterion(null, List.of(1), null, null);
 
         GetChargingProfilesResult r = useCase.getChargingProfiles(
-                tenantId, station, 1, null, ChargingProfileCriterion.all()).join();
+                tenantId, station, 1, null, c).join();
 
         assertThat(r.isAccepted()).isFalse();
         assertThat(r.status()).isEqualTo(GetChargingProfilesStatus.NO_PROFILES);
@@ -103,17 +121,20 @@ class GetChargingProfilesUseCaseV201Test {
     @Test
     void unknown_wire_status_rejected() {
         commandSender.setNextResponse(Map.of("status", "Maybe"));
+        ChargingProfileCriterion c = new ChargingProfileCriterion(null, List.of(1), null, null);
 
         assertThatThrownBy(() -> useCase.getChargingProfiles(
-                tenantId, station, 1, null, ChargingProfileCriterion.all()).join())
+                tenantId, station, 1, null, c).join())
                 .hasCauseInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Maybe");
     }
 
     @Test
     void negative_evse_id_rejected() {
+        ChargingProfileCriterion c = new ChargingProfileCriterion(null, List.of(1), null, null);
+
         assertThatThrownBy(() -> useCase.getChargingProfiles(
-                tenantId, station, 1, -1, ChargingProfileCriterion.all()))
+                tenantId, station, 1, -1, c))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("evseId");
     }

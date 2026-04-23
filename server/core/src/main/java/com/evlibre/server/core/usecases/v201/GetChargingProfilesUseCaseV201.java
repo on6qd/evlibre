@@ -39,6 +39,11 @@ public class GetChargingProfilesUseCaseV201 implements GetChargingProfilesPort {
         Objects.requireNonNull(tenantId, "tenantId");
         Objects.requireNonNull(stationIdentity, "stationIdentity");
         Objects.requireNonNull(criterion, "criterion");
+        if (criterion.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "K09.FR.03: GetChargingProfiles criterion must specify either chargingProfileId(s)"
+                            + " OR at least one of chargingLimitSource/chargingProfilePurpose/stackLevel");
+        }
         if (evseId != null && evseId < 0) {
             throw new IllegalArgumentException("evseId must be >= 0 when present, got " + evseId);
         }

@@ -10,11 +10,12 @@ import java.util.Objects;
  * {@link ChargingLimitSource}s and profile ids, whereas the Clear variant has
  * only the (evseId/purpose/stackLevel) triple.
  *
- * <p>Per K09.FR.03 the caller supplies either a list of profile ids OR one or
- * more of the other criteria (limit source, purpose, stack level). Absence of
- * any filter means "return everything". All list fields here are optional;
- * {@code null} is treated the same as an empty list on the wire (field
- * omitted).
+ * <p>K09.FR.03 requires the CSMS to populate this with <em>either</em> a list
+ * of profile ids <em>or</em> at least one of {@code chargingLimitSource},
+ * {@code chargingProfilePurpose}, {@code stackLevel}. The validity of that
+ * rule is enforced by {@link #isEmpty()} at the use-case call site so empty
+ * criteria never reach the wire. All list fields here are optional on the
+ * wire; {@code null} is treated the same as an empty list (field omitted).
  */
 public record ChargingProfileCriterion(
         List<ChargingLimitSource> chargingLimitSource,
@@ -38,7 +39,10 @@ public record ChargingProfileCriterion(
         }
     }
 
-    public static ChargingProfileCriterion all() {
-        return new ChargingProfileCriterion(null, null, null, null);
+    public boolean isEmpty() {
+        return (chargingLimitSource == null || chargingLimitSource.isEmpty())
+                && (chargingProfileId == null || chargingProfileId.isEmpty())
+                && chargingProfilePurpose == null
+                && stackLevel == null;
     }
 }
