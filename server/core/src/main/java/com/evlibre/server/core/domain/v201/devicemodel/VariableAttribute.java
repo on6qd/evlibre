@@ -16,7 +16,9 @@ package com.evlibre.server.core.domain.v201.devicemodel;
  * attribute without a currently-assigned value legitimately reports no
  * {@code value} in a {@code NotifyReport} — enforcing presence here would make
  * the domain stricter than the spec and crash the inbound path for compliant
- * stations.
+ * stations. When present, {@code value} is capped at 2500 characters per spec
+ * §1.42 (the {@code AttributeValueType} max length); oversized values are
+ * rejected at construction.
  */
 public record VariableAttribute(
         AttributeType type,

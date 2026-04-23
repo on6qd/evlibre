@@ -33,7 +33,10 @@ public class PostBootActionService {
     // Monotonic per-process requestId for post-boot GetBaseReport. B07.FR.04 only
     // requires the station to echo the same id on its follow-up NotifyReport frames;
     // uniqueness across simultaneous station boots lets log entries line up even
-    // though inbound aggregation is not wired yet.
+    // though inbound aggregation is not wired yet. Note: the id space is NOT
+    // partitioned from operator-triggered GetBaseReport/GetReport calls — once
+    // aggregation lands, the aggregator should disambiguate by (station, requestId)
+    // tuple rather than requestId alone.
     private final AtomicInteger postBootRequestId = new AtomicInteger(1);
 
     public PostBootActionService(Ocpp16StationCommandSender commandSender16,
