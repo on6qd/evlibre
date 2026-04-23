@@ -154,6 +154,10 @@ Phase 5 tally: 7 new outbound use cases, 5 new inbound handlers, ~19 new schema 
 
 Phase 6 tally: 4 new outbound use cases (UpdateFirmware, GetLog, PublishFirmware + the existing pattern), 4 new inbound handlers (FirmwareStatusNotification, LogStatusNotification, NotifyEvent, PublishFirmwareStatusNotification), ~12 new schema files; 147 integration tests in `adapter-ocpp-ws` (up from 129 at end of Phase 5). New `domain/v201/firmware/` and `domain/v201/diagnostics/` packages bootstrap Phase 7 (Security/Certificates) and Phase 8 (Monitoring/Display) — `EventData` will extend naturally to `NotifyMonitoringReport`, and the firmware update/security flows already share the StatusInfo shape used by certificate ops.
 
+### Phase 6 audit follow-ups (2026-04-23)
+- [x] L01.FR.11 + L01.FR.12: `Firmware` now rejects lopsided `signingCertificate` / `signature` pairs (either both present for a secure update, or both absent for L02). Covered by new `FirmwareTest`.
+- [x] L03.FR.02: `PublishFirmwareUseCaseV201` now enforces checksum is a 32-char hex string (regex), matching the spec's "hexadecimal string of length 32" contract — not just `length == 32`. Also cleaned up the put-then-remove payload builder to the conditional-put pattern used by `UpdateFirmwareUseCaseV201`. Covered by new `PublishFirmwareUseCaseV201Test`.
+
 ## Phase 7 — Security & Certificates (Blocks A, M)
 - [ ] Inbound: `SecurityEventNotification`.
 - [ ] Inbound: `SignCertificate`.

@@ -41,6 +41,13 @@ public record Firmware(
             throw new IllegalArgumentException(
                     "signature exceeds 800 char limit (" + signature.length() + ")");
         }
+        // L01.FR.11 + L01.FR.12: the station verifies the signature using the
+        // signing certificate. Either both are present (secure update) or both
+        // are absent (non-secure L02 flow); mixing the two is a client error.
+        if ((signingCertificate == null) != (signature == null)) {
+            throw new IllegalArgumentException(
+                    "signingCertificate and signature must be supplied together");
+        }
     }
 
     public static Firmware basic(String location, Instant retrieveDateTime) {

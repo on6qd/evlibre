@@ -13,10 +13,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 
 public class PublishFirmwareUseCaseV201 implements PublishFirmwarePort {
 
     private static final Logger log = LoggerFactory.getLogger(PublishFirmwareUseCaseV201.class);
+    private static final Pattern MD5_HEX = Pattern.compile("[0-9a-fA-F]{32}");
 
     private final Ocpp201StationCommandSender commandSender;
 
@@ -44,11 +46,11 @@ public class PublishFirmwareUseCaseV201 implements PublishFirmwarePort {
             throw new IllegalArgumentException(
                     "location exceeds 512 char limit (" + location.length() + ")");
         }
-        if (checksum.length() != 32) {
-            // OCA spec lists maxLength=32; MD5 hex is exactly 32 chars and the field
-            // exists specifically to carry an MD5 — anything else is misuse.
+        if (!MD5_HEX.matcher(checksum).matches()) {
+            // OCA spec description: "MD5 checksum over the entire firmware file
+            // as a hexadecimal string of length 32" — the field is MD5-hex only.
             throw new IllegalArgumentException(
-                    "checksum must be a 32-char MD5 hex string, got length " + checksum.length());
+                    "checksum must be a 32-char MD5 hex string, got " + checksum);
         }
         if (retries != null && retries < 0) {
             throw new IllegalArgumentException("retries must be >= 0 when present, got " + retries);
@@ -60,16 +62,13 @@ public class PublishFirmwareUseCaseV201 implements PublishFirmwarePort {
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("location", location);
-        payload.put("retries", retries);
+        if (retries != null) {
+            payload.put("retries", retries);
+        }
         payload.put("checksum", checksum);
         payload.put("requestId", requestId);
-        payload.put("retryInterval", retryInterval);
-        // Strip the optional fields if absent — keep the wire shape minimal.
-        if (retries == null) {
-            payload.remove("retries");
-        }
-        if (retryInterval == null) {
-            payload.remove("retryInterval");
+        if (retryInterval != null) {
+            payload.put("retryInterval", retryInterval);
         }
 
         log.info("Sending PublishFirmware(requestId={}, location={}) to {} (tenant: {})",
