@@ -4,17 +4,13 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.dto.RequestStartStopStatus;
 import com.evlibre.server.core.domain.v201.dto.RequestStartTransactionResult;
-import com.evlibre.server.core.domain.v201.model.AdditionalInfo;
 import com.evlibre.server.core.domain.v201.model.IdToken;
-import com.evlibre.server.core.domain.v201.model.IdTokenType;
 import com.evlibre.server.core.domain.v201.ports.inbound.RequestStartTransactionPort;
 import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -46,12 +42,12 @@ public class RequestStartTransactionUseCaseV201 implements RequestStartTransacti
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("remoteStartId", remoteStartId);
-        payload.put("idToken", idTokenToWire(idToken));
+        payload.put("idToken", IdTokenWire.toWire(idToken));
         if (evseId != null) {
             payload.put("evseId", evseId);
         }
         if (groupIdToken != null) {
-            payload.put("groupIdToken", idTokenToWire(groupIdToken));
+            payload.put("groupIdToken", IdTokenWire.toWire(groupIdToken));
         }
 
         log.info("Sending RequestStartTransaction(remoteStartId={}, evseId={}) to {} (tenant: {})",
@@ -87,34 +83,5 @@ public class RequestStartTransactionUseCaseV201 implements RequestStartTransacti
 
     private static String stringOrNull(Object v) {
         return v == null ? null : String.valueOf(v);
-    }
-
-    private static Map<String, Object> idTokenToWire(IdToken token) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("idToken", token.idToken());
-        out.put("type", idTokenTypeToWire(token.type()));
-        if (token.additionalInfo() != null) {
-            List<Map<String, Object>> extras = new ArrayList<>(token.additionalInfo().size());
-            for (AdditionalInfo info : token.additionalInfo()) {
-                extras.add(Map.of(
-                        "additionalIdToken", info.additionalIdToken(),
-                        "type", info.type()));
-            }
-            out.put("additionalInfo", extras);
-        }
-        return out;
-    }
-
-    private static String idTokenTypeToWire(IdTokenType t) {
-        return switch (t) {
-            case CENTRAL -> "Central";
-            case EMAID -> "eMAID";
-            case ISO14443 -> "ISO14443";
-            case ISO15693 -> "ISO15693";
-            case KEY_CODE -> "KeyCode";
-            case LOCAL -> "Local";
-            case MAC_ADDRESS -> "MacAddress";
-            case NO_AUTHORIZATION -> "NoAuthorization";
-        };
     }
 }
