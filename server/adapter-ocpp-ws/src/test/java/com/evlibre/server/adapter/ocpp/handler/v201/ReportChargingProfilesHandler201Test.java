@@ -132,9 +132,10 @@ class ReportChargingProfilesHandler201Test {
                     "id": 1,
                     "stackLevel": 0,
                     "chargingProfilePurpose": "ChargingStationMaxProfile",
-                    "chargingProfileKind": "Relative",
+                    "chargingProfileKind": "Absolute",
                     "chargingSchedule": [{
                       "id": 1,
+                      "startSchedule": "2027-03-01T00:00:00Z",
                       "chargingRateUnit": "W",
                       "chargingSchedulePeriod": [{"startPeriod": 0, "limit": 50000.0}]
                     }]

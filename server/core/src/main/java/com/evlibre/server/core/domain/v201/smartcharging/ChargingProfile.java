@@ -13,9 +13,11 @@ import java.util.Objects;
  *   <li>{@link ChargingProfileKind#RECURRING} profiles MUST carry a
  *       {@link RecurrencyKind} and every schedule MUST have {@code startSchedule}.
  *   <li>{@link ChargingProfileKind#ABSOLUTE} profiles MUST have {@code startSchedule}
- *       on every schedule.
+ *       on every schedule (K01.FR.40).
  *   <li>{@link ChargingProfileKind#RELATIVE} profiles MUST NOT have
- *       {@code startSchedule} on any schedule (start time = start of transaction).
+ *       {@code startSchedule} on any schedule (K01.FR.41).
+ *   <li>{@link ChargingProfilePurpose#CHARGING_STATION_MAX_PROFILE} MUST NOT be
+ *       combined with {@link ChargingProfileKind#RELATIVE} (K01.FR.38).
  *   <li>{@link ChargingProfilePurpose#TX_PROFILE} requires a non-null
  *       {@code transactionId}; other purposes forbid it.
  * </ul>
@@ -49,6 +51,11 @@ public record ChargingProfile(
 
         if (chargingProfileKind == ChargingProfileKind.RECURRING && recurrencyKind == null) {
             throw new IllegalArgumentException("recurrencyKind is required when kind=Recurring");
+        }
+        if (chargingProfilePurpose == ChargingProfilePurpose.CHARGING_STATION_MAX_PROFILE
+                && chargingProfileKind == ChargingProfileKind.RELATIVE) {
+            throw new IllegalArgumentException(
+                    "K01.FR.38: chargingProfileKind SHALL NOT be Relative when purpose=ChargingStationMaxProfile");
         }
         if (chargingProfileKind == ChargingProfileKind.RELATIVE) {
             for (ChargingSchedule s : chargingSchedule) {

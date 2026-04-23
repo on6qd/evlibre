@@ -55,10 +55,12 @@ public class SetChargingProfileUseCaseV201 implements SetChargingProfilePort {
 
     private static void validatePurposeEvseCombination(int evseId, ChargingProfilePurpose purpose) {
         switch (purpose) {
-            case CHARGING_STATION_MAX_PROFILE, CHARGING_STATION_EXTERNAL_CONSTRAINTS -> {
+            case CHARGING_STATION_EXTERNAL_CONSTRAINTS -> throw new IllegalArgumentException(
+                    "K01.FR.22: CSMS SHALL NOT set chargingProfilePurpose to ChargingStationExternalConstraints");
+            case CHARGING_STATION_MAX_PROFILE -> {
                 if (evseId != 0) {
                     throw new IllegalArgumentException(
-                            "purpose=" + purpose + " requires evseId=0 (K01), got " + evseId);
+                            "purpose=ChargingStationMaxProfile requires evseId=0 (K01), got " + evseId);
                 }
             }
             case TX_PROFILE -> {

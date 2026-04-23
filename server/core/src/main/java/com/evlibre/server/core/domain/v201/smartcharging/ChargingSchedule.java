@@ -36,8 +36,18 @@ public record ChargingSchedule(
         }
         if (chargingSchedulePeriod.get(0).startPeriod() != 0) {
             throw new IllegalArgumentException(
-                    "first ChargingSchedulePeriod.startPeriod must be 0, got "
+                    "first ChargingSchedulePeriod.startPeriod must be 0 (K01.FR.31), got "
                             + chargingSchedulePeriod.get(0).startPeriod());
+        }
+        for (int i = 1; i < chargingSchedulePeriod.size(); i++) {
+            int prev = chargingSchedulePeriod.get(i - 1).startPeriod();
+            int curr = chargingSchedulePeriod.get(i).startPeriod();
+            if (curr <= prev) {
+                throw new IllegalArgumentException(
+                        "chargingSchedulePeriod entries must be ordered by strictly increasing startPeriod"
+                                + " (K01.FR.35); found startPeriod[" + (i - 1) + "]=" + prev
+                                + " >= startPeriod[" + i + "]=" + curr);
+            }
         }
         chargingSchedulePeriod = List.copyOf(chargingSchedulePeriod);
         if (duration != null && duration < 0) {

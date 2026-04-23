@@ -75,6 +75,8 @@ class ReportChargingProfiles201IT {
                             .isEqualTo(ChargingProfilePurpose.TX_DEFAULT_PROFILE);
                     assertThat(f.profiles().get(0).chargingProfileKind())
                             .isEqualTo(ChargingProfileKind.RELATIVE);
+                    assertThat(f.profiles().get(0).chargingSchedule().get(0).startSchedule())
+                            .isNull();
                     ctx.completeNow();
                 }));
     }
@@ -91,9 +93,10 @@ class ReportChargingProfiles201IT {
                     "id": 42,
                     "stackLevel": 0,
                     "chargingProfilePurpose": "ChargingStationMaxProfile",
-                    "chargingProfileKind": "Relative",
+                    "chargingProfileKind": "Absolute",
                     "chargingSchedule": [{
                       "id": 1,
+                      "startSchedule": "2027-03-01T00:00:00Z",
                       "chargingRateUnit": "W",
                       "chargingSchedulePeriod": [{"startPeriod": 0, "limit": 50000.0}]
                     }]

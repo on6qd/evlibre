@@ -149,17 +149,58 @@ class SetChargingProfileUseCaseV201Test {
 
     @Test
     void max_profile_requires_evse_zero() {
+        Instant start = Instant.parse("2027-01-01T00:00:00Z");
         ChargingProfile max = new ChargingProfile(
                 1, 0,
                 ChargingProfilePurpose.CHARGING_STATION_MAX_PROFILE,
-                ChargingProfileKind.RELATIVE,
+                ChargingProfileKind.ABSOLUTE,
                 null, null, null, null,
-                List.of(new ChargingSchedule(1, null, null, ChargingRateUnit.WATTS,
+                List.of(new ChargingSchedule(1, start, null, ChargingRateUnit.WATTS,
                         List.of(ChargingSchedulePeriod.of(0, 22000.0)), null)));
 
         assertThatThrownBy(() -> useCase.setChargingProfile(tenantId, station, 1, max))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("evseId=0");
+    }
+
+    @Test
+    void external_constraints_purpose_rejected_k01_fr_22() {
+        Instant start = Instant.parse("2027-01-01T00:00:00Z");
+        ChargingProfile external = new ChargingProfile(
+                1, 0,
+                ChargingProfilePurpose.CHARGING_STATION_EXTERNAL_CONSTRAINTS,
+                ChargingProfileKind.ABSOLUTE,
+                null, null, null, null,
+                List.of(new ChargingSchedule(1, start, null, ChargingRateUnit.WATTS,
+                        List.of(ChargingSchedulePeriod.of(0, 22000.0)), null)));
+
+        assertThatThrownBy(() -> useCase.setChargingProfile(tenantId, station, 0, external))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("K01.FR.22");
+    }
+
+    @Test
+    void max_profile_with_relative_kind_rejected_k01_fr_38() {
+        assertThatThrownBy(() -> new ChargingProfile(
+                1, 0,
+                ChargingProfilePurpose.CHARGING_STATION_MAX_PROFILE,
+                ChargingProfileKind.RELATIVE,
+                null, null, null, null,
+                List.of(new ChargingSchedule(1, null, null, ChargingRateUnit.WATTS,
+                        List.of(ChargingSchedulePeriod.of(0, 22000.0)), null))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("K01.FR.38");
+    }
+
+    @Test
+    void non_increasing_period_start_rejected_k01_fr_35() {
+        assertThatThrownBy(() -> new ChargingSchedule(1, null, null, ChargingRateUnit.AMPERES,
+                List.of(ChargingSchedulePeriod.of(0, 16.0),
+                        ChargingSchedulePeriod.of(900, 11.0),
+                        ChargingSchedulePeriod.of(900, 8.0)),
+                null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("K01.FR.35");
     }
 
     @Test
