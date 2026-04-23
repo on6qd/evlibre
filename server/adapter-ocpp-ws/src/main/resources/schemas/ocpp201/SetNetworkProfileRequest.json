@@ -1,0 +1,241 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:SetNetworkProfileRequest",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "APNAuthenticationEnumType": {
+      "description": "Authentication method for the APN.",
+      "javaType": "APNAuthenticationEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "CHAP",
+        "NONE",
+        "PAP",
+        "AUTO"
+      ]
+    },
+    "OCPPInterfaceEnumType": {
+      "description": "Applicable network interface.",
+      "javaType": "OCPPInterfaceEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Wired0",
+        "Wired1",
+        "Wired2",
+        "Wired3",
+        "Wireless0",
+        "Wireless1",
+        "Wireless2",
+        "Wireless3"
+      ]
+    },
+    "OCPPTransportEnumType": {
+      "description": "Defines the transport protocol (e.g. SOAP or JSON). Note: OCPP 2.0.1 supports JSON only.",
+      "javaType": "OCPPTransportEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "JSON",
+        "SOAP"
+      ]
+    },
+    "OCPPVersionEnumType": {
+      "description": "Defines the OCPP protocol version. OCPP20 is used for v2.0.1 in this field.",
+      "javaType": "OCPPVersionEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "OCPP12",
+        "OCPP15",
+        "OCPP16",
+        "OCPP20"
+      ]
+    },
+    "VPNEnumType": {
+      "description": "Type of VPN.",
+      "javaType": "VPNEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "IKEv2",
+        "IPSec",
+        "L2TP",
+        "PPTP"
+      ]
+    },
+    "APNType": {
+      "description": "APN configuration — cellular/gateway credentials.",
+      "javaType": "APN",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "apn": {
+          "description": "The Access Point Name as an URL.",
+          "type": "string",
+          "maxLength": 512
+        },
+        "apnUserName": {
+          "description": "APN username.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "apnPassword": {
+          "description": "APN password.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "simPin": {
+          "description": "SIM card PIN.",
+          "type": "integer"
+        },
+        "preferredNetwork": {
+          "description": "Preferred network, written as MCC and MNC concatenated.",
+          "type": "string",
+          "maxLength": 6
+        },
+        "useOnlyPreferredNetwork": {
+          "description": "Use only the preferred Network; do not dial in when not available.",
+          "type": "boolean",
+          "default": false
+        },
+        "apnAuthentication": {
+          "$ref": "#/definitions/APNAuthenticationEnumType"
+        }
+      },
+      "required": [
+        "apn",
+        "apnAuthentication"
+      ]
+    },
+    "VPNType": {
+      "description": "VPN configuration.",
+      "javaType": "VPN",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "server": {
+          "description": "VPN Server Address.",
+          "type": "string",
+          "maxLength": 512
+        },
+        "user": {
+          "description": "VPN User.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "group": {
+          "description": "VPN group.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "password": {
+          "description": "VPN Password.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "key": {
+          "description": "VPN shared secret.",
+          "type": "string",
+          "maxLength": 255
+        },
+        "type": {
+          "$ref": "#/definitions/VPNEnumType"
+        }
+      },
+      "required": [
+        "server",
+        "user",
+        "password",
+        "key",
+        "type"
+      ]
+    },
+    "NetworkConnectionProfileType": {
+      "description": "Communication parameters for an OCPP connection, stored on the station at a configurationSlot.",
+      "javaType": "NetworkConnectionProfile",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "apn": {
+          "$ref": "#/definitions/APNType"
+        },
+        "ocppVersion": {
+          "$ref": "#/definitions/OCPPVersionEnumType"
+        },
+        "ocppTransport": {
+          "$ref": "#/definitions/OCPPTransportEnumType"
+        },
+        "ocppCsmsUrl": {
+          "description": "CSMS URL.",
+          "type": "string",
+          "maxLength": 512
+        },
+        "messageTimeout": {
+          "description": "Default timeout in seconds for messages to/from CSMS.",
+          "type": "integer"
+        },
+        "securityProfile": {
+          "description": "Security profile: 1, 2 or 3.",
+          "type": "integer"
+        },
+        "ocppInterface": {
+          "$ref": "#/definitions/OCPPInterfaceEnumType"
+        },
+        "vpn": {
+          "$ref": "#/definitions/VPNType"
+        }
+      },
+      "required": [
+        "ocppVersion",
+        "ocppTransport",
+        "ocppCsmsUrl",
+        "messageTimeout",
+        "securityProfile",
+        "ocppInterface"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "configurationSlot": {
+      "description": "Slot in which the configuration should be stored.",
+      "type": "integer"
+    },
+    "connectionData": {
+      "$ref": "#/definitions/NetworkConnectionProfileType"
+    }
+  },
+  "required": [
+    "configurationSlot",
+    "connectionData"
+  ]
+}

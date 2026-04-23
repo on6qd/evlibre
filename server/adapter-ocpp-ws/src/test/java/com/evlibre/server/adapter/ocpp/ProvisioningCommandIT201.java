@@ -14,9 +14,13 @@ import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
 import com.evlibre.server.core.domain.v201.devicemodel.SetVariableData;
 import com.evlibre.server.core.domain.v201.devicemodel.SetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.network.NetworkConnectionProfile;
+import com.evlibre.server.core.domain.v201.network.OcppInterface;
+import com.evlibre.server.core.domain.v201.network.OcppVersion;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetVariablesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.SetNetworkProfileUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetVariablesUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -318,6 +322,91 @@ class ProvisioningCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send SetVariables via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void set_network_profile_accepted_wire_shape(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("SetNetworkProfile", "Accepted");
+                    SetNetworkProfileUseCaseV201 useCase = new SetNetworkProfileUseCaseV201(harness.commandSender201);
+                    var profile = NetworkConnectionProfile.ofWebSocket(
+                            OcppVersion.OCPP_20, OcppInterface.WIRED_0,
+                            "wss://csms.example.com/ocpp", 30, 3);
+                    return useCase.setNetworkProfile(TENANT, STATION, 1, profile)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    var cmd = client.receivedCommands("SetNetworkProfile").get(0);
+                                    assertThat(cmd.payload().get("configurationSlot").asInt()).isEqualTo(1);
+                                    var conn = cmd.payload().get("connectionData");
+                                    assertThat(conn.get("ocppVersion").asText()).isEqualTo("OCPP20");
+                                    assertThat(conn.get("ocppTransport").asText()).isEqualTo("JSON");
+                                    assertThat(conn.get("ocppInterface").asText()).isEqualTo("Wired0");
+                                    assertThat(conn.get("messageTimeout").asInt()).isEqualTo(30);
+                                    assertThat(conn.get("securityProfile").asInt()).isEqualTo(3);
+                                    assertThat(conn.get("ocppCsmsUrl").asText())
+                                            .isEqualTo("wss://csms.example.com/ocpp");
+                                    assertThat(conn.has("apn")).isFalse();
+                                    assertThat(conn.has("vpn")).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void set_network_profile_failed_status_propagated(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("SetNetworkProfile", "Failed");
+                    SetNetworkProfileUseCaseV201 useCase = new SetNetworkProfileUseCaseV201(harness.commandSender201);
+                    var profile = NetworkConnectionProfile.ofWebSocket(
+                            OcppVersion.OCPP_20, OcppInterface.WIRED_0, "wss://x", 30, 1);
+                    return useCase.setNetworkProfile(TENANT, STATION, 0, profile)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.status()).isEqualTo("Failed");
+                                    assertThat(result.isAccepted()).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void set_network_profile_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    SetNetworkProfileUseCaseV201 useCase = new SetNetworkProfileUseCaseV201(harness.commandSender201);
+                    var profile = NetworkConnectionProfile.ofWebSocket(
+                            OcppVersion.OCPP_20, OcppInterface.WIRED_0, "wss://x", 30, 1);
+                    return useCase.setNetworkProfile(TENANT, STATION, 0, profile)
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send SetNetworkProfile via OCPP_201");
                                 });
                                 client.close();
                                 return null;
