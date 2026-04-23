@@ -7,12 +7,14 @@ import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.devicemodel.Evse;
 import com.evlibre.server.core.domain.v201.dto.RequestStartStopStatus;
 import com.evlibre.server.core.domain.v201.dto.TriggerMessageStatus;
+import com.evlibre.server.core.domain.v201.dto.UnlockStatus;
 import com.evlibre.server.core.domain.v201.model.IdToken;
 import com.evlibre.server.core.domain.v201.model.IdTokenType;
 import com.evlibre.server.core.domain.v201.model.MessageTrigger;
 import com.evlibre.server.core.usecases.v201.RequestStartTransactionUseCaseV201;
 import com.evlibre.server.core.usecases.v201.RequestStopTransactionUseCaseV201;
 import com.evlibre.server.core.usecases.v201.TriggerMessageUseCaseV201;
+import com.evlibre.server.core.usecases.v201.UnlockConnectorUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -337,6 +339,105 @@ class RemoteControlCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send TriggerMessage via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void unlock_connector_unlocked_wire_shape(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("UnlockConnector", "Unlocked");
+                    UnlockConnectorUseCaseV201 useCase =
+                            new UnlockConnectorUseCaseV201(harness.commandSender201);
+                    return useCase.unlockConnector(TENANT, STATION, 2, 1)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isUnlocked()).isTrue();
+                                    assertThat(result.status()).isEqualTo(UnlockStatus.UNLOCKED);
+                                    var cmd = client.receivedCommands("UnlockConnector").get(0);
+                                    assertThat(cmd.payload().get("evseId").asInt()).isEqualTo(2);
+                                    assertThat(cmd.payload().get("connectorId").asInt()).isEqualTo(1);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void unlock_connector_ongoing_transaction_refusal_propagated(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("UnlockConnector", "OngoingAuthorizedTransaction");
+                    UnlockConnectorUseCaseV201 useCase =
+                            new UnlockConnectorUseCaseV201(harness.commandSender201);
+                    return useCase.unlockConnector(TENANT, STATION, 1, 1)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isUnlocked()).isFalse();
+                                    assertThat(result.status())
+                                            .isEqualTo(UnlockStatus.ONGOING_AUTHORIZED_TRANSACTION);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void unlock_connector_unknown_with_status_info_reason(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("UnlockConnector", payload -> Map.of(
+                            "status", "UnknownConnector",
+                            "statusInfo", Map.of("reasonCode", "NoSuchConnector")));
+                    UnlockConnectorUseCaseV201 useCase =
+                            new UnlockConnectorUseCaseV201(harness.commandSender201);
+                    return useCase.unlockConnector(TENANT, STATION, 9, 9)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.status()).isEqualTo(UnlockStatus.UNKNOWN_CONNECTOR);
+                                    assertThat(result.statusInfoReason()).isEqualTo("NoSuchConnector");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void unlock_connector_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    UnlockConnectorUseCaseV201 useCase =
+                            new UnlockConnectorUseCaseV201(harness.commandSender201);
+                    return useCase.unlockConnector(TENANT, STATION, 1, 1)
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send UnlockConnector via OCPP_201");
                                 });
                                 client.close();
                                 return null;
