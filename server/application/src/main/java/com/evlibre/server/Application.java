@@ -27,6 +27,7 @@ import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.domain.v201.dto.GenericStatus;
 import com.evlibre.server.core.domain.v201.dto.NotifyEVChargingNeedsStatus;
 import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleFirmwareStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
@@ -209,6 +210,14 @@ public class Application {
                             return GenericStatus.ACCEPTED;
                         });
 
+        // Firmware-update progress notifications from the station (L01). No persistence
+        // yet — the sink just logs.
+        HandleFirmwareStatusNotificationUseCaseV201 handleFirmwareStatus201 =
+                new HandleFirmwareStatusNotificationUseCaseV201(
+                        (t, s, status, requestId) ->
+                                log.info("FirmwareStatusNotification from {} (status={}, requestId={})",
+                                        s.value(), status, requestId));
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -262,6 +271,8 @@ public class Application {
                 new NotifyEVChargingNeedsHandler201(handleNotifyEVChargingNeeds, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyEVChargingSchedule",
                 new NotifyEVChargingScheduleHandler201(handleNotifyEVChargingSchedule, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "FirmwareStatusNotification",
+                new FirmwareStatusNotificationHandler201(handleFirmwareStatus201, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
