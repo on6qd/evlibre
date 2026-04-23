@@ -116,7 +116,7 @@ All v2.0.1-only use cases; no reuse of v1.6 siblings.
 ## Phase 3 — Availability, Auth, Local List (Blocks C, D, G)
 - [x] Outbound: `ChangeAvailability` — `ChangeAvailabilityUseCaseV201` under `usecases/v201/`; three targeting levels (whole station / whole EVSE / specific connector) via optional `Evse` locator; `OperationalStatus` + `ChangeAvailabilityStatus` enums (incl. `Scheduled` for transaction-in-progress deferral per G03.FR.05 / G04.FR.06). New `ChangeAvailabilityRequest`/`Response` schemas on classpath.
 - [x] Outbound: `ClearCache` — `ClearCacheUseCaseV201` under `usecases/v201/`; empty request, typed `ClearCacheResult` (`Accepted`/`Rejected`) with `statusInfo.reasonCode` surfacing the `AuthCacheDisabled` / technical-failure distinction per C11.FR.04 / C11.FR.05. New `ClearCacheRequest`/`Response` schemas on classpath.
-- [ ] Outbound: `GetLocalListVersion`.
+- [x] Outbound: `GetLocalListVersion` — `GetLocalListVersionUseCaseV201` under `usecases/v201/`; empty request, typed `GetLocalListVersionResult` carrying the integer `versionNumber` (response uses `versionNumber`, not v1.6's `listVersion`). `versionNumber == 0` signals "no list installed" per D02.FR.02 / D02.FR.03; negative values are rejected. New `GetLocalListVersionRequest`/`Response` schemas on classpath.
 - [ ] Outbound: `SendLocalList` — v2.0.1 `AuthorizationData` carries `IdToken` object + `IdTokenInfo`.
 
 ## Phase 4 — Generic Extension Point (Block P)
