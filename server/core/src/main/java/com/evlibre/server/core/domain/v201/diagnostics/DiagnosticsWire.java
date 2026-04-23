@@ -53,4 +53,25 @@ public final class DiagnosticsWire {
                     "Unexpected GetLog status from station: " + wire);
         };
     }
+
+    public static EventTrigger eventTriggerFromWire(String wire) {
+        return switch (wire) {
+            case "Alerting" -> EventTrigger.ALERTING;
+            case "Delta" -> EventTrigger.DELTA;
+            case "Periodic" -> EventTrigger.PERIODIC;
+            default -> throw new IllegalArgumentException(
+                    "Unknown EventTrigger wire value: " + wire);
+        };
+    }
+
+    public static EventNotificationType eventNotificationTypeFromWire(String wire) {
+        return switch (wire) {
+            case "HardWiredNotification" -> EventNotificationType.HARD_WIRED_NOTIFICATION;
+            case "HardWiredMonitor" -> EventNotificationType.HARD_WIRED_MONITOR;
+            case "PreconfiguredMonitor" -> EventNotificationType.PRECONFIGURED_MONITOR;
+            case "CustomMonitor" -> EventNotificationType.CUSTOM_MONITOR;
+            default -> throw new IllegalArgumentException(
+                    "Unknown EventNotificationType wire value: " + wire);
+        };
+    }
 }
