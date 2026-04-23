@@ -24,6 +24,8 @@ import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
@@ -172,6 +174,20 @@ public class Application {
                                 log.info("ReportChargingProfiles frame from {} (requestId={}, source={}, evseId={}, profiles={}, tbc={})",
                                         s.value(), requestId, source, evseId, profiles.size(), tbc));
 
+        // Charging-limit notifications from the station (external EMS/SO/CSO imposed/cleared a limit).
+        // No persistence yet; sinks just log.
+        HandleNotifyChargingLimitUseCaseV201 handleNotifyChargingLimit =
+                new HandleNotifyChargingLimitUseCaseV201(
+                        (t, s, evseId, limit, schedules) ->
+                                log.info("NotifyChargingLimit from {} (evseId={}, source={}, gridCritical={}, schedules={})",
+                                        s.value(), evseId, limit.chargingLimitSource(), limit.isGridCritical(),
+                                        schedules == null ? 0 : schedules.size()));
+        HandleClearedChargingLimitUseCaseV201 handleClearedChargingLimit =
+                new HandleClearedChargingLimitUseCaseV201(
+                        (t, s, source, evseId) ->
+                                log.info("ClearedChargingLimit from {} (source={}, evseId={})",
+                                        s.value(), source, evseId));
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -217,6 +233,10 @@ public class Application {
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
                 new ReportChargingProfilesHandler201(handleReportChargingProfiles, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyChargingLimit",
+                new NotifyChargingLimitHandler201(handleNotifyChargingLimit, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "ClearedChargingLimit",
+                new ClearedChargingLimitHandler201(handleClearedChargingLimit, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

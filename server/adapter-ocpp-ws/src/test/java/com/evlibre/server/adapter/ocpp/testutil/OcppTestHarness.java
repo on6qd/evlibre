@@ -11,6 +11,8 @@ import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
@@ -45,6 +47,7 @@ public class OcppTestHarness {
     public final FakeDeviceModelRepository deviceModelRepo = new FakeDeviceModelRepository();
     public final FakeNotifyReportCompletionPublisher notifyReportCompletion = new FakeNotifyReportCompletionPublisher();
     public final FakeReportChargingProfilesSink reportChargingProfilesSink = new FakeReportChargingProfilesSink();
+    public final FakeChargingLimitSink chargingLimitSink = new FakeChargingLimitSink();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -91,6 +94,10 @@ public class OcppTestHarness {
                 deviceModelRepo, notifyReportCompletion);
         HandleReportChargingProfilesUseCaseV201 handleReportChargingProfiles201 =
                 new HandleReportChargingProfilesUseCaseV201(reportChargingProfilesSink);
+        HandleNotifyChargingLimitUseCaseV201 handleNotifyChargingLimit201 =
+                new HandleNotifyChargingLimitUseCaseV201(chargingLimitSink);
+        HandleClearedChargingLimitUseCaseV201 handleClearedChargingLimit201 =
+                new HandleClearedChargingLimitUseCaseV201(chargingLimitSink);
         // v201 DataTransfer allow-list mirrors v16: empty by default, so incoming requests
         // hit the UnknownVendorId branch unless tests specifically rewire a known vendor.
         HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
@@ -147,6 +154,10 @@ public class OcppTestHarness {
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
                 new ReportChargingProfilesHandler201(handleReportChargingProfiles201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyChargingLimit",
+                new NotifyChargingLimitHandler201(handleNotifyChargingLimit201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "ClearedChargingLimit",
+                new ClearedChargingLimitHandler201(handleClearedChargingLimit201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
