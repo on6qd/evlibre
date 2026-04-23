@@ -31,6 +31,7 @@ import com.evlibre.server.core.usecases.v201.HandleFirmwareStatusNotificationUse
 import com.evlibre.server.core.usecases.v201.HandleLogStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEventUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandlePublishFirmwareStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
@@ -236,6 +237,14 @@ public class Application {
                                 log.info("NotifyEvent from {} (seqNo={}, tbc={}, events={})",
                                         s.value(), seqNo, tbc, events.size()));
 
+        // Local-firmware publish progress from a Local Controller (L03). No persistence
+        // yet — the sink just logs.
+        HandlePublishFirmwareStatusNotificationUseCaseV201 handlePublishFirmwareStatus201 =
+                new HandlePublishFirmwareStatusNotificationUseCaseV201(
+                        (t, s, status, locations, requestId) ->
+                                log.info("PublishFirmwareStatusNotification from {} (status={}, requestId={}, locations={})",
+                                        s.value(), status, requestId, locations.size()));
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -295,6 +304,8 @@ public class Application {
                 new LogStatusNotificationHandler201(handleLogStatus201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyEvent",
                 new NotifyEventHandler201(handleNotifyEvent201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "PublishFirmwareStatusNotification",
+                new PublishFirmwareStatusNotificationHandler201(handlePublishFirmwareStatus201, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

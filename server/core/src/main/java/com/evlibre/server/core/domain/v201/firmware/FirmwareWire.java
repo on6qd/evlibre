@@ -28,6 +28,23 @@ public final class FirmwareWire {
         };
     }
 
+    public static PublishFirmwareStatus publishStatusFromWire(String wire) {
+        return switch (wire) {
+            case "Idle" -> PublishFirmwareStatus.IDLE;
+            case "DownloadScheduled" -> PublishFirmwareStatus.DOWNLOAD_SCHEDULED;
+            case "Downloading" -> PublishFirmwareStatus.DOWNLOADING;
+            case "Downloaded" -> PublishFirmwareStatus.DOWNLOADED;
+            case "DownloadPaused" -> PublishFirmwareStatus.DOWNLOAD_PAUSED;
+            case "DownloadFailed" -> PublishFirmwareStatus.DOWNLOAD_FAILED;
+            case "ChecksumVerified" -> PublishFirmwareStatus.CHECKSUM_VERIFIED;
+            case "InvalidChecksum" -> PublishFirmwareStatus.INVALID_CHECKSUM;
+            case "Published" -> PublishFirmwareStatus.PUBLISHED;
+            case "PublishFailed" -> PublishFirmwareStatus.PUBLISH_FAILED;
+            default -> throw new IllegalArgumentException(
+                    "Unknown PublishFirmwareStatus wire value: " + wire);
+        };
+    }
+
     public static FirmwareStatus statusFromWire(String wire) {
         return switch (wire) {
             case "Downloaded" -> FirmwareStatus.DOWNLOADED;

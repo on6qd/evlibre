@@ -3,7 +3,9 @@ package com.evlibre.server.adapter.ocpp;
 import com.evlibre.server.adapter.ocpp.testutil.OcppMessages;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.v201.firmware.FirmwareStatus;
+import com.evlibre.server.core.domain.v201.firmware.PublishFirmwareStatus;
 import com.evlibre.server.test.fakes.FakeFirmwareStatusSink;
+import com.evlibre.server.test.fakes.FakePublishFirmwareStatusSink;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -70,6 +72,58 @@ class Firmware201IT {
                     FakeFirmwareStatusSink.Event e = harness.firmwareStatusSink.events().get(0);
                     assertThat(e.status()).isEqualTo(FirmwareStatus.IDLE);
                     assertThat(e.requestId()).isNull();
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void publish_firmware_status_published_with_locations(Vertx vertx, VertxTestContext ctx) {
+        // L03.FR.04 — Published status carries one URI per supported protocol
+        String msg = """
+                [2,"pfsn-1","PublishFirmwareStatusNotification",{
+                  "status": "Published",
+                  "requestId": 33,
+                  "location": [
+                    "http://controller.local/fw/v2.bin",
+                    "ftp://controller.local/fw/v2.bin"
+                  ]
+                }]""";
+
+        harness.send201(vertx, "PFW-STATION-201", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "PFW-STATION-201", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).size()).isEqualTo(0);
+
+                    assertThat(harness.publishFirmwareStatusSink.events()).hasSize(1);
+                    FakePublishFirmwareStatusSink.Event e =
+                            harness.publishFirmwareStatusSink.events().get(0);
+                    assertThat(e.status()).isEqualTo(PublishFirmwareStatus.PUBLISHED);
+                    assertThat(e.requestId()).isEqualTo(33);
+                    assertThat(e.locations()).containsExactly(
+                            "http://controller.local/fw/v2.bin",
+                            "ftp://controller.local/fw/v2.bin");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void publish_firmware_status_invalid_checksum_no_locations(Vertx vertx, VertxTestContext ctx) {
+        String msg = """
+                [2,"pfsn-2","PublishFirmwareStatusNotification",{
+                  "status": "InvalidChecksum",
+                  "requestId": 44
+                }]""";
+
+        harness.send201(vertx, "PFW-STATION-202", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "PFW-STATION-202", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(harness.publishFirmwareStatusSink.events()).hasSize(1);
+                    FakePublishFirmwareStatusSink.Event e =
+                            harness.publishFirmwareStatusSink.events().get(0);
+                    assertThat(e.status()).isEqualTo(PublishFirmwareStatus.INVALID_CHECKSUM);
+                    assertThat(e.locations()).isEmpty();
                     ctx.completeNow();
                 }));
     }
