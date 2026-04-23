@@ -36,4 +36,21 @@ public final class DiagnosticsWire {
                     "Unknown UploadLogStatus wire value: " + wire);
         };
     }
+
+    public static String logTypeToWire(LogType type) {
+        return switch (type) {
+            case DIAGNOSTICS_LOG -> "DiagnosticsLog";
+            case SECURITY_LOG -> "SecurityLog";
+        };
+    }
+
+    public static GetLogStatus getLogStatusFromWire(String wire) {
+        return switch (wire) {
+            case "Accepted" -> GetLogStatus.ACCEPTED;
+            case "Rejected" -> GetLogStatus.REJECTED;
+            case "AcceptedCanceled" -> GetLogStatus.ACCEPTED_CANCELED;
+            default -> throw new IllegalStateException(
+                    "Unexpected GetLog status from station: " + wire);
+        };
+    }
 }
