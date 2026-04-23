@@ -1,9 +1,11 @@
 # OCPP 2.0.1 Implementation TODO
 
 Source: OCPP 2.0.1 Edition 4 Errata February 2026 (NotebookLM).
-Last audit: 2026-04-21.
+Last audit: 2026-04-23.
 Phase 0 completed: 2026-04-21 (all subsections done — separation groundwork
 plus full response-schema authoring and hard-reject validation, see 0.4).
+Phase 4 (Block P / DataTransfer) completed: 2026-04-22.
+Phase 5 (Blocks E, H, K — Reservations, Transactions, Smart Charging) completed: 2026-04-23.
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -123,13 +125,17 @@ All v2.0.1-only use cases; no reuse of v1.6 siblings.
 - [x] Inbound `DataTransferHandler201` + use case + schemas — `HandleDataTransferUseCaseV201` + `DataTransferHandler201` under `handler/v201/`; v201-scoped `DataTransferStatus` / `DataTransferResult` DTOs; `data` is anyType (Jackson `JsonNode` at the wire, plain `Object` in the domain port). Default vendor allow-list is empty, so every CS→CSMS request resolves to `UnknownVendorId` per P02.FR.06; known vendors fall through to `Accepted`. New `DataTransferRequest`/`Response` schemas on classpath.
 - [x] Outbound `DataTransferUseCaseV201` + schemas — `SendDataTransferUseCaseV201` under `usecases/v201/` against `Ocpp201StationCommandSender`. Accepts primitives/lists/maps for the opaque `data` field, parses the 4-valued `DataTransferStatus` plus optional `statusInfo.reasonCode`, and surfaces the station's response `data` back through `DataTransferResult.data()`. Request/Response schemas are shared with the inbound path.
 
-## Phase 5 — Reservations, Transactions, Smart Charging (Blocks E, H, K)
-- [ ] Outbound: `ReserveNow`, `CancelReservation` (v2.0.1 uses `IdToken`, `evseId`, `connectorType`).
-- [ ] Outbound: `GetTransactionStatus` (2.0.1-only).
-- [ ] Outbound: `SetChargingProfile`, `ClearChargingProfile`, `GetCompositeSchedule`.
-- [ ] Outbound: `GetChargingProfiles` (2.0.1-only).
-- [ ] Inbound: `ReportChargingProfiles`, `NotifyChargingLimit`, `ClearedChargingLimit`.
-- [ ] Inbound: `NotifyEVChargingNeeds`, `NotifyEVChargingSchedule` (ISO 15118).
+## Phase 5 — Reservations, Transactions, Smart Charging (Blocks E, H, K) ✅
+- [x] Outbound: `ReserveNowUseCaseV201` + `CancelReservationUseCaseV201` under `usecases/v201/` — v2.0.1 shapes: `IdToken` (via `IdTokenWire`), optional `evseId` + `connectorType` + `groupIdToken`. New `ConnectorType` enum (25 spec values) and `ReserveNowStatus` (5 values) / `CancelReservationStatus` (2 values). `ReservationCommand201IT` covers Block H.
+- [x] Outbound: `GetTransactionStatusUseCaseV201` (E14, 2.0.1-only) — null-preserving `ongoingIndicator` so callers can tell "absent" from "false" per E14.FR.06. `TransactionCommand201IT`.
+- [x] Outbound: `SetChargingProfileUseCaseV201` / `ClearChargingProfileUseCaseV201` / `GetCompositeScheduleUseCaseV201` — new `domain/v201/smartcharging/` package with `ChargingProfile` + `ChargingSchedule` + `ChargingSchedulePeriod` records (cross-field K01 rules enforced at construction: Recurring⇒recurrencyKind, Relative⇒no startSchedule, TxProfile⇔transactionId, first period startPeriod==0), plus purpose/kind/recurrency/rate-unit enums. `CompositeSchedule` is a distinct record from `ChargingSchedule` (no id/minChargingRate/salesTariff). `ChargingProfileWire` codec carries `toWire`/`fromWire` for the whole tree.
+- [x] Outbound: `GetChargingProfilesUseCaseV201` (K09, 2.0.1-only) with new `ChargingProfileCriterion` (limit-source + id arrays + purpose + stackLevel) and `ChargingLimitSource` enum. 2-valued `GetChargingProfilesStatus` (Accepted/NoProfiles).
+- [x] Inbound: `ReportChargingProfilesHandler201` (K09 follow-up) + `NotifyChargingLimitHandler201` + `ClearedChargingLimitHandler201`. Added `ChargingLimit` domain record (source + optional isGridCritical). All three handlers are pass-through use cases with `Sink` functional-interface ports. `ReportChargingProfiles201IT` + `ChargingLimit201IT`.
+- [x] Inbound: `NotifyEVChargingNeedsHandler201` + `NotifyEVChargingScheduleHandler201` (ISO 15118). New domain types `EnergyTransferMode` (4 values incl. underscored AC variants), `AcChargingParameters`, `DcChargingParameters` (with SoC-percentage validators), `ChargingNeeds` aggregate. Both use cases take a caller-supplied `Policy` functional interface because these messages have non-empty responses (`NotifyEVChargingNeedsStatus` / `GenericStatus`). `EVCharging201IT`.
+
+Wire codec centralisation: `ChargingProfileWire` (under `smartcharging/wire/`) grew to cover every smart-charging type's toWire/fromWire. Mirrors the `DeviceModelWire` pattern.
+
+Phase 5 tally: 7 new outbound use cases, 5 new inbound handlers, ~19 new schema files; 129 integration tests in `adapter-ocpp-ws` (up from 113). Smart-charging domain package bootstrapped for Phase 8+ to extend (monitoring, display messages).
 
 ## Phase 6 — Firmware & Diagnostics (Blocks L, N)
 - [ ] Inbound: `FirmwareStatusNotification`.
