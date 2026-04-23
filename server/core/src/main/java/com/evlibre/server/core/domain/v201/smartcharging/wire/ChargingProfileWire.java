@@ -153,6 +153,98 @@ public final class ChargingProfileWire {
         };
     }
 
+    public static ChargingProfile chargingProfileFromWire(Map<?, ?> node) {
+        Object id = node.get("id");
+        Object stackLevel = node.get("stackLevel");
+        Object purpose = node.get("chargingProfilePurpose");
+        Object kind = node.get("chargingProfileKind");
+        Object schedules = node.get("chargingSchedule");
+        if (!(id instanceof Number) || !(stackLevel instanceof Number)
+                || !(purpose instanceof String purposeStr) || !(kind instanceof String kindStr)
+                || !(schedules instanceof List<?> scheduleList) || scheduleList.isEmpty()) {
+            throw new IllegalArgumentException("ChargingProfile missing required fields: " + node);
+        }
+        ChargingProfileKind parsedKind = kindFromWire(kindStr);
+        RecurrencyKind recurrency = node.get("recurrencyKind") instanceof String rStr
+                ? recurrencyKindFromWire(rStr) : null;
+        Instant validFrom = node.get("validFrom") instanceof String vfStr ? Instant.parse(vfStr) : null;
+        Instant validTo = node.get("validTo") instanceof String vtStr ? Instant.parse(vtStr) : null;
+        String transactionId = node.get("transactionId") instanceof String txStr ? txStr : null;
+
+        List<ChargingSchedule> parsed = new ArrayList<>(scheduleList.size());
+        for (Object s : scheduleList) {
+            if (!(s instanceof Map<?, ?> sMap)) {
+                throw new IllegalArgumentException("chargingSchedule entry is not an object: " + s);
+            }
+            parsed.add(chargingScheduleFromWire(sMap));
+        }
+        return new ChargingProfile(
+                ((Number) id).intValue(),
+                ((Number) stackLevel).intValue(),
+                purposeFromWire(purposeStr),
+                parsedKind,
+                recurrency,
+                validFrom,
+                validTo,
+                transactionId,
+                parsed);
+    }
+
+    public static ChargingSchedule chargingScheduleFromWire(Map<?, ?> node) {
+        Object id = node.get("id");
+        Object unit = node.get("chargingRateUnit");
+        Object periods = node.get("chargingSchedulePeriod");
+        if (!(id instanceof Number) || !(unit instanceof String unitStr)
+                || !(periods instanceof List<?> periodList)) {
+            throw new IllegalArgumentException("ChargingSchedule missing required fields: " + node);
+        }
+        Instant start = node.get("startSchedule") instanceof String sStr ? Instant.parse(sStr) : null;
+        Integer duration = node.get("duration") instanceof Number d ? d.intValue() : null;
+        Double minRate = node.get("minChargingRate") instanceof Number m ? m.doubleValue() : null;
+
+        List<ChargingSchedulePeriod> parsedPeriods = new ArrayList<>(periodList.size());
+        for (Object p : periodList) {
+            if (!(p instanceof Map<?, ?> pMap)) {
+                throw new IllegalArgumentException("chargingSchedulePeriod entry is not an object: " + p);
+            }
+            parsedPeriods.add(periodFromWire(pMap));
+        }
+        return new ChargingSchedule(
+                ((Number) id).intValue(),
+                start,
+                duration,
+                rateUnitFromWire(unitStr),
+                parsedPeriods,
+                minRate);
+    }
+
+    public static ChargingProfilePurpose purposeFromWire(String wire) {
+        return switch (wire) {
+            case "ChargingStationExternalConstraints" -> ChargingProfilePurpose.CHARGING_STATION_EXTERNAL_CONSTRAINTS;
+            case "ChargingStationMaxProfile" -> ChargingProfilePurpose.CHARGING_STATION_MAX_PROFILE;
+            case "TxDefaultProfile" -> ChargingProfilePurpose.TX_DEFAULT_PROFILE;
+            case "TxProfile" -> ChargingProfilePurpose.TX_PROFILE;
+            default -> throw new IllegalArgumentException("Unknown ChargingProfilePurpose wire value: " + wire);
+        };
+    }
+
+    public static ChargingProfileKind kindFromWire(String wire) {
+        return switch (wire) {
+            case "Absolute" -> ChargingProfileKind.ABSOLUTE;
+            case "Recurring" -> ChargingProfileKind.RECURRING;
+            case "Relative" -> ChargingProfileKind.RELATIVE;
+            default -> throw new IllegalArgumentException("Unknown ChargingProfileKind wire value: " + wire);
+        };
+    }
+
+    public static RecurrencyKind recurrencyKindFromWire(String wire) {
+        return switch (wire) {
+            case "Daily" -> RecurrencyKind.DAILY;
+            case "Weekly" -> RecurrencyKind.WEEKLY;
+            default -> throw new IllegalArgumentException("Unknown RecurrencyKind wire value: " + wire);
+        };
+    }
+
     public static CompositeSchedule compositeScheduleFromWire(Map<?, ?> node) {
         Object evse = node.get("evseId");
         Object dur = node.get("duration");

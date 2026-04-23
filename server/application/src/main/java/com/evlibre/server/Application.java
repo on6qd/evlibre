@@ -25,6 +25,7 @@ import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -163,6 +164,14 @@ public class Application {
                 (t, s, requestId) -> log.info("NotifyReport complete for station {} (requestId={})",
                         s.value(), requestId));
 
+        // ReportChargingProfiles pass-through: no persistence target yet, so the
+        // sink just logs. A subscriber can swap in when a charging-profile repo lands.
+        HandleReportChargingProfilesUseCaseV201 handleReportChargingProfiles =
+                new HandleReportChargingProfilesUseCaseV201(
+                        (t, s, requestId, source, evseId, profiles, tbc) ->
+                                log.info("ReportChargingProfiles frame from {} (requestId={}, source={}, evseId={}, profiles={}, tbc={})",
+                                        s.value(), requestId, source, evseId, profiles.size(), tbc));
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -206,6 +215,8 @@ public class Application {
                 new NotifyReportHandler201(handleNotifyReport, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
+                new ReportChargingProfilesHandler201(handleReportChargingProfiles, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

@@ -12,6 +12,7 @@ import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -43,6 +44,7 @@ public class OcppTestHarness {
     public final FakeTimeProvider timeProvider = new FakeTimeProvider();
     public final FakeDeviceModelRepository deviceModelRepo = new FakeDeviceModelRepository();
     public final FakeNotifyReportCompletionPublisher notifyReportCompletion = new FakeNotifyReportCompletionPublisher();
+    public final FakeReportChargingProfilesSink reportChargingProfilesSink = new FakeReportChargingProfilesSink();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -87,6 +89,8 @@ public class OcppTestHarness {
         HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
         HandleNotifyReportUseCaseV201 handleNotifyReport201 = new HandleNotifyReportUseCaseV201(
                 deviceModelRepo, notifyReportCompletion);
+        HandleReportChargingProfilesUseCaseV201 handleReportChargingProfiles201 =
+                new HandleReportChargingProfilesUseCaseV201(reportChargingProfilesSink);
         // v201 DataTransfer allow-list mirrors v16: empty by default, so incoming requests
         // hit the UnknownVendorId branch unless tests specifically rewire a known vendor.
         HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
@@ -141,6 +145,8 @@ public class OcppTestHarness {
                 new NotifyReportHandler201(handleNotifyReport201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
+                new ReportChargingProfilesHandler201(handleReportChargingProfiles201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
