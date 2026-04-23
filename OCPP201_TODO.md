@@ -94,13 +94,13 @@ plus full response-schema authoring and hard-reject validation, see 0.4).
 
 ## Phase 1 — Core Provisioning (Block B)
 Device Model is the biggest 2.0.1-only concept; foundational for everything else.
-- [ ] Device Model domain in `domain/v201/devicemodel/`: `Component`, `Evse`, `Variable`, `VariableAttribute`, `VariableCharacteristics`, `Monitor` + repository ports.
+- [~] Device Model domain in `domain/v201/devicemodel/`: `Component`, `Evse`, `Variable`, `VariableAttribute`, `VariableCharacteristics` + `DeviceModelRepositoryPort` + `DeviceModelWire` codec landed across phases 1.1–1.6 and the 1.11 refactor; plus `ReportedVariable` aggregate wired through `NotifyReportHandler201`. **`Monitor` deferred to Phase 8** where variable monitoring (`SetMonitoringBase`, `NotifyMonitoringReport`, ...) first depends on it.
 - [x] Outbound (new v201 use case + handler + schemas): `GetBaseReport` — `GetBaseReportUseCaseV201` + schemas; `PostBootActionService` now delegates to the use case.
 - [x] Outbound (new v201 use case + handler + schemas): `GetReport` — `GetReportUseCaseV201` + schemas; supports `ComponentCriterion` and `ComponentVariableSelector` filters.
 - [x] Outbound (new v201 use case + handler + schemas): `GetVariables` — `GetVariablesUseCaseV201` + schemas; synchronous read, returns typed `List<GetVariableResult>`.
 - [x] Outbound (new v201 use case + handler + schemas): `SetVariables` — `SetVariablesUseCaseV201` + schemas; synchronous write, returns `List<SetVariableResult>` including the spec's `RebootRequired` outcome.
 - [x] Outbound (new v201 use case + handler + schemas): `SetNetworkProfile` — `SetNetworkProfileUseCaseV201` + schemas; full `NetworkConnectionProfile` with optional APN + VPN subtypes.
-- [ ] Outbound (new v201 use case + handler + schemas): `Reset` — new `ResetStationUseCaseV201`, independent of the v1.6 `ResetStationUseCase`.
+- [x] Outbound (new v201 use case + handler + schemas): `Reset` — `ResetStationUseCaseV201` (independent of v1.6); supports `Immediate`/`OnIdle` + optional `evseId`, and the added `Scheduled` response status.
 
 ## Phase 2 — Remote Control (Block F)
 All v2.0.1-only use cases; no reuse of v1.6 siblings.

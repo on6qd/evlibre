@@ -14,12 +14,14 @@ import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
 import com.evlibre.server.core.domain.v201.devicemodel.SetVariableData;
 import com.evlibre.server.core.domain.v201.devicemodel.SetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.model.ResetType;
 import com.evlibre.server.core.domain.v201.network.NetworkConnectionProfile;
 import com.evlibre.server.core.domain.v201.network.OcppInterface;
 import com.evlibre.server.core.domain.v201.network.OcppVersion;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetVariablesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.ResetStationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetNetworkProfileUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetVariablesUseCaseV201;
 import io.vertx.core.Vertx;
@@ -407,6 +409,99 @@ class ProvisioningCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send SetNetworkProfile via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void reset_immediate_whole_station_accepted(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("Reset", "Accepted");
+                    ResetStationUseCaseV201 useCase = new ResetStationUseCaseV201(harness.commandSender201);
+                    return useCase.reset(TENANT, STATION, ResetType.IMMEDIATE, null)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    var cmd = client.receivedCommands("Reset").get(0);
+                                    assertThat(cmd.payload().get("type").asText()).isEqualTo("Immediate");
+                                    assertThat(cmd.payload().has("evseId")).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void reset_on_idle_returns_scheduled(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("Reset", "Scheduled");
+                    ResetStationUseCaseV201 useCase = new ResetStationUseCaseV201(harness.commandSender201);
+                    return useCase.reset(TENANT, STATION, ResetType.ON_IDLE, null)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.status()).isEqualTo("Scheduled");
+                                    var cmd = client.receivedCommands("Reset").get(0);
+                                    assertThat(cmd.payload().get("type").asText()).isEqualTo("OnIdle");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void reset_per_evse_wire_shape(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("Reset", "Accepted");
+                    ResetStationUseCaseV201 useCase = new ResetStationUseCaseV201(harness.commandSender201);
+                    return useCase.reset(TENANT, STATION, ResetType.IMMEDIATE, 3)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    var cmd = client.receivedCommands("Reset").get(0);
+                                    assertThat(cmd.payload().get("type").asText()).isEqualTo("Immediate");
+                                    assertThat(cmd.payload().get("evseId").asInt()).isEqualTo(3);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void reset_v201_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    ResetStationUseCaseV201 useCase = new ResetStationUseCaseV201(harness.commandSender201);
+                    return useCase.reset(TENANT, STATION, ResetType.IMMEDIATE, null)
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send Reset via OCPP_201");
                                 });
                                 client.close();
                                 return null;
