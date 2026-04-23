@@ -110,7 +110,7 @@ Device Model is the biggest 2.0.1-only concept; foundational for everything else
 All v2.0.1-only use cases; no reuse of v1.6 siblings.
 - [x] Outbound: `RequestStartTransaction` — `RequestStartTransactionUseCaseV201` under `usecases/v201/`; builds `{remoteStartId, idToken:{idToken,type,additionalInfo?}, evseId?, groupIdToken?}` and returns typed `RequestStartTransactionResult`. `chargingProfile` deferred to Phase 5 alongside `SetChargingProfile`.
 - [x] Outbound: `RequestStopTransaction` — `RequestStopTransactionUseCaseV201` under `usecases/v201/`; builds `{transactionId}` (string UUID) and returns typed `RequestStopTransactionResult` (status + optional `statusInfo.reasonCode`).
-- [ ] Outbound: `TriggerMessage` (v2.0.1 enum: `BootNotification`, `LogStatusNotification`, `FirmwareStatusNotification`, `Heartbeat`, `MeterValues`, `SignChargingStationCertificate`, `SignV2GCertificate`, `StatusNotification`, `TransactionEvent`, `SignCombinedCertificate`, `PublishFirmwareStatusNotification`).
+- [x] Outbound: `TriggerMessage` — `TriggerMessageUseCaseV201` under `usecases/v201/`; full 11-value `MessageTrigger` enum (incl. ISO 15118 cert signing + `PublishFirmwareStatusNotification`); optional `Evse` target; typed `TriggerMessageResult` with `Accepted`/`Rejected`/`NotImplemented`. New `TriggerMessageRequest`/`Response` schemas on classpath.
 - [ ] Outbound: `UnlockConnector` (v2.0.1 uses `evseId` + `connectorId`).
 
 ## Phase 3 — Availability, Auth, Local List (Blocks C, D, G)
