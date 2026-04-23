@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @ExtendWith(VertxExtension.class)
 @Tag("integration")
-class RemoteControlCommandIT201 {
+class RemoteControlCommand201IT {
 
     private OcppTestHarness harness;
     private static final TenantId TENANT = new TenantId("demo-tenant");
