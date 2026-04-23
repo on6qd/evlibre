@@ -6,6 +6,7 @@ import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.dto.ChargingProfileStatus;
 import com.evlibre.server.core.domain.v201.dto.ClearChargingProfileStatus;
+import com.evlibre.server.core.domain.v201.dto.GenericStatus;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfile;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileKind;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
@@ -14,6 +15,7 @@ import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedule;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedulePeriod;
 import com.evlibre.server.core.domain.v201.smartcharging.ClearChargingProfileCriterion;
 import com.evlibre.server.core.usecases.v201.ClearChargingProfileUseCaseV201;
+import com.evlibre.server.core.usecases.v201.GetCompositeScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetChargingProfileUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -211,6 +213,78 @@ class SmartChargingCommand201IT {
                                     assertThat(result.isAccepted()).isFalse();
                                     assertThat(result.status()).isEqualTo(ChargingProfileStatus.REJECTED);
                                     assertThat(result.statusInfoReason()).isEqualTo("DuplicateProfile");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_composite_schedule_accepted_parses_schedule(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetCompositeSchedule", payload -> Map.of(
+                            "status", "Accepted",
+                            "schedule", Map.of(
+                                    "evseId", 1,
+                                    "duration", 3600,
+                                    "scheduleStart", "2027-02-01T10:00:00Z",
+                                    "chargingRateUnit", "W",
+                                    "chargingSchedulePeriod", List.of(
+                                            Map.of("startPeriod", 0, "limit", 22000.0),
+                                            Map.of("startPeriod", 1800, "limit", 11000.0)))));
+                    GetCompositeScheduleUseCaseV201 useCase =
+                            new GetCompositeScheduleUseCaseV201(harness.commandSender201);
+                    return useCase.getCompositeSchedule(TENANT, STATION, 1, 3600, ChargingRateUnit.WATTS)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status()).isEqualTo(GenericStatus.ACCEPTED);
+                                    assertThat(result.schedule()).isNotNull();
+                                    assertThat(result.schedule().evseId()).isEqualTo(1);
+                                    assertThat(result.schedule().duration()).isEqualTo(3600);
+                                    assertThat(result.schedule().chargingRateUnit())
+                                            .isEqualTo(ChargingRateUnit.WATTS);
+                                    assertThat(result.schedule().chargingSchedulePeriod()).hasSize(2);
+
+                                    var cmd = client.receivedCommands("GetCompositeSchedule").get(0);
+                                    assertThat(cmd.payload().get("duration").asInt()).isEqualTo(3600);
+                                    assertThat(cmd.payload().get("evseId").asInt()).isEqualTo(1);
+                                    assertThat(cmd.payload().get("chargingRateUnit").asText()).isEqualTo("W");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_composite_schedule_rejected_omits_schedule(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetCompositeSchedule", payload -> Map.of(
+                            "status", "Rejected",
+                            "statusInfo", Map.of("reasonCode", "UnknownEVSE")));
+                    GetCompositeScheduleUseCaseV201 useCase =
+                            new GetCompositeScheduleUseCaseV201(harness.commandSender201);
+                    return useCase.getCompositeSchedule(TENANT, STATION, 99, 600, null)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.schedule()).isNull();
+                                    assertThat(result.statusInfoReason()).isEqualTo("UnknownEVSE");
+
+                                    var cmd = client.receivedCommands("GetCompositeSchedule").get(0);
+                                    assertThat(cmd.payload().has("chargingRateUnit")).isFalse();
                                 });
                                 client.close();
                                 return result;

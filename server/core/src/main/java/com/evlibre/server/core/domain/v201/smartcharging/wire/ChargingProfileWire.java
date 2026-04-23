@@ -6,8 +6,10 @@ import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingRateUnit;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedule;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedulePeriod;
+import com.evlibre.server.core.domain.v201.smartcharging.CompositeSchedule;
 import com.evlibre.server.core.domain.v201.smartcharging.RecurrencyKind;
 
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -121,5 +123,53 @@ public final class ChargingProfileWire {
             case WATTS -> "W";
             case AMPERES -> "A";
         };
+    }
+
+    public static ChargingRateUnit rateUnitFromWire(String wire) {
+        return switch (wire) {
+            case "W" -> ChargingRateUnit.WATTS;
+            case "A" -> ChargingRateUnit.AMPERES;
+            default -> throw new IllegalArgumentException("Unknown ChargingRateUnit wire value: " + wire);
+        };
+    }
+
+    public static CompositeSchedule compositeScheduleFromWire(Map<?, ?> node) {
+        Object evse = node.get("evseId");
+        Object dur = node.get("duration");
+        Object start = node.get("scheduleStart");
+        Object unit = node.get("chargingRateUnit");
+        Object periods = node.get("chargingSchedulePeriod");
+        if (!(evse instanceof Number) || !(dur instanceof Number) || !(start instanceof String startStr)
+                || !(unit instanceof String unitStr) || !(periods instanceof List<?> periodList)) {
+            throw new IllegalArgumentException("CompositeSchedule is missing required fields: " + node);
+        }
+        List<ChargingSchedulePeriod> parsed = new ArrayList<>(periodList.size());
+        for (Object p : periodList) {
+            if (!(p instanceof Map<?, ?> pMap)) {
+                throw new IllegalArgumentException("chargingSchedulePeriod entry is not an object: " + p);
+            }
+            parsed.add(periodFromWire(pMap));
+        }
+        return new CompositeSchedule(
+                ((Number) evse).intValue(),
+                ((Number) dur).intValue(),
+                Instant.parse(startStr),
+                rateUnitFromWire(unitStr),
+                parsed);
+    }
+
+    public static ChargingSchedulePeriod periodFromWire(Map<?, ?> node) {
+        Object start = node.get("startPeriod");
+        Object limit = node.get("limit");
+        if (!(start instanceof Number) || !(limit instanceof Number)) {
+            throw new IllegalArgumentException("ChargingSchedulePeriod missing startPeriod/limit: " + node);
+        }
+        Integer numberPhases = node.get("numberPhases") instanceof Number n ? n.intValue() : null;
+        Integer phaseToUse = node.get("phaseToUse") instanceof Number n ? n.intValue() : null;
+        return new ChargingSchedulePeriod(
+                ((Number) start).intValue(),
+                ((Number) limit).doubleValue(),
+                numberPhases,
+                phaseToUse);
     }
 }
