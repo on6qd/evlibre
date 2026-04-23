@@ -8,7 +8,7 @@ import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
 import com.evlibre.server.core.domain.v201.devicemodel.DataType;
 import com.evlibre.server.core.domain.v201.devicemodel.Mutability;
 import com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable;
-import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort;
+import com.evlibre.server.core.domain.v201.ports.inbound.HandleNotifyReportPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,10 +38,11 @@ class NotifyReportHandler201Test {
     }
 
     @Test
-    void parses_minimal_report_and_upserts_to_port() throws Exception {
+    void parses_minimal_report_and_delegates_to_port() throws Exception {
         JsonNode payload = objectMapper.readTree("""
                 {
-                  "requestId": 1, "seqNo": 0, "generatedAt": "2026-04-21T10:00:00Z",
+                  "requestId": 7, "seqNo": 2, "tbc": true,
+                  "generatedAt": "2026-04-21T10:00:00Z",
                   "reportData": [{
                     "component": {"name": "SecurityCtrlr"},
                     "variable": {"name": "BasicAuthPassword"},
@@ -54,11 +55,17 @@ class NotifyReportHandler201Test {
 
         assertThat(response.isObject()).isTrue();
         assertThat(response.size()).isZero();
-        assertThat(port.capturedTenant).isEqualTo(tenantId);
-        assertThat(port.capturedStation).isEqualTo(stationIdentity);
-        assertThat(port.captured).hasSize(1);
+        assertThat(port.frames).hasSize(1);
 
-        ReportedVariable r = port.captured.get(0);
+        CapturingPort.Frame f = port.frames.get(0);
+        assertThat(f.tenantId).isEqualTo(tenantId);
+        assertThat(f.stationIdentity).isEqualTo(stationIdentity);
+        assertThat(f.requestId).isEqualTo(7);
+        assertThat(f.seqNo).isEqualTo(2);
+        assertThat(f.tbc).isTrue();
+        assertThat(f.reports).hasSize(1);
+
+        ReportedVariable r = f.reports.get(0);
         assertThat(r.component().name()).isEqualTo("SecurityCtrlr");
         assertThat(r.component().evse()).isNull();
         assertThat(r.variable().name()).isEqualTo("BasicAuthPassword");
@@ -66,6 +73,19 @@ class NotifyReportHandler201Test {
         assertThat(r.attributes().get(0).type()).isEqualTo(AttributeType.ACTUAL);
         assertThat(r.attributes().get(0).value()).isEqualTo("secret");
         assertThat(r.characteristics().dataType()).isEqualTo(DataType.STRING);
+    }
+
+    @Test
+    void missing_tbc_defaults_to_false() throws Exception {
+        JsonNode payload = objectMapper.readTree("""
+                {
+                  "requestId": 1, "seqNo": 0, "generatedAt": "2026-04-21T10:00:00Z",
+                  "reportData": []
+                }""");
+
+        handler.handle(session, "msg-tbc-default", payload);
+
+        assertThat(port.frames.get(0).tbc).isFalse();
     }
 
     @Test
@@ -82,7 +102,7 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-2", payload);
 
-        var component = port.captured.get(0).component();
+        var component = port.frames.get(0).reports.get(0).component();
         assertThat(component.evse().id()).isEqualTo(2);
         assertThat(component.evse().connectorId()).isEqualTo(1);
     }
@@ -101,7 +121,7 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-3", payload);
 
-        assertThat(port.captured.get(0).attributes().get(0).type()).isEqualTo(AttributeType.ACTUAL);
+        assertThat(port.frames.get(0).reports.get(0).attributes().get(0).type()).isEqualTo(AttributeType.ACTUAL);
     }
 
     @Test
@@ -118,7 +138,8 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-4", payload);
 
-        assertThat(port.captured.get(0).attributes().get(0).mutability()).isEqualTo(Mutability.READ_WRITE);
+        assertThat(port.frames.get(0).reports.get(0).attributes().get(0).mutability())
+                .isEqualTo(Mutability.READ_WRITE);
     }
 
     @Test
@@ -138,7 +159,7 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-readonly-null", payload);
 
-        var attr = port.captured.get(0).attributes().get(0);
+        var attr = port.frames.get(0).reports.get(0).attributes().get(0);
         assertThat(attr.value()).isNull();
         assertThat(attr.mutability()).isEqualTo(Mutability.READ_ONLY);
     }
@@ -157,7 +178,7 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-5", payload);
 
-        assertThat(port.captured.get(0).characteristics()).isNull();
+        assertThat(port.frames.get(0).reports.get(0).characteristics()).isNull();
     }
 
     @Test
@@ -181,13 +202,14 @@ class NotifyReportHandler201Test {
 
         handler.handle(session, "msg-6", payload);
 
-        assertThat(port.captured).hasSize(2);
-        assertThat(port.captured.get(0).attributes().get(0).type()).isEqualTo(AttributeType.MIN_SET);
-        assertThat(port.captured.get(0).attributes().get(0).mutability()).isEqualTo(Mutability.READ_ONLY);
-        assertThat(port.captured.get(0).characteristics().dataType()).isEqualTo(DataType.DATE_TIME);
-        assertThat(port.captured.get(1).attributes().get(0).type()).isEqualTo(AttributeType.MAX_SET);
-        assertThat(port.captured.get(1).attributes().get(0).mutability()).isEqualTo(Mutability.WRITE_ONLY);
-        assertThat(port.captured.get(1).characteristics().dataType()).isEqualTo(DataType.OPTION_LIST);
+        List<ReportedVariable> reports = port.frames.get(0).reports;
+        assertThat(reports).hasSize(2);
+        assertThat(reports.get(0).attributes().get(0).type()).isEqualTo(AttributeType.MIN_SET);
+        assertThat(reports.get(0).attributes().get(0).mutability()).isEqualTo(Mutability.READ_ONLY);
+        assertThat(reports.get(0).characteristics().dataType()).isEqualTo(DataType.DATE_TIME);
+        assertThat(reports.get(1).attributes().get(0).type()).isEqualTo(AttributeType.MAX_SET);
+        assertThat(reports.get(1).attributes().get(0).mutability()).isEqualTo(Mutability.WRITE_ONLY);
+        assertThat(reports.get(1).characteristics().dataType()).isEqualTo(DataType.OPTION_LIST);
     }
 
     @Test
@@ -207,34 +229,30 @@ class NotifyReportHandler201Test {
     }
 
     @Test
-    void empty_reportData_does_not_hit_the_port() throws Exception {
+    void empty_reportData_still_forwards_frame_to_port() throws Exception {
+        // The port must see every frame (including empty ones) so it can track
+        // seqNo progression and fire completion on the tbc=false marker.
         JsonNode payload = objectMapper.readTree("""
                 {"requestId": 1, "seqNo": 0, "generatedAt": "2026-04-21T10:00:00Z", "reportData": []}
                 """);
 
         handler.handle(session, "msg-8", payload);
 
-        assertThat(port.captured).isEmpty();
-        assertThat(port.upsertCalls).isZero();
+        assertThat(port.frames).hasSize(1);
+        assertThat(port.frames.get(0).reports).isEmpty();
     }
 
-    private static final class CapturingPort implements DeviceModelRepositoryPort {
-        TenantId capturedTenant;
-        ChargePointIdentity capturedStation;
-        List<ReportedVariable> captured = new ArrayList<>();
-        int upsertCalls = 0;
+    private static final class CapturingPort implements HandleNotifyReportPort {
+        record Frame(TenantId tenantId, ChargePointIdentity stationIdentity,
+                     int requestId, int seqNo, boolean tbc,
+                     List<ReportedVariable> reports) {}
+
+        final List<Frame> frames = new ArrayList<>();
 
         @Override
-        public void upsert(TenantId tenantId, ChargePointIdentity stationIdentity, List<ReportedVariable> reports) {
-            this.capturedTenant = tenantId;
-            this.capturedStation = stationIdentity;
-            this.captured = new ArrayList<>(reports);
-            this.upsertCalls++;
-        }
-
-        @Override
-        public List<ReportedVariable> findAll(TenantId tenantId, ChargePointIdentity stationIdentity) {
-            return List.copyOf(captured);
+        public void handleFrame(TenantId tenantId, ChargePointIdentity stationIdentity,
+                                int requestId, int seqNo, boolean tbc, List<ReportedVariable> reports) {
+            frames.add(new Frame(tenantId, stationIdentity, requestId, seqNo, tbc, List.copyOf(reports)));
         }
     }
 }

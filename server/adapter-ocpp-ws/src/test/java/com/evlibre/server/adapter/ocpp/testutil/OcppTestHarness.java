@@ -10,6 +10,7 @@ import com.evlibre.server.core.usecases.v16.*;
 import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -39,6 +40,8 @@ public class OcppTestHarness {
     public final FakeAuthorizationRepository authRepo = new FakeAuthorizationRepository();
     public final FakeOcppEventLog eventLog = new FakeOcppEventLog();
     public final FakeTimeProvider timeProvider = new FakeTimeProvider();
+    public final FakeDeviceModelRepository deviceModelRepo = new FakeDeviceModelRepository();
+    public final FakeNotifyReportCompletionPublisher notifyReportCompletion = new FakeNotifyReportCompletionPublisher();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -81,6 +84,8 @@ public class OcppTestHarness {
         HandleStatusNotificationUseCaseV201 handleStatusNotification201 = new HandleStatusNotificationUseCaseV201(eventLog);
         AuthorizeUseCaseV201 authorize201 = new AuthorizeUseCaseV201(authRepo, transactionRepo, timeProvider);
         HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
+        HandleNotifyReportUseCaseV201 handleNotifyReport201 = new HandleNotifyReportUseCaseV201(
+                deviceModelRepo, notifyReportCompletion);
 
         // OCPP infrastructure
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -92,26 +97,6 @@ public class OcppTestHarness {
         commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper, schemaValidator);
         commandSender16 = commandSender.v16();
         commandSender201 = commandSender.v201();
-
-        // No-op DeviceModelRepositoryPort so NotifyReportHandler201 can be registered
-        // without pulling the persistence-inmemory module into adapter-ocpp-ws's test
-        // classpath.
-        com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort deviceModelRepo =
-                new com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort() {
-                    @Override
-                    public void upsert(com.evlibre.server.core.domain.shared.model.TenantId t,
-                                       com.evlibre.common.model.ChargePointIdentity s,
-                                       java.util.List<com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable> reports) {
-                        /* no-op */
-                    }
-
-                    @Override
-                    public java.util.List<com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable>
-                    findAll(com.evlibre.server.core.domain.shared.model.TenantId t,
-                            com.evlibre.common.model.ChargePointIdentity s) {
-                        return java.util.List.of();
-                    }
-                };
 
         // Register OCPP 1.6 handlers
         dispatcher.registerHandler(OcppProtocol.OCPP_16, "BootNotification",
@@ -149,7 +134,7 @@ public class OcppTestHarness {
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
-                new NotifyReportHandler201(deviceModelRepo, objectMapper));
+                new NotifyReportHandler201(handleNotifyReport201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }

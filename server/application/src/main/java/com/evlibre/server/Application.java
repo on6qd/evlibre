@@ -23,6 +23,7 @@ import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -153,6 +154,13 @@ public class Application {
         // CSMS-initiated v2.0.1 use cases
         GetBaseReportUseCaseV201 getBaseReport = new GetBaseReportUseCaseV201(commandSender.v201());
 
+        // NotifyReport aggregation — buffers multi-frame reports per requestId, commits
+        // on tbc=false. Completion port is a no-op until a subscriber wires itself in.
+        HandleNotifyReportUseCaseV201 handleNotifyReport = new HandleNotifyReportUseCaseV201(
+                deviceModelRepo,
+                (t, s, requestId) -> log.info("NotifyReport complete for station {} (requestId={})",
+                        s.value(), requestId));
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -193,7 +201,7 @@ public class Application {
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "MeterValues",
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
-                new NotifyReportHandler201(deviceModelRepo, objectMapper));
+                new NotifyReportHandler201(handleNotifyReport, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

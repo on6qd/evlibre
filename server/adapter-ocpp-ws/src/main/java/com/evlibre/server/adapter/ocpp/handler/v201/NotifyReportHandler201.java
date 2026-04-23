@@ -12,7 +12,7 @@ import com.evlibre.server.core.domain.v201.devicemodel.Variable;
 import com.evlibre.server.core.domain.v201.devicemodel.VariableAttribute;
 import com.evlibre.server.core.domain.v201.devicemodel.VariableCharacteristics;
 import com.evlibre.server.core.domain.v201.devicemodel.wire.DeviceModelWire;
-import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort;
+import com.evlibre.server.core.domain.v201.ports.inbound.HandleNotifyReportPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -26,11 +26,11 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(NotifyReportHandler201.class);
 
-    private final DeviceModelRepositoryPort deviceModelRepository;
+    private final HandleNotifyReportPort handleNotifyReport;
     private final ObjectMapper objectMapper;
 
-    public NotifyReportHandler201(DeviceModelRepositoryPort deviceModelRepository, ObjectMapper objectMapper) {
-        this.deviceModelRepository = deviceModelRepository;
+    public NotifyReportHandler201(HandleNotifyReportPort handleNotifyReport, ObjectMapper objectMapper) {
+        this.handleNotifyReport = handleNotifyReport;
         this.objectMapper = objectMapper;
     }
 
@@ -48,9 +48,9 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
             }
         }
 
-        if (!reports.isEmpty()) {
-            deviceModelRepository.upsert(session.tenantId(), session.stationIdentity(), reports);
-        }
+        handleNotifyReport.handleFrame(
+                session.tenantId(), session.stationIdentity(),
+                requestId, seqNo, tbc, reports);
 
         log.info("NotifyReport from {} (requestId={}, seqNo={}, reports={}, tbc={})",
                 session.stationIdentity().value(), requestId, seqNo, reports.size(), tbc);
