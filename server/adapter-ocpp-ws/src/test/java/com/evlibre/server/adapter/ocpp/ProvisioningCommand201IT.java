@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @ExtendWith(VertxExtension.class)
 @Tag("integration")
-class ProvisioningCommandIT201 {
+class ProvisioningCommand201IT {
 
     private OcppTestHarness harness;
     private static final TenantId TENANT = new TenantId("demo-tenant");
