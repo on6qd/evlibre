@@ -120,8 +120,8 @@ All v2.0.1-only use cases; no reuse of v1.6 siblings.
 - [x] Outbound: `SendLocalList` — `SendLocalListUseCaseV201` under `usecases/v201/`; carries `versionNumber` (enforced `> 0` per D01.FR.18), `UpdateType` (`Full`/`Differential`), and a `List<AuthorizationData>` where per-entry `IdTokenInfo` presence/absence drives add-vs-remove in differential mode (D01.FR.16 / D01.FR.17). New `AuthorizationStatus` (10 values), `MessageFormat`, `MessageContent`, `IdTokenInfo`, `AuthorizationData`, `UpdateType` domain types under `domain/v201/model/`. Shared `IdTokenWire` codec extracted so the v2.0.1 `IdToken` / `IdTokenInfo` wire shape is emitted identically by every outbound use case (RequestStartTransaction migrated in this commit). Typed `SendLocalListResult` with `Accepted` / `Failed` / `VersionMismatch`. New `SendLocalListRequest`/`Response` schemas on classpath.
 
 ## Phase 4 — Generic Extension Point (Block P)
-- [ ] Inbound `DataTransferHandler201` + use case + schemas.
-- [ ] Outbound `DataTransferUseCaseV201` + schemas.
+- [x] Inbound `DataTransferHandler201` + use case + schemas — `HandleDataTransferUseCaseV201` + `DataTransferHandler201` under `handler/v201/`; v201-scoped `DataTransferStatus` / `DataTransferResult` DTOs; `data` is anyType (Jackson `JsonNode` at the wire, plain `Object` in the domain port). Default vendor allow-list is empty, so every CS→CSMS request resolves to `UnknownVendorId` per P02.FR.06; known vendors fall through to `Accepted`. New `DataTransferRequest`/`Response` schemas on classpath.
+- [x] Outbound `DataTransferUseCaseV201` + schemas — `SendDataTransferUseCaseV201` under `usecases/v201/` against `Ocpp201StationCommandSender`. Accepts primitives/lists/maps for the opaque `data` field, parses the 4-valued `DataTransferStatus` plus optional `statusInfo.reasonCode`, and surfaces the station's response `data` back through `DataTransferResult.data()`. Request/Response schemas are shared with the inbound path.
 
 ## Phase 5 — Reservations, Transactions, Smart Charging (Blocks E, H, K)
 - [ ] Outbound: `ReserveNow`, `CancelReservation` (v2.0.1 uses `IdToken`, `evseId`, `connectorType`).
