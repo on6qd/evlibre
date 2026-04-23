@@ -21,6 +21,7 @@ import com.evlibre.server.core.domain.v201.ports.outbound.*;
 import com.evlibre.server.core.usecases.v16.*;
 import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
@@ -132,6 +133,7 @@ public class Application {
         AuthorizeUseCaseV201 authorize201 = new AuthorizeUseCaseV201(authorizationRepo, transactionRepo, timeProvider);
         HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
         HandleDataTransferUseCase handleDataTransfer = new HandleDataTransferUseCase(eventLog);
+        HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
         HandleDiagnosticsStatusUseCase handleDiagnosticsStatus = new HandleDiagnosticsStatusUseCase(eventLog);
         HandleFirmwareStatusUseCase handleFirmwareStatus = new HandleFirmwareStatusUseCase(eventLog);
 
@@ -202,6 +204,8 @@ public class Application {
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
                 new NotifyReportHandler201(handleNotifyReport, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
+                new DataTransferHandler201(handleDataTransfer201, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

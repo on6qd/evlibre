@@ -8,6 +8,7 @@ import com.evlibre.server.core.domain.v16.model.AuthorizationStatus;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.usecases.v16.*;
 import com.evlibre.server.core.usecases.v201.AuthorizeUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
@@ -86,6 +87,9 @@ public class OcppTestHarness {
         HandleMeterValuesUseCaseV201 handleMeterValues201 = new HandleMeterValuesUseCaseV201(eventLog);
         HandleNotifyReportUseCaseV201 handleNotifyReport201 = new HandleNotifyReportUseCaseV201(
                 deviceModelRepo, notifyReportCompletion);
+        // v201 DataTransfer allow-list mirrors v16: empty by default, so incoming requests
+        // hit the UnknownVendorId branch unless tests specifically rewire a known vendor.
+        HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
 
         // OCPP infrastructure
         OcppMessageCodec codec = new OcppMessageCodec(objectMapper);
@@ -135,6 +139,8 @@ public class OcppTestHarness {
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
                 new NotifyReportHandler201(handleNotifyReport201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
+                new DataTransferHandler201(handleDataTransfer201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }

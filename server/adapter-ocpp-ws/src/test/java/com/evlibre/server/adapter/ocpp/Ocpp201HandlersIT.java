@@ -113,6 +113,23 @@ class Ocpp201HandlersIT {
     }
 
     @Test
+    void dataTransfer_unknown_vendor_returns_unknownVendorId(Vertx vertx, VertxTestContext ctx) {
+        // Default harness wiring has an empty vendor allow-list, so any vendorId resolves
+        // to UnknownVendorId per OCPP 2.0.1 P02.FR.06. Also proves the handler is registered
+        // under the v201 protocol key and that `data` as a JSON object passes schema validation.
+        harness.send201(vertx, "CS-201-7", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "CS-201-7",
+                        OcppMessages.dataTransfer201("com.unknown.vendor", "ping",
+                                "{\"hello\":\"world\"}")))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(0).asInt()).isEqualTo(3); // CALLRESULT
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("UnknownVendorId");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
     void v16_action_sent_on_v201_session_returns_not_implemented(Vertx vertx, VertxTestContext ctx) {
         // Protocol separation contract: StartTransaction is a v1.6-only action. Dispatching
         // it over a v2.0.1-negotiated session must not resolve to the v16 handler — the

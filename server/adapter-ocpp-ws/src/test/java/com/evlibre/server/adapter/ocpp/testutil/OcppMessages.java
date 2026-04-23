@@ -148,6 +148,19 @@ public final class OcppMessages {
         return notifyReport201(nextId(), requestId, seqNo, generatedAt, componentName, variableName);
     }
 
+    public static String dataTransfer201(String vendorId, String messageId, String data) {
+        return dataTransfer201(nextId(), vendorId, messageId, data);
+    }
+
+    public static String dataTransfer201(String msgId, String vendorId, String messageId, String data) {
+        // `data` is anyType in 2.0.1; the helper takes a raw JSON fragment so callers can pass
+        // strings, numbers, or objects — e.g. "\"hello\"" or "{\"k\":1}" — or null to omit.
+        String messagePart = messageId != null ? String.format(",\"messageId\":\"%s\"", messageId) : "";
+        String dataPart = data != null ? String.format(",\"data\":%s", data) : "";
+        return String.format("[2,\"%s\",\"DataTransfer\",{\"vendorId\":\"%s\"%s%s}]",
+                msgId, vendorId, messagePart, dataPart);
+    }
+
     public static String notifyReport201(String msgId, int requestId, int seqNo, Instant generatedAt,
                                           String componentName, String variableName) {
         return String.format("[2,\"%s\",\"NotifyReport\","
