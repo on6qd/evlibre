@@ -5,12 +5,15 @@ import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.dto.ChargingProfileStatus;
+import com.evlibre.server.core.domain.v201.dto.ClearChargingProfileStatus;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfile;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileKind;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingRateUnit;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedule;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedulePeriod;
+import com.evlibre.server.core.domain.v201.smartcharging.ClearChargingProfileCriterion;
+import com.evlibre.server.core.usecases.v201.ClearChargingProfileUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetChargingProfileUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -122,6 +125,66 @@ class SmartChargingCommand201IT {
                                             .isEqualTo("TxProfile");
                                     assertThat(profile.get("transactionId").asText())
                                             .isEqualTo("tx-abc-123");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void clear_charging_profile_by_id_accepted(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("ClearChargingProfile", "Accepted");
+                    ClearChargingProfileUseCaseV201 useCase =
+                            new ClearChargingProfileUseCaseV201(harness.commandSender201);
+                    return useCase.clearChargingProfile(TENANT, STATION, 101, null)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status()).isEqualTo(ClearChargingProfileStatus.ACCEPTED);
+
+                                    var cmd = client.receivedCommands("ClearChargingProfile").get(0);
+                                    assertThat(cmd.payload().get("chargingProfileId").asInt()).isEqualTo(101);
+                                    assertThat(cmd.payload().has("chargingProfileCriteria")).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void clear_charging_profile_by_criterion_unknown(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("ClearChargingProfile", payload -> Map.of("status", "Unknown"));
+                    ClearChargingProfileUseCaseV201 useCase =
+                            new ClearChargingProfileUseCaseV201(harness.commandSender201);
+                    ClearChargingProfileCriterion criterion = new ClearChargingProfileCriterion(
+                            2, ChargingProfilePurpose.TX_DEFAULT_PROFILE, 1);
+                    return useCase.clearChargingProfile(TENANT, STATION, null, criterion)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status()).isEqualTo(ClearChargingProfileStatus.UNKNOWN);
+
+                                    var cmd = client.receivedCommands("ClearChargingProfile").get(0);
+                                    assertThat(cmd.payload().has("chargingProfileId")).isFalse();
+                                    var crit = cmd.payload().get("chargingProfileCriteria");
+                                    assertThat(crit.get("evseId").asInt()).isEqualTo(2);
+                                    assertThat(crit.get("chargingProfilePurpose").asText())
+                                            .isEqualTo("TxDefaultProfile");
+                                    assertThat(crit.get("stackLevel").asInt()).isEqualTo(1);
                                 });
                                 client.close();
                                 return result;
