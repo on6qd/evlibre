@@ -137,6 +137,12 @@ Wire codec centralisation: `ChargingProfileWire` (under `smartcharging/wire/`) g
 
 Phase 5 tally: 7 new outbound use cases, 5 new inbound handlers, ~19 new schema files; 129 integration tests in `adapter-ocpp-ws` (up from 113). Smart-charging domain package bootstrapped for Phase 8+ to extend (monitoring, display messages).
 
+### Phase 5 audit follow-ups (2026-04-23)
+- [x] K01.FR.22: `SetChargingProfileUseCaseV201` now rejects `purpose=ChargingStationExternalConstraints` (spec says CSMS MUST NOT send it).
+- [x] K01.FR.35: `ChargingSchedule` now validates `chargingSchedulePeriod` entries are ordered by strictly increasing `startPeriod`.
+- [x] K01.FR.38: `ChargingProfile` now rejects the `ChargingStationMaxProfile` + `Relative` combination at construction.
+- [x] K09.FR.03: `GetChargingProfilesUseCaseV201` rejects empty criteria; the spec-violating `ChargingProfileCriterion.all()` factory was dropped in favour of an `isEmpty()` guard.
+
 ## Phase 6 — Firmware & Diagnostics (Blocks L, N)
 - [ ] Inbound: `FirmwareStatusNotification`.
 - [ ] Outbound: `UpdateFirmware`.
