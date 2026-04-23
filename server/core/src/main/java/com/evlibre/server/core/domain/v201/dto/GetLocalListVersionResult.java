@@ -1,7 +1,6 @@
 package com.evlibre.server.core.domain.v201.dto;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Typed result of a {@code GetLocalListVersion} call. The {@code versionNumber}
@@ -20,7 +19,6 @@ public record GetLocalListVersionResult(
                     "versionNumber must be >= 0 per spec, got " + versionNumber);
         }
         rawResponse = rawResponse == null ? Map.of() : Map.copyOf(rawResponse);
-        Objects.requireNonNull(rawResponse);
     }
 
     public boolean hasLocalList() {

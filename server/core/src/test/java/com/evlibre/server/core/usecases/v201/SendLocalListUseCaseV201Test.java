@@ -48,6 +48,19 @@ class SendLocalListUseCaseV201Test {
     }
 
     @Test
+    void differential_update_with_empty_list_omits_list_field() {
+        // Per D01.FR.05, a differential update may legally carry no entries —
+        // it still bumps the station's version counter.
+        useCase.sendLocalList(tenantId, station, 8, UpdateType.DIFFERENTIAL, List.of()).join();
+
+        var cmd = commandSender.commands().get(0);
+        assertThat(cmd.payload())
+                .containsEntry("versionNumber", 8)
+                .containsEntry("updateType", "Differential")
+                .doesNotContainKey("localAuthorizationList");
+    }
+
+    @Test
     void differential_add_entry_wires_full_id_token_info() {
         var entry = AuthorizationData.add(
                 IdToken.of("driver-42", IdTokenType.ISO14443),

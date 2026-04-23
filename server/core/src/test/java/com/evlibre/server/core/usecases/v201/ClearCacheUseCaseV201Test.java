@@ -48,13 +48,13 @@ class ClearCacheUseCaseV201Test {
     void rejected_status_parsed_with_reason() {
         commandSender.setNextResponse(Map.of(
                 "status", "Rejected",
-                "statusInfo", Map.of("reasonCode", "AuthCacheDisabled")));
+                "statusInfo", Map.of("reasonCode", "NotEnabled")));
 
         ClearCacheResult r = useCase.clearCache(tenantId, station).join();
 
         assertThat(r.status()).isEqualTo(ClearCacheStatus.REJECTED);
         assertThat(r.isAccepted()).isFalse();
-        assertThat(r.statusInfoReason()).isEqualTo("AuthCacheDisabled");
+        assertThat(r.statusInfoReason()).isEqualTo("NotEnabled");
     }
 
     @Test

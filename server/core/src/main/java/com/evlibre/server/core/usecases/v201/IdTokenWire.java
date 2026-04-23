@@ -33,9 +33,10 @@ final class IdTokenWire {
         if (token.additionalInfo() != null) {
             List<Map<String, Object>> extras = new ArrayList<>(token.additionalInfo().size());
             for (AdditionalInfo info : token.additionalInfo()) {
-                extras.add(Map.of(
-                        "additionalIdToken", info.additionalIdToken(),
-                        "type", info.type()));
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("additionalIdToken", info.additionalIdToken());
+                entry.put("type", info.type());
+                extras.add(entry);
             }
             out.put("additionalInfo", extras);
         }
