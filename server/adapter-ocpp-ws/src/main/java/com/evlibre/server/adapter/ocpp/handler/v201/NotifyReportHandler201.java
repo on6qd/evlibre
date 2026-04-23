@@ -11,6 +11,7 @@ import com.evlibre.server.core.domain.v201.devicemodel.ReportedVariable;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
 import com.evlibre.server.core.domain.v201.devicemodel.VariableAttribute;
 import com.evlibre.server.core.domain.v201.devicemodel.VariableCharacteristics;
+import com.evlibre.server.core.domain.v201.devicemodel.wire.DeviceModelWire;
 import com.evlibre.server.core.domain.v201.ports.outbound.DeviceModelRepositoryPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -92,7 +93,7 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
         if (node.isArray()) {
             for (JsonNode attr : node) {
                 AttributeType type = attr.hasNonNull("type")
-                        ? attributeTypeFromWire(attr.path("type").asText())
+                        ? DeviceModelWire.attributeTypeFromWire(attr.path("type").asText())
                         : AttributeType.DEFAULT;
                 String value = attr.hasNonNull("value") ? attr.path("value").asText() : null;
                 Mutability mutability = attr.hasNonNull("mutability")
@@ -114,16 +115,6 @@ public class NotifyReportHandler201 implements OcppMessageHandler {
         String valuesList = node.hasNonNull("valuesList") ? node.path("valuesList").asText() : null;
         boolean supportsMonitoring = node.path("supportsMonitoring").asBoolean(false);
         return new VariableCharacteristics(unit, dataType, minLimit, maxLimit, valuesList, supportsMonitoring);
-    }
-
-    private static AttributeType attributeTypeFromWire(String wire) {
-        return switch (wire) {
-            case "Actual" -> AttributeType.ACTUAL;
-            case "Target" -> AttributeType.TARGET;
-            case "MinSet" -> AttributeType.MIN_SET;
-            case "MaxSet" -> AttributeType.MAX_SET;
-            default -> throw new IllegalArgumentException("Unknown AttributeEnumType: " + wire);
-        };
     }
 
     private static Mutability mutabilityFromWire(String wire) {

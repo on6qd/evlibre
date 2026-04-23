@@ -4,11 +4,11 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
 import com.evlibre.server.core.domain.v201.devicemodel.Component;
-import com.evlibre.server.core.domain.v201.devicemodel.Evse;
 import com.evlibre.server.core.domain.v201.devicemodel.GetVariableData;
 import com.evlibre.server.core.domain.v201.devicemodel.GetVariableResult;
 import com.evlibre.server.core.domain.v201.devicemodel.GetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.devicemodel.wire.DeviceModelWire;
 import com.evlibre.server.core.domain.v201.ports.inbound.GetVariablesPort;
 import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
 import org.slf4j.Logger;
@@ -71,10 +71,10 @@ public class GetVariablesUseCaseV201 implements GetVariablesPort {
 
     @SuppressWarnings("unchecked")
     private GetVariableResult decodeResult(Map<String, Object> entry) {
-        Component component = componentFromWire((Map<String, Object>) entry.get("component"));
-        Variable variable = variableFromWire((Map<String, Object>) entry.get("variable"));
+        Component component = DeviceModelWire.componentFromWire((Map<String, Object>) entry.get("component"));
+        Variable variable = DeviceModelWire.variableFromWire((Map<String, Object>) entry.get("variable"));
         AttributeType attributeType = entry.get("attributeType") != null
-                ? attributeTypeFromWire((String) entry.get("attributeType"))
+                ? DeviceModelWire.attributeTypeFromWire((String) entry.get("attributeType"))
                 : AttributeType.DEFAULT;
         GetVariableStatus status = statusFromWire((String) entry.get("attributeStatus"));
         String attributeValue = (String) entry.get("attributeValue");
@@ -92,78 +92,11 @@ public class GetVariablesUseCaseV201 implements GetVariablesPort {
     private static Map<String, Object> requestEntryToWire(GetVariableData data) {
         Map<String, Object> out = new LinkedHashMap<>();
         if (data.attributeType() != null) {
-            out.put("attributeType", attributeTypeToWire(data.attributeType()));
+            out.put("attributeType", DeviceModelWire.attributeTypeToWire(data.attributeType()));
         }
-        out.put("component", componentToWire(data.component()));
-        out.put("variable", variableToWire(data.variable()));
+        out.put("component", DeviceModelWire.componentToWire(data.component()));
+        out.put("variable", DeviceModelWire.variableToWire(data.variable()));
         return out;
-    }
-
-    private static Map<String, Object> componentToWire(Component component) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("name", component.name());
-        if (component.instance() != null) {
-            out.put("instance", component.instance());
-        }
-        if (component.evse() != null) {
-            out.put("evse", evseToWire(component.evse()));
-        }
-        return out;
-    }
-
-    private static Map<String, Object> evseToWire(Evse evse) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("id", evse.id());
-        if (evse.connectorId() != null) {
-            out.put("connectorId", evse.connectorId());
-        }
-        return out;
-    }
-
-    private static Map<String, Object> variableToWire(Variable variable) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("name", variable.name());
-        if (variable.instance() != null) {
-            out.put("instance", variable.instance());
-        }
-        return out;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Component componentFromWire(Map<String, Object> wire) {
-        String name = (String) wire.get("name");
-        String instance = (String) wire.get("instance");
-        Evse evse = null;
-        Object evseNode = wire.get("evse");
-        if (evseNode instanceof Map<?, ?> e) {
-            Number id = (Number) e.get("id");
-            Number connectorId = (Number) e.get("connectorId");
-            evse = new Evse(id.intValue(), connectorId != null ? connectorId.intValue() : null);
-        }
-        return new Component(name, instance, evse);
-    }
-
-    private static Variable variableFromWire(Map<String, Object> wire) {
-        return new Variable((String) wire.get("name"), (String) wire.get("instance"));
-    }
-
-    private static String attributeTypeToWire(AttributeType type) {
-        return switch (type) {
-            case ACTUAL -> "Actual";
-            case TARGET -> "Target";
-            case MIN_SET -> "MinSet";
-            case MAX_SET -> "MaxSet";
-        };
-    }
-
-    private static AttributeType attributeTypeFromWire(String wire) {
-        return switch (wire) {
-            case "Actual" -> AttributeType.ACTUAL;
-            case "Target" -> AttributeType.TARGET;
-            case "MinSet" -> AttributeType.MIN_SET;
-            case "MaxSet" -> AttributeType.MAX_SET;
-            default -> throw new IllegalArgumentException("Unknown AttributeType wire value: " + wire);
-        };
     }
 
     private static GetVariableStatus statusFromWire(String wire) {
