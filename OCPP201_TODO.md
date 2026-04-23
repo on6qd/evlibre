@@ -108,7 +108,7 @@ Device Model is the biggest 2.0.1-only concept; foundational for everything else
 
 ## Phase 2 — Remote Control (Block F)
 All v2.0.1-only use cases; no reuse of v1.6 siblings.
-- [ ] Outbound: `RequestStartTransaction` — `RequestStartTransactionUseCase` under `usecases/v201/`, builds `{remoteStartId, idToken:{idToken,type}, evseId?, groupIdToken?, chargingProfile?}`.
+- [x] Outbound: `RequestStartTransaction` — `RequestStartTransactionUseCaseV201` under `usecases/v201/`; builds `{remoteStartId, idToken:{idToken,type,additionalInfo?}, evseId?, groupIdToken?}` and returns typed `RequestStartTransactionResult`. `chargingProfile` deferred to Phase 5 alongside `SetChargingProfile`.
 - [ ] Outbound: `RequestStopTransaction` — `RequestStopTransactionUseCase` under `usecases/v201/`, builds `{transactionId}` (UUID).
 - [ ] Outbound: `TriggerMessage` (v2.0.1 enum: `BootNotification`, `LogStatusNotification`, `FirmwareStatusNotification`, `Heartbeat`, `MeterValues`, `SignChargingStationCertificate`, `SignV2GCertificate`, `StatusNotification`, `TransactionEvent`, `SignCombinedCertificate`, `PublishFirmwareStatusNotification`).
 - [ ] Outbound: `UnlockConnector` (v2.0.1 uses `evseId` + `connectorId`).
