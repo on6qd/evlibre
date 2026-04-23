@@ -4,13 +4,17 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
 import com.evlibre.server.core.domain.v201.devicemodel.Component;
 import com.evlibre.server.core.domain.v201.devicemodel.ComponentCriterion;
 import com.evlibre.server.core.domain.v201.devicemodel.ComponentVariableSelector;
+import com.evlibre.server.core.domain.v201.devicemodel.GetVariableData;
+import com.evlibre.server.core.domain.v201.devicemodel.GetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.GetVariablesUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -20,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,6 +170,80 @@ class ProvisioningCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send GetReport via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_variables_inline_results_decoded(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    // Station responds with two result entries: one Accepted with a value,
+                    // one Rejected (WriteOnly variable) with statusInfo but no attributeValue.
+                    client.onCommand("GetVariables", payload -> Map.of("getVariableResult", List.of(
+                            Map.of(
+                                    "attributeStatus", "Accepted",
+                                    "attributeValue", "changeme",
+                                    "component", Map.of("name", "SecurityCtrlr"),
+                                    "variable", Map.of("name", "BasicAuthPassword")),
+                            Map.of(
+                                    "attributeStatus", "Rejected",
+                                    "attributeStatusInfo", Map.of("reasonCode", "WriteOnly"),
+                                    "component", Map.of("name", "SecurityCtrlr"),
+                                    "variable", Map.of("name", "Identity")))));
+                    GetVariablesUseCaseV201 useCase = new GetVariablesUseCaseV201(harness.commandSender201);
+                    return useCase.getVariables(TENANT, STATION, List.of(
+                                    GetVariableData.of(Component.of("SecurityCtrlr"), Variable.of("BasicAuthPassword")),
+                                    GetVariableData.of(Component.of("SecurityCtrlr"), Variable.of("Identity"),
+                                            AttributeType.ACTUAL)))
+                            .thenApply(results -> {
+                                ctx.verify(() -> {
+                                    var cmd = client.receivedCommands("GetVariables").get(0);
+                                    var data = cmd.payload().get("getVariableData");
+                                    assertThat(data.isArray()).isTrue();
+                                    assertThat(data.size()).isEqualTo(2);
+                                    // First entry has no attributeType on the wire (domain null).
+                                    assertThat(data.get(0).has("attributeType")).isFalse();
+                                    // Second entry serialised ACTUAL explicitly.
+                                    assertThat(data.get(1).get("attributeType").asText()).isEqualTo("Actual");
+
+                                    assertThat(results).hasSize(2);
+                                    assertThat(results.get(0).status()).isEqualTo(GetVariableStatus.ACCEPTED);
+                                    assertThat(results.get(0).attributeValue()).isEqualTo("changeme");
+                                    assertThat(results.get(1).status()).isEqualTo(GetVariableStatus.REJECTED);
+                                    assertThat(results.get(1).attributeValue()).isNull();
+                                    assertThat(results.get(1).statusInfoReason()).isEqualTo("WriteOnly");
+                                });
+                                client.close();
+                                return results;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_variables_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    GetVariablesUseCaseV201 useCase = new GetVariablesUseCaseV201(harness.commandSender201);
+                    return useCase.getVariables(TENANT, STATION, List.of(
+                                    GetVariableData.of(Component.of("C"), Variable.of("V"))))
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send GetVariables via OCPP_201");
                                 });
                                 client.close();
                                 return null;

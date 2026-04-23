@@ -97,7 +97,7 @@ Device Model is the biggest 2.0.1-only concept; foundational for everything else
 - [ ] Device Model domain in `domain/v201/devicemodel/`: `Component`, `Evse`, `Variable`, `VariableAttribute`, `VariableCharacteristics`, `Monitor` + repository ports.
 - [x] Outbound (new v201 use case + handler + schemas): `GetBaseReport` — `GetBaseReportUseCaseV201` + schemas; `PostBootActionService` now delegates to the use case.
 - [x] Outbound (new v201 use case + handler + schemas): `GetReport` — `GetReportUseCaseV201` + schemas; supports `ComponentCriterion` and `ComponentVariableSelector` filters.
-- [ ] Outbound (new v201 use case + handler + schemas): `GetVariables`
+- [x] Outbound (new v201 use case + handler + schemas): `GetVariables` — `GetVariablesUseCaseV201` + schemas; synchronous read, returns typed `List<GetVariableResult>`.
 - [ ] Outbound (new v201 use case + handler + schemas): `SetVariables`
 - [ ] Outbound (new v201 use case + handler + schemas): `SetNetworkProfile`
 - [ ] Outbound (new v201 use case + handler + schemas): `Reset` — new `ResetStationUseCaseV201`, independent of the v1.6 `ResetStationUseCase`.

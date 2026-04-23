@@ -1,0 +1,198 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:GetVariablesResponse",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "AttributeEnumType": {
+      "description": "Attribute type for which value is requested. When absent, default Actual is assumed.",
+      "javaType": "AttributeEnum",
+      "type": "string",
+      "default": "Actual",
+      "additionalProperties": false,
+      "enum": [
+        "Actual",
+        "Target",
+        "MinSet",
+        "MaxSet"
+      ]
+    },
+    "GetVariableStatusEnumType": {
+      "description": "Result status of getting the variable.",
+      "javaType": "GetVariableStatusEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Accepted",
+        "Rejected",
+        "UnknownComponent",
+        "UnknownVariable",
+        "NotSupportedAttributeType"
+      ]
+    },
+    "EVSEType": {
+      "description": "EVSE (Electric Vehicle Supply Equipment) is part of a Charging Station that delivers energy to a single EV.",
+      "javaType": "EVSE",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "id": {
+          "description": "EVSE Identifier. When 0, the ID references the Charging Station as a whole.",
+          "type": "integer"
+        },
+        "connectorId": {
+          "description": "An id to designate a specific connector (on an EVSE) by connector index number.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "ComponentType": {
+      "description": "A physical or logical component.",
+      "javaType": "Component",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "evse": {
+          "$ref": "#/definitions/EVSEType"
+        },
+        "name": {
+          "description": "Name of the component.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the component exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "VariableType": {
+      "description": "Reference key to a component-variable.",
+      "javaType": "Variable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "name": {
+          "description": "Name of the variable.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the variable exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "StatusInfoType": {
+      "description": "Element providing more information about the status.",
+      "javaType": "StatusInfo",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "reasonCode": {
+          "description": "A predefined code for the reason why the status is returned in this response.",
+          "type": "string",
+          "maxLength": 20
+        },
+        "additionalInfo": {
+          "description": "Additional text to provide detailed information.",
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "reasonCode"
+      ]
+    },
+    "GetVariableResultType": {
+      "description": "Class to hold results of GetVariables request.",
+      "javaType": "GetVariableResult",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "attributeStatusInfo": {
+          "$ref": "#/definitions/StatusInfoType"
+        },
+        "attributeStatus": {
+          "$ref": "#/definitions/GetVariableStatusEnumType"
+        },
+        "attributeType": {
+          "$ref": "#/definitions/AttributeEnumType"
+        },
+        "attributeValue": {
+          "description": "Value of requested attribute type of component-variable. This field SHALL only be empty when the given status is NOT Accepted; an Accepted variable that currently has no assigned value returns an empty string.",
+          "type": "string",
+          "maxLength": 2500
+        },
+        "component": {
+          "$ref": "#/definitions/ComponentType"
+        },
+        "variable": {
+          "$ref": "#/definitions/VariableType"
+        }
+      },
+      "required": [
+        "attributeStatus",
+        "component",
+        "variable"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "getVariableResult": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/GetVariableResultType"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "getVariableResult"
+  ]
+}
