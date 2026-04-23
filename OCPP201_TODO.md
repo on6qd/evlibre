@@ -114,7 +114,7 @@ All v2.0.1-only use cases; no reuse of v1.6 siblings.
 - [x] Outbound: `UnlockConnector` — `UnlockConnectorUseCaseV201` under `usecases/v201/`; builds `{evseId, connectorId}` (both required, spec > 0) and returns typed `UnlockConnectorResult` with the 4-valued `UnlockStatus` (`Unlocked` / `UnlockFailed` / `OngoingAuthorizedTransaction` / `UnknownConnector`). New `UnlockConnectorRequest`/`Response` schemas on classpath.
 
 ## Phase 3 — Availability, Auth, Local List (Blocks C, D, G)
-- [ ] Outbound: `ChangeAvailability` — uses EVSE/connector `OperationalStatus`.
+- [x] Outbound: `ChangeAvailability` — `ChangeAvailabilityUseCaseV201` under `usecases/v201/`; three targeting levels (whole station / whole EVSE / specific connector) via optional `Evse` locator; `OperationalStatus` + `ChangeAvailabilityStatus` enums (incl. `Scheduled` for transaction-in-progress deferral per G03.FR.05 / G04.FR.06). New `ChangeAvailabilityRequest`/`Response` schemas on classpath.
 - [ ] Outbound: `ClearCache`.
 - [ ] Outbound: `GetLocalListVersion`.
 - [ ] Outbound: `SendLocalList` — v2.0.1 `AuthorizationData` carries `IdToken` object + `IdTokenInfo`.
