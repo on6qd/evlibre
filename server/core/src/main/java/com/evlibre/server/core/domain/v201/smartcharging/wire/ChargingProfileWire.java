@@ -1,5 +1,6 @@
 package com.evlibre.server.core.domain.v201.smartcharging.wire;
 
+import com.evlibre.server.core.domain.v201.smartcharging.ChargingLimitSource;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfile;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileKind;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
@@ -122,6 +123,25 @@ public final class ChargingProfileWire {
         return switch (u) {
             case WATTS -> "W";
             case AMPERES -> "A";
+        };
+    }
+
+    public static String limitSourceToWire(ChargingLimitSource s) {
+        return switch (s) {
+            case EMS -> "EMS";
+            case OTHER -> "Other";
+            case SO -> "SO";
+            case CSO -> "CSO";
+        };
+    }
+
+    public static ChargingLimitSource limitSourceFromWire(String wire) {
+        return switch (wire) {
+            case "EMS" -> ChargingLimitSource.EMS;
+            case "Other" -> ChargingLimitSource.OTHER;
+            case "SO" -> ChargingLimitSource.SO;
+            case "CSO" -> ChargingLimitSource.CSO;
+            default -> throw new IllegalArgumentException("Unknown ChargingLimitSource wire value: " + wire);
         };
     }
 

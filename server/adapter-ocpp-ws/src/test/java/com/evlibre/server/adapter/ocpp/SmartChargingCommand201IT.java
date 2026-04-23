@@ -7,7 +7,10 @@ import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.dto.ChargingProfileStatus;
 import com.evlibre.server.core.domain.v201.dto.ClearChargingProfileStatus;
 import com.evlibre.server.core.domain.v201.dto.GenericStatus;
+import com.evlibre.server.core.domain.v201.dto.GetChargingProfilesStatus;
+import com.evlibre.server.core.domain.v201.smartcharging.ChargingLimitSource;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfile;
+import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileCriterion;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileKind;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingRateUnit;
@@ -15,6 +18,7 @@ import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedule;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingSchedulePeriod;
 import com.evlibre.server.core.domain.v201.smartcharging.ClearChargingProfileCriterion;
 import com.evlibre.server.core.usecases.v201.ClearChargingProfileUseCaseV201;
+import com.evlibre.server.core.usecases.v201.GetChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetCompositeScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.SetChargingProfileUseCaseV201;
 import io.vertx.core.Vertx;
@@ -256,6 +260,73 @@ class SmartChargingCommand201IT {
                                     assertThat(cmd.payload().get("duration").asInt()).isEqualTo(3600);
                                     assertThat(cmd.payload().get("evseId").asInt()).isEqualTo(1);
                                     assertThat(cmd.payload().get("chargingRateUnit").asText()).isEqualTo("W");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_charging_profiles_accepted_sends_criterion(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetChargingProfiles", "Accepted");
+                    GetChargingProfilesUseCaseV201 useCase =
+                            new GetChargingProfilesUseCaseV201(harness.commandSender201);
+                    ChargingProfileCriterion criterion = new ChargingProfileCriterion(
+                            List.of(ChargingLimitSource.EMS, ChargingLimitSource.CSO),
+                            null,
+                            ChargingProfilePurpose.TX_DEFAULT_PROFILE,
+                            1);
+                    return useCase.getChargingProfiles(TENANT, STATION, 777, 3, criterion)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status()).isEqualTo(GetChargingProfilesStatus.ACCEPTED);
+
+                                    var cmd = client.receivedCommands("GetChargingProfiles").get(0);
+                                    assertThat(cmd.payload().get("requestId").asInt()).isEqualTo(777);
+                                    assertThat(cmd.payload().get("evseId").asInt()).isEqualTo(3);
+
+                                    var crit = cmd.payload().get("chargingProfile");
+                                    assertThat(crit.get("chargingProfilePurpose").asText())
+                                            .isEqualTo("TxDefaultProfile");
+                                    assertThat(crit.get("stackLevel").asInt()).isEqualTo(1);
+                                    var sources = crit.get("chargingLimitSource");
+                                    assertThat(sources.isArray()).isTrue();
+                                    assertThat(sources.get(0).asText()).isEqualTo("EMS");
+                                    assertThat(sources.get(1).asText()).isEqualTo("CSO");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void get_charging_profiles_no_profiles_status(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("GetChargingProfiles", "NoProfiles");
+                    GetChargingProfilesUseCaseV201 useCase =
+                            new GetChargingProfilesUseCaseV201(harness.commandSender201);
+                    return useCase.getChargingProfiles(TENANT, STATION, 888, null, ChargingProfileCriterion.all())
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status()).isEqualTo(GetChargingProfilesStatus.NO_PROFILES);
+
+                                    var cmd = client.receivedCommands("GetChargingProfiles").get(0);
+                                    assertThat(cmd.payload().has("evseId")).isFalse();
                                 });
                                 client.close();
                                 return result;
