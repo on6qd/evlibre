@@ -8,6 +8,7 @@ import com.evlibre.server.core.domain.v201.dto.RequestStartStopStatus;
 import com.evlibre.server.core.domain.v201.model.IdToken;
 import com.evlibre.server.core.domain.v201.model.IdTokenType;
 import com.evlibre.server.core.usecases.v201.RequestStartTransactionUseCaseV201;
+import com.evlibre.server.core.usecases.v201.RequestStopTransactionUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -150,6 +151,82 @@ class RemoteControlCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send RequestStartTransaction via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void request_stop_transaction_accepted_wire_shape(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("RequestStopTransaction", "Accepted");
+                    RequestStopTransactionUseCaseV201 useCase =
+                            new RequestStopTransactionUseCaseV201(harness.commandSender201);
+                    return useCase.requestStopTransaction(TENANT, STATION, "tx-uuid-99")
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    var cmd = client.receivedCommands("RequestStopTransaction").get(0);
+                                    assertThat(cmd.payload().get("transactionId").asText())
+                                            .isEqualTo("tx-uuid-99");
+                                    assertThat(cmd.payload().size()).isEqualTo(1);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void request_stop_transaction_rejected_surfaces_status_info(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("RequestStopTransaction", payload -> Map.of(
+                            "status", "Rejected",
+                            "statusInfo", Map.of("reasonCode", "NoTransaction")));
+                    RequestStopTransactionUseCaseV201 useCase =
+                            new RequestStopTransactionUseCaseV201(harness.commandSender201);
+                    return useCase.requestStopTransaction(TENANT, STATION, "not-a-real-tx")
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status()).isEqualTo(RequestStartStopStatus.REJECTED);
+                                    assertThat(result.statusInfoReason()).isEqualTo("NoTransaction");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void request_stop_transaction_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    RequestStopTransactionUseCaseV201 useCase =
+                            new RequestStopTransactionUseCaseV201(harness.commandSender201);
+                    return useCase.requestStopTransaction(TENANT, STATION, "tx")
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send RequestStopTransaction via OCPP_201");
                                 });
                                 client.close();
                                 return null;
