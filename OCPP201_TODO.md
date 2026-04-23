@@ -98,7 +98,7 @@ Device Model is the biggest 2.0.1-only concept; foundational for everything else
 - [x] Outbound (new v201 use case + handler + schemas): `GetBaseReport` — `GetBaseReportUseCaseV201` + schemas; `PostBootActionService` now delegates to the use case.
 - [x] Outbound (new v201 use case + handler + schemas): `GetReport` — `GetReportUseCaseV201` + schemas; supports `ComponentCriterion` and `ComponentVariableSelector` filters.
 - [x] Outbound (new v201 use case + handler + schemas): `GetVariables` — `GetVariablesUseCaseV201` + schemas; synchronous read, returns typed `List<GetVariableResult>`.
-- [ ] Outbound (new v201 use case + handler + schemas): `SetVariables`
+- [x] Outbound (new v201 use case + handler + schemas): `SetVariables` — `SetVariablesUseCaseV201` + schemas; synchronous write, returns `List<SetVariableResult>` including the spec's `RebootRequired` outcome.
 - [ ] Outbound (new v201 use case + handler + schemas): `SetNetworkProfile`
 - [ ] Outbound (new v201 use case + handler + schemas): `Reset` — new `ResetStationUseCaseV201`, independent of the v1.6 `ResetStationUseCase`.
 

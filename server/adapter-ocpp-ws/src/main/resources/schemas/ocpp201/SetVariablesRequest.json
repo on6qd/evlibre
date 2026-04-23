@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:SetVariablesRequest",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "AttributeEnumType": {
+      "description": "Type of attribute: Actual, Target, MinSet, MaxSet. Default is Actual when omitted.",
+      "javaType": "AttributeEnum",
+      "type": "string",
+      "default": "Actual",
+      "additionalProperties": false,
+      "enum": [
+        "Actual",
+        "Target",
+        "MinSet",
+        "MaxSet"
+      ]
+    },
+    "EVSEType": {
+      "description": "EVSE (Electric Vehicle Supply Equipment) is part of a Charging Station that delivers energy to a single EV.",
+      "javaType": "EVSE",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "id": {
+          "description": "EVSE Identifier.",
+          "type": "integer"
+        },
+        "connectorId": {
+          "description": "An id to designate a specific connector (on an EVSE) by connector index number.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "ComponentType": {
+      "description": "A physical or logical component.",
+      "javaType": "Component",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "evse": {
+          "$ref": "#/definitions/EVSEType"
+        },
+        "name": {
+          "description": "Name of the component.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the component exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "VariableType": {
+      "description": "Reference key to a component-variable.",
+      "javaType": "Variable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "name": {
+          "description": "Name of the variable.",
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "description": "Name of instance in case the variable exists as multiple instances.",
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "SetVariableDataType": {
+      "javaType": "SetVariableData",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "attributeType": {
+          "$ref": "#/definitions/AttributeEnumType"
+        },
+        "attributeValue": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "component": {
+          "$ref": "#/definitions/ComponentType"
+        },
+        "variable": {
+          "$ref": "#/definitions/VariableType"
+        }
+      },
+      "required": [
+        "attributeValue",
+        "component",
+        "variable"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "setVariableData": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/SetVariableDataType"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "setVariableData"
+  ]
+}

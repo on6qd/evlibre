@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:SetVariablesResponse",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "AttributeEnumType": {
+      "description": "Type of attribute: Actual, Target, MinSet, MaxSet. Default is Actual when omitted.",
+      "javaType": "AttributeEnum",
+      "type": "string",
+      "default": "Actual",
+      "additionalProperties": false,
+      "enum": [
+        "Actual",
+        "Target",
+        "MinSet",
+        "MaxSet"
+      ]
+    },
+    "SetVariableStatusEnumType": {
+      "description": "Result status of setting the variable.",
+      "javaType": "SetVariableStatusEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Accepted",
+        "Rejected",
+        "UnknownComponent",
+        "UnknownVariable",
+        "NotSupportedAttributeType",
+        "RebootRequired"
+      ]
+    },
+    "EVSEType": {
+      "description": "EVSE (Electric Vehicle Supply Equipment) is part of a Charging Station that delivers energy to a single EV.",
+      "javaType": "EVSE",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "connectorId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "ComponentType": {
+      "description": "A physical or logical component.",
+      "javaType": "Component",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "evse": {
+          "$ref": "#/definitions/EVSEType"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "VariableType": {
+      "description": "Reference key to a component-variable.",
+      "javaType": "Variable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "instance": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "StatusInfoType": {
+      "description": "Element providing more information about the status.",
+      "javaType": "StatusInfo",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "reasonCode": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "additionalInfo": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "reasonCode"
+      ]
+    },
+    "SetVariableResultType": {
+      "javaType": "SetVariableResult",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "attributeType": {
+          "$ref": "#/definitions/AttributeEnumType"
+        },
+        "attributeStatus": {
+          "$ref": "#/definitions/SetVariableStatusEnumType"
+        },
+        "attributeStatusInfo": {
+          "$ref": "#/definitions/StatusInfoType"
+        },
+        "component": {
+          "$ref": "#/definitions/ComponentType"
+        },
+        "variable": {
+          "$ref": "#/definitions/VariableType"
+        }
+      },
+      "required": [
+        "attributeStatus",
+        "component",
+        "variable"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "setVariableResult": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "$ref": "#/definitions/SetVariableResultType"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "setVariableResult"
+  ]
+}

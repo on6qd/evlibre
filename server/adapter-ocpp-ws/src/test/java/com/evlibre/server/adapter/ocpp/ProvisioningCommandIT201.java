@@ -11,10 +11,13 @@ import com.evlibre.server.core.domain.v201.devicemodel.ComponentVariableSelector
 import com.evlibre.server.core.domain.v201.devicemodel.GetVariableData;
 import com.evlibre.server.core.domain.v201.devicemodel.GetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.ReportBase;
+import com.evlibre.server.core.domain.v201.devicemodel.SetVariableData;
+import com.evlibre.server.core.domain.v201.devicemodel.SetVariableStatus;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
 import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetVariablesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.SetVariablesUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -244,6 +247,77 @@ class ProvisioningCommandIT201 {
                                     assertThat(err.getCause())
                                             .isInstanceOf(IllegalStateException.class)
                                             .hasMessageContaining("Cannot send GetVariables via OCPP_201");
+                                });
+                                client.close();
+                                return null;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void set_variables_accepted_and_reboot_required_decoded(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    // Station responds: first update Accepted, second RebootRequired.
+                    client.onCommand("SetVariables", payload -> Map.of("setVariableResult", List.of(
+                            Map.of(
+                                    "attributeStatus", "Accepted",
+                                    "component", Map.of("name", "SecurityCtrlr"),
+                                    "variable", Map.of("name", "BasicAuthPassword")),
+                            Map.of(
+                                    "attributeStatus", "RebootRequired",
+                                    "attributeStatusInfo", Map.of("reasonCode", "NeedsReset"),
+                                    "component", Map.of("name", "OCPPCommCtrlr"),
+                                    "variable", Map.of("name", "NetworkConfigurationPriority")))));
+                    SetVariablesUseCaseV201 useCase = new SetVariablesUseCaseV201(harness.commandSender201);
+                    return useCase.setVariables(TENANT, STATION, List.of(
+                                    SetVariableData.of(Component.of("SecurityCtrlr"),
+                                            Variable.of("BasicAuthPassword"), "newpass"),
+                                    SetVariableData.of(Component.of("OCPPCommCtrlr"),
+                                            Variable.of("NetworkConfigurationPriority"), "0", AttributeType.ACTUAL)))
+                            .thenApply(results -> {
+                                ctx.verify(() -> {
+                                    var cmd = client.receivedCommands("SetVariables").get(0);
+                                    var data = cmd.payload().get("setVariableData");
+                                    assertThat(data.size()).isEqualTo(2);
+                                    assertThat(data.get(0).get("attributeValue").asText()).isEqualTo("newpass");
+                                    assertThat(data.get(0).has("attributeType")).isFalse();
+                                    assertThat(data.get(1).get("attributeType").asText()).isEqualTo("Actual");
+
+                                    assertThat(results).hasSize(2);
+                                    assertThat(results.get(0).isAccepted()).isTrue();
+                                    assertThat(results.get(0).requiresReboot()).isFalse();
+                                    assertThat(results.get(1).status()).isEqualTo(SetVariableStatus.REBOOT_REQUIRED);
+                                    assertThat(results.get(1).requiresReboot()).isTrue();
+                                    assertThat(results.get(1).statusInfoReason()).isEqualTo("NeedsReset");
+                                });
+                                client.close();
+                                return results;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void set_variables_on_v16_session_rejected_by_protocol_guard(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp1.6")
+                .thenCompose(client -> {
+                    SetVariablesUseCaseV201 useCase = new SetVariablesUseCaseV201(harness.commandSender201);
+                    return useCase.setVariables(TENANT, STATION, List.of(
+                                    SetVariableData.of(Component.of("C"), Variable.of("V"), "x")))
+                            .handle((result, err) -> {
+                                ctx.verify(() -> {
+                                    assertThat(err).isNotNull();
+                                    assertThat(err.getCause())
+                                            .isInstanceOf(IllegalStateException.class)
+                                            .hasMessageContaining("Cannot send SetVariables via OCPP_201");
                                 });
                                 client.close();
                                 return null;
