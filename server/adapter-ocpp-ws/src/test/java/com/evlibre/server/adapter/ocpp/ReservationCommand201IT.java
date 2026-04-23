@@ -4,10 +4,12 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v201.dto.CancelReservationStatus;
 import com.evlibre.server.core.domain.v201.dto.ReserveNowStatus;
 import com.evlibre.server.core.domain.v201.model.ConnectorType;
 import com.evlibre.server.core.domain.v201.model.IdToken;
 import com.evlibre.server.core.domain.v201.model.IdTokenType;
+import com.evlibre.server.core.usecases.v201.CancelReservationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.ReserveNowUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -129,6 +131,59 @@ class ReservationCommand201IT {
                                     assertThat(result.isAccepted()).isFalse();
                                     assertThat(result.status()).isEqualTo(ReserveNowStatus.OCCUPIED);
                                     assertThat(result.statusInfoReason()).isEqualTo("EvseInUse");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void cancel_reservation_accepted_wire_shape(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("CancelReservation", "Accepted");
+                    CancelReservationUseCaseV201 useCase =
+                            new CancelReservationUseCaseV201(harness.commandSender201);
+                    return useCase.cancelReservation(TENANT, STATION, 404)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status()).isEqualTo(CancelReservationStatus.ACCEPTED);
+
+                                    var cmd = client.receivedCommands("CancelReservation").get(0);
+                                    assertThat(cmd.payload().get("reservationId").asInt()).isEqualTo(404);
+                                    assertThat(cmd.payload().size()).isEqualTo(1);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void cancel_reservation_rejected_surfaces_reason_code(Vertx vertx, VertxTestContext ctx) {
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("CancelReservation", payload -> Map.of(
+                            "status", "Rejected",
+                            "statusInfo", Map.of("reasonCode", "NoSuchReservation")));
+                    CancelReservationUseCaseV201 useCase =
+                            new CancelReservationUseCaseV201(harness.commandSender201);
+                    return useCase.cancelReservation(TENANT, STATION, 999)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status()).isEqualTo(CancelReservationStatus.REJECTED);
+                                    assertThat(result.statusInfoReason()).isEqualTo("NoSuchReservation");
                                 });
                                 client.close();
                                 return result;
