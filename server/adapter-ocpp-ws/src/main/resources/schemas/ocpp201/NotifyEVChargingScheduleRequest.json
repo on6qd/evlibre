@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:NotifyEVChargingScheduleRequest",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "ChargingRateUnitEnumType": {
+      "description": "The unit of measure Limit is expressed in.\r\n",
+      "javaType": "ChargingRateUnitEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "W",
+        "A"
+      ]
+    },
+    "CostKindEnumType": {
+      "description": "The kind of cost referred to in the message element amount.",
+      "javaType": "CostKindEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "CarbonDioxideEmission",
+        "RelativePricePercentage",
+        "RenewableGenerationPercentage"
+      ]
+    },
+    "ChargingSchedulePeriodType": {
+      "javaType": "ChargingSchedulePeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "startPeriod": { "type": "integer" },
+        "limit": { "type": "number" },
+        "numberPhases": { "type": "integer" },
+        "phaseToUse": { "type": "integer" }
+      },
+      "required": [ "startPeriod", "limit" ]
+    },
+    "ChargingScheduleType": {
+      "javaType": "ChargingSchedule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "id": { "type": "integer" },
+        "startSchedule": { "type": "string", "format": "date-time" },
+        "duration": { "type": "integer" },
+        "chargingRateUnit": { "$ref": "#/definitions/ChargingRateUnitEnumType" },
+        "chargingSchedulePeriod": {
+          "type": "array",
+          "additionalItems": false,
+          "items": { "$ref": "#/definitions/ChargingSchedulePeriodType" },
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "minChargingRate": { "type": "number" },
+        "salesTariff": { "$ref": "#/definitions/SalesTariffType" }
+      },
+      "required": [ "id", "chargingRateUnit", "chargingSchedulePeriod" ]
+    },
+    "ConsumptionCostType": {
+      "javaType": "ConsumptionCost",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "startValue": { "type": "number" },
+        "cost": {
+          "type": "array",
+          "additionalItems": false,
+          "items": { "$ref": "#/definitions/CostType" },
+          "minItems": 1,
+          "maxItems": 3
+        }
+      },
+      "required": ["startValue", "cost"]
+    },
+    "CostType": {
+      "javaType": "Cost",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "costKind": { "$ref": "#/definitions/CostKindEnumType" },
+        "amount": { "type": "integer" },
+        "amountMultiplier": { "type": "integer" }
+      },
+      "required": ["costKind", "amount"]
+    },
+    "RelativeTimeIntervalType": {
+      "javaType": "RelativeTimeInterval",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "start": { "type": "integer" },
+        "duration": { "type": "integer" }
+      },
+      "required": ["start"]
+    },
+    "SalesTariffEntryType": {
+      "javaType": "SalesTariffEntry",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "relativeTimeInterval": { "$ref": "#/definitions/RelativeTimeIntervalType" },
+        "ePriceLevel": { "type": "integer", "minimum": 0.0 },
+        "consumptionCost": {
+          "type": "array",
+          "additionalItems": false,
+          "items": { "$ref": "#/definitions/ConsumptionCostType" },
+          "minItems": 1,
+          "maxItems": 3
+        }
+      },
+      "required": ["relativeTimeInterval"]
+    },
+    "SalesTariffType": {
+      "javaType": "SalesTariff",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": { "$ref": "#/definitions/CustomDataType" },
+        "id": { "type": "integer" },
+        "salesTariffDescription": { "type": "string", "maxLength": 32 },
+        "numEPriceLevels": { "type": "integer" },
+        "salesTariffEntry": {
+          "type": "array",
+          "additionalItems": false,
+          "items": { "$ref": "#/definitions/SalesTariffEntryType" },
+          "minItems": 1,
+          "maxItems": 1024
+        }
+      },
+      "required": ["id", "salesTariffEntry"]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "timeBase": {
+      "description": "Periods contained in the charging profile are relative to this point in time.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "evseId": {
+      "description": "The charging schedule contained in this notification applies to an EVSE. EvseId must be > 0.",
+      "type": "integer"
+    },
+    "chargingSchedule": {
+      "$ref": "#/definitions/ChargingScheduleType"
+    }
+  },
+  "required": [
+    "timeBase",
+    "evseId",
+    "chargingSchedule"
+  ]
+}

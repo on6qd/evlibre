@@ -1,7 +1,11 @@
 package com.evlibre.server.core.domain.v201.smartcharging.wire;
 
+import com.evlibre.server.core.domain.v201.smartcharging.AcChargingParameters;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingLimitSource;
+import com.evlibre.server.core.domain.v201.smartcharging.ChargingNeeds;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfile;
+import com.evlibre.server.core.domain.v201.smartcharging.DcChargingParameters;
+import com.evlibre.server.core.domain.v201.smartcharging.EnergyTransferMode;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfileKind;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingProfilePurpose;
 import com.evlibre.server.core.domain.v201.smartcharging.ChargingRateUnit;
@@ -151,6 +155,71 @@ public final class ChargingProfileWire {
             case "A" -> ChargingRateUnit.AMPERES;
             default -> throw new IllegalArgumentException("Unknown ChargingRateUnit wire value: " + wire);
         };
+    }
+
+    public static String energyTransferModeToWire(EnergyTransferMode m) {
+        return switch (m) {
+            case DC -> "DC";
+            case AC_SINGLE_PHASE -> "AC_single_phase";
+            case AC_TWO_PHASE -> "AC_two_phase";
+            case AC_THREE_PHASE -> "AC_three_phase";
+        };
+    }
+
+    public static EnergyTransferMode energyTransferModeFromWire(String wire) {
+        return switch (wire) {
+            case "DC" -> EnergyTransferMode.DC;
+            case "AC_single_phase" -> EnergyTransferMode.AC_SINGLE_PHASE;
+            case "AC_two_phase" -> EnergyTransferMode.AC_TWO_PHASE;
+            case "AC_three_phase" -> EnergyTransferMode.AC_THREE_PHASE;
+            default -> throw new IllegalArgumentException("Unknown EnergyTransferMode wire value: " + wire);
+        };
+    }
+
+    public static ChargingNeeds chargingNeedsFromWire(Map<?, ?> node) {
+        Object mode = node.get("requestedEnergyTransfer");
+        if (!(mode instanceof String modeStr)) {
+            throw new IllegalArgumentException("ChargingNeeds missing requestedEnergyTransfer: " + node);
+        }
+        Instant departure = node.get("departureTime") instanceof String dStr ? Instant.parse(dStr) : null;
+        AcChargingParameters ac = node.get("acChargingParameters") instanceof Map<?, ?> acMap
+                ? acParamsFromWire(acMap) : null;
+        DcChargingParameters dc = node.get("dcChargingParameters") instanceof Map<?, ?> dcMap
+                ? dcParamsFromWire(dcMap) : null;
+        return new ChargingNeeds(energyTransferModeFromWire(modeStr), departure, ac, dc);
+    }
+
+    private static AcChargingParameters acParamsFromWire(Map<?, ?> node) {
+        return new AcChargingParameters(
+                intRequired(node, "energyAmount"),
+                intRequired(node, "evMinCurrent"),
+                intRequired(node, "evMaxCurrent"),
+                intRequired(node, "evMaxVoltage"));
+    }
+
+    private static DcChargingParameters dcParamsFromWire(Map<?, ?> node) {
+        return new DcChargingParameters(
+                intRequired(node, "evMaxCurrent"),
+                intRequired(node, "evMaxVoltage"),
+                intOptional(node, "energyAmount"),
+                intOptional(node, "evMaxPower"),
+                intOptional(node, "stateOfCharge"),
+                intOptional(node, "evEnergyCapacity"),
+                intOptional(node, "fullSoC"),
+                intOptional(node, "bulkSoC"));
+    }
+
+    private static int intRequired(Map<?, ?> node, String key) {
+        Object v = node.get(key);
+        if (!(v instanceof Number n)) {
+            throw new IllegalArgumentException("missing required int field: " + key + " in " + node);
+        }
+        return n.intValue();
+    }
+
+    private static Integer intOptional(Map<?, ?> node, String key) {
+        Object v = node.get(key);
+        return v instanceof Number n ? n.intValue() : null;
     }
 
     public static ChargingProfile chargingProfileFromWire(Map<?, ?> node) {

@@ -24,8 +24,12 @@ import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.domain.v201.dto.GenericStatus;
+import com.evlibre.server.core.domain.v201.dto.NotifyEVChargingNeedsStatus;
 import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
@@ -188,6 +192,23 @@ public class Application {
                                 log.info("ClearedChargingLimit from {} (source={}, evseId={})",
                                         s.value(), source, evseId));
 
+        // ISO 15118 EV-originated smart-charging acks. Default policies return Accepted
+        // so stations aren't blocked until real schedule synthesis lands.
+        HandleNotifyEVChargingNeedsUseCaseV201 handleNotifyEVChargingNeeds =
+                new HandleNotifyEVChargingNeedsUseCaseV201(
+                        (t, s, evseId, maxScheduleTuples, needs) -> {
+                            log.info("NotifyEVChargingNeeds from {} (evseId={}, mode={}, departureTime={})",
+                                    s.value(), evseId, needs.requestedEnergyTransfer(), needs.departureTime());
+                            return NotifyEVChargingNeedsStatus.ACCEPTED;
+                        });
+        HandleNotifyEVChargingScheduleUseCaseV201 handleNotifyEVChargingSchedule =
+                new HandleNotifyEVChargingScheduleUseCaseV201(
+                        (t, s, timeBase, evseId, schedule) -> {
+                            log.info("NotifyEVChargingSchedule from {} (evseId={}, timeBase={}, periods={})",
+                                    s.value(), evseId, timeBase, schedule.chargingSchedulePeriod().size());
+                            return GenericStatus.ACCEPTED;
+                        });
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -237,6 +258,10 @@ public class Application {
                 new NotifyChargingLimitHandler201(handleNotifyChargingLimit, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ClearedChargingLimit",
                 new ClearedChargingLimitHandler201(handleClearedChargingLimit, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyEVChargingNeeds",
+                new NotifyEVChargingNeedsHandler201(handleNotifyEVChargingNeeds, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyEVChargingSchedule",
+                new NotifyEVChargingScheduleHandler201(handleNotifyEVChargingSchedule, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(

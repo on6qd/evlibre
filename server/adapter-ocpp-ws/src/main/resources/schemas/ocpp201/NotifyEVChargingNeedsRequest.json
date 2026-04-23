@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "urn:OCPP:Cp:2:2020:3:NotifyEVChargingNeedsRequest",
+  "comment": "OCPP 2.0.1 FINAL",
+  "definitions": {
+    "CustomDataType": {
+      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "javaType": "CustomData",
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "vendorId"
+      ]
+    },
+    "EnergyTransferModeEnumType": {
+      "description": "Mode of energy transfer requested by the EV.\r\n",
+      "javaType": "EnergyTransferModeEnum",
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "DC",
+        "AC_single_phase",
+        "AC_two_phase",
+        "AC_three_phase"
+      ]
+    },
+    "ACChargingParametersType": {
+      "description": "AC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233250\r\n",
+      "javaType": "ACChargingParameters",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "energyAmount": {
+          "description": "Amount of energy requested (in Wh).",
+          "type": "integer"
+        },
+        "evMinCurrent": {
+          "description": "Minimum current (amps) supported by the EV (per phase).",
+          "type": "integer"
+        },
+        "evMaxCurrent": {
+          "description": "Maximum current (amps) supported by the EV (per phase).",
+          "type": "integer"
+        },
+        "evMaxVoltage": {
+          "description": "Maximum voltage supported by the EV.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "energyAmount",
+        "evMinCurrent",
+        "evMaxCurrent",
+        "evMaxVoltage"
+      ]
+    },
+    "DCChargingParametersType": {
+      "description": "DC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233251\r\n",
+      "javaType": "DCChargingParameters",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "evMaxCurrent": {
+          "description": "Maximum current (amps) supported by the EV.",
+          "type": "integer"
+        },
+        "evMaxVoltage": {
+          "description": "Maximum voltage supported by the EV.",
+          "type": "integer"
+        },
+        "energyAmount": {
+          "description": "Energy to be delivered by the Charging Station.",
+          "type": "integer"
+        },
+        "evMaxPower": {
+          "description": "Maximum power (in W) supported by the EV.",
+          "type": "integer"
+        },
+        "stateOfCharge": {
+          "description": "Energy available in the battery (as a percentage of the battery capacity).",
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 100.0
+        },
+        "evEnergyCapacity": {
+          "description": "Capacity of the electric vehicle battery (in Wh).",
+          "type": "integer"
+        },
+        "fullSoC": {
+          "description": "Percentage of SoC at which the EV considers the battery fully charged.",
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 100.0
+        },
+        "bulkSoC": {
+          "description": "Percentage of SoC at which the EV considers a fast charging process to end.",
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 100.0
+        }
+      },
+      "required": [
+        "evMaxCurrent",
+        "evMaxVoltage"
+      ]
+    },
+    "ChargingNeedsType": {
+      "description": "Charging_ Needs\r\nurn:x-oca:ocpp:uid:2:233249\r\n",
+      "javaType": "ChargingNeeds",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customData": {
+          "$ref": "#/definitions/CustomDataType"
+        },
+        "acChargingParameters": {
+          "$ref": "#/definitions/ACChargingParametersType"
+        },
+        "dcChargingParameters": {
+          "$ref": "#/definitions/DCChargingParametersType"
+        },
+        "requestedEnergyTransfer": {
+          "$ref": "#/definitions/EnergyTransferModeEnumType"
+        },
+        "departureTime": {
+          "description": "Estimated departure time of the EV.",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "requestedEnergyTransfer"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "customData": {
+      "$ref": "#/definitions/CustomDataType"
+    },
+    "chargingNeeds": {
+      "$ref": "#/definitions/ChargingNeedsType"
+    },
+    "evseId": {
+      "description": "Defines the EVSE and connector to which the EV is connected. EvseId MAY not be 0.",
+      "type": "integer",
+      "minimum": 0.0
+    },
+    "maxScheduleTuples": {
+      "description": "Contains the maximum schedule tuples the car supports per schedule.",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "evseId",
+    "chargingNeeds"
+  ]
+}
