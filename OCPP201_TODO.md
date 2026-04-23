@@ -103,8 +103,8 @@ Device Model is the biggest 2.0.1-only concept; foundational for everything else
 - [x] Outbound (new v201 use case + handler + schemas): `Reset` — `ResetStationUseCaseV201` (independent of v1.6); supports `Immediate`/`OnIdle` + optional `evseId`, and the added `Scheduled` response status.
 
 ### Phase 1 follow-ups (not blockers for starting Phase 2)
-- [ ] `NotifyReport` request-scoped aggregation. Today `NotifyReportHandler201` upserts every frame into the repo directly and ignores `requestId` / `seqNo` / `tbc`. A multi-frame `FullInventory` report is correct in the end state but never triggers a "report complete" signal. Wire a per-`requestId` accumulator that commits (and clears) on `tbc=false`, so callers can react to completion events.
-- [ ] End-to-end IT: `GetBaseReport` → station streams N `NotifyReport` frames with matching `requestId` → repo ends up populated. Currently only the outbound and inbound legs are tested in isolation.
+- [x] `NotifyReport` request-scoped aggregation. `HandleNotifyReportUseCaseV201` buffers frames per `(tenantId, stationIdentity, requestId)` and on `tbc=false` upserts atomically and fires `NotifyReportCompletionPort`.
+- [x] End-to-end IT: `DeviceModelReporting201IT` drives `GetBaseReport` → N `NotifyReport` frames with matching `requestId` → repo populated, completion event fires exactly once.
 
 ## Phase 2 — Remote Control (Block F)
 All v2.0.1-only use cases; no reuse of v1.6 siblings.
