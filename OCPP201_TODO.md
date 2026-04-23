@@ -6,6 +6,7 @@ Phase 0 completed: 2026-04-21 (all subsections done — separation groundwork
 plus full response-schema authoring and hard-reject validation, see 0.4).
 Phase 4 (Block P / DataTransfer) completed: 2026-04-22.
 Phase 5 (Blocks E, H, K — Reservations, Transactions, Smart Charging) completed: 2026-04-23.
+Phase 6 (Blocks L, N — Firmware & Diagnostics) completed: 2026-04-23.
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -143,13 +144,15 @@ Phase 5 tally: 7 new outbound use cases, 5 new inbound handlers, ~19 new schema 
 - [x] K01.FR.38: `ChargingProfile` now rejects the `ChargingStationMaxProfile` + `Relative` combination at construction.
 - [x] K09.FR.03: `GetChargingProfilesUseCaseV201` rejects empty criteria; the spec-violating `ChargingProfileCriterion.all()` factory was dropped in favour of an `isEmpty()` guard.
 
-## Phase 6 — Firmware & Diagnostics (Blocks L, N)
-- [ ] Inbound: `FirmwareStatusNotification`.
-- [ ] Outbound: `UpdateFirmware`.
-- [ ] Inbound: `LogStatusNotification`.
-- [ ] Outbound: `GetLog` (replaces 1.6 `GetDiagnostics` conceptually, but different shape).
-- [ ] Inbound: `NotifyEvent`.
-- [ ] Inbound/Outbound: `PublishFirmware` + `PublishFirmwareStatusNotification` (optional, local firmware distribution).
+## Phase 6 — Firmware & Diagnostics (Blocks L, N) ✅
+- [x] Inbound: `FirmwareStatusNotification` — `FirmwareStatusNotificationHandler201` + `HandleFirmwareStatusNotificationUseCaseV201` (Sink). New `FirmwareStatus` enum (14 spec values) with `FirmwareWire` codec under `domain/v201/firmware/`. `requestId` optional per L01.FR.20 (only required when status≠Idle).
+- [x] Outbound: `UpdateFirmware` — `UpdateFirmwareUseCaseV201`. New `Firmware` record (location + retrieveDateTime required, optional installDateTime / signingCertificate / signature with maxLength 512 / 5500 / 800). `UpdateFirmwareStatus` enum (5 values, AcceptedCanceled folded into `isAccepted()` per L01.FR.34). Typed `UpdateFirmwareResult` with optional `statusInfo.reasonCode`.
+- [x] Inbound: `LogStatusNotification` — `LogStatusNotificationHandler201` + `HandleLogStatusNotificationUseCaseV201` (Sink). New `UploadLogStatus` enum (8 spec values incl. `AcceptedCanceled` for N01.FR.12) with `DiagnosticsWire` codec under a new `domain/v201/diagnostics/` subpackage. `requestId` optional per N01.FR.13.
+- [x] Outbound: `GetLog` — `GetLogUseCaseV201`. New `LogParameters` record (remoteLocation required, optional time window with oldest≤latest validation), 2-valued `LogType` enum (`DiagnosticsLog` / `SecurityLog`) and 3-valued `GetLogStatus` enum. Typed `GetLogResult` surfaces optional `filename` + `statusInfo.reasonCode`. AcceptedCanceled folded into `isAccepted()` per N01.FR.12.
+- [x] Inbound: `NotifyEvent` — `NotifyEventHandler201` + `HandleNotifyEventUseCaseV201` (Sink). New `EventData` record (7 required fields + 7 optional: cause / techCode / techInfo / cleared / transactionId / variableMonitoringId), `EventTrigger` (3 values), `EventNotificationType` (4 values). Reuses devicemodel `Component` / `Variable` types via `DeviceModelWire` so the device-model and event paths emit the same shape. Multi-frame batches arrive as separate sink calls keyed by ascending `seqNo` per N08.FR.04.
+- [x] Inbound/Outbound: `PublishFirmware` + `PublishFirmwareStatusNotification` — `PublishFirmwareUseCaseV201` (outbound, GenericStatus response, 32-char MD5 checksum length enforced) + `PublishFirmwareStatusNotificationHandler201` (inbound, 10-value `PublishFirmwareStatus` enum). Use case enforces L03.FR.04 — `status=Published` MUST come with at least one location URI.
+
+Phase 6 tally: 4 new outbound use cases (UpdateFirmware, GetLog, PublishFirmware + the existing pattern), 4 new inbound handlers (FirmwareStatusNotification, LogStatusNotification, NotifyEvent, PublishFirmwareStatusNotification), ~12 new schema files; 147 integration tests in `adapter-ocpp-ws` (up from 129 at end of Phase 5). New `domain/v201/firmware/` and `domain/v201/diagnostics/` packages bootstrap Phase 7 (Security/Certificates) and Phase 8 (Monitoring/Display) — `EventData` will extend naturally to `NotifyMonitoringReport`, and the firmware update/security flows already share the StatusInfo shape used by certificate ops.
 
 ## Phase 7 — Security & Certificates (Blocks A, M)
 - [ ] Inbound: `SecurityEventNotification`.
