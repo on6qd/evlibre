@@ -35,6 +35,12 @@ public class DataTransferHandler201 implements OcppMessageHandler {
 
         ObjectNode response = objectMapper.createObjectNode();
         response.put("status", toWire(result.status()));
+        if (result.data() != null) {
+            response.set("data", objectMapper.valueToTree(result.data()));
+        }
+        if (result.statusInfoReason() != null) {
+            response.putObject("statusInfo").put("reasonCode", result.statusInfoReason());
+        }
         return response;
     }
 

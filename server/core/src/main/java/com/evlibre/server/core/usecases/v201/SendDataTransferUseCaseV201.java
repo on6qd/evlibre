@@ -64,7 +64,7 @@ public class SendDataTransferUseCaseV201 implements SendDataTransferPort {
             statusInfoReason = reason == null ? null : String.valueOf(reason);
         }
         log.info("DataTransfer response from {}: {}", stationIdentity.value(), statusWire);
-        return new DataTransferResult(status, responseData, statusInfoReason, response);
+        return new DataTransferResult(status, responseData, statusInfoReason);
     }
 
     private static DataTransferStatus parseStatus(String wire) {
