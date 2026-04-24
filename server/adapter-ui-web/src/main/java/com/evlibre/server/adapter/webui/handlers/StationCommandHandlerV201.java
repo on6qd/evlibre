@@ -26,6 +26,30 @@ public class StationCommandHandlerV201 {
         sendCommand(ctx, tenantId, stationId, "ClearCache", Collections.emptyMap());
     }
 
+    public void changeAvailability(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String status = param(ctx, "operationalStatus");
+        if (!"Operative".equals(status) && !"Inoperative".equals(status)) {
+            respondResult(ctx, "ChangeAvailability",
+                    "error: operationalStatus must be Operative or Inoperative", false);
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("operationalStatus", status);
+        String evseStr = param(ctx, "evseId");
+        if (evseStr != null && !evseStr.isBlank()) {
+            Map<String, Object> evse = new HashMap<>();
+            evse.put("id", Integer.parseInt(evseStr));
+            String connStr = param(ctx, "connectorId");
+            if (connStr != null && !connStr.isBlank()) {
+                evse.put("connectorId", Integer.parseInt(connStr));
+            }
+            payload.put("evse", evse);
+        }
+        sendCommand(ctx, tenantId, stationId, "ChangeAvailability", payload);
+    }
+
     public void reset(RoutingContext ctx, TenantId tenantId) {
         String stationId = ctx.pathParam("stationId");
         String type = ctx.queryParams().get("type");
@@ -59,6 +83,12 @@ public class StationCommandHandlerV201 {
                     ctx.vertx().runOnContext(v -> respondResult(ctx, action, "error: " + err.getMessage(), false));
                     return null;
                 });
+    }
+
+    private static String param(RoutingContext ctx, String name) {
+        String q = ctx.queryParams().get(name);
+        if (q != null) return q;
+        return ctx.request().getFormAttribute(name);
     }
 
     private void respondResult(RoutingContext ctx, String action, String status, boolean success) {

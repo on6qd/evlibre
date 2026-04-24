@@ -7,6 +7,7 @@ import com.evlibre.server.test.fakes.FakeStationRepository;
 import com.evlibre.server.test.fakes.FakeTenantRepository;
 import com.evlibre.server.test.fakes.FakeTransactionRepository;
 import com.evlibre.server.test.fixtures.Tenants;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -83,6 +86,64 @@ class V201CommandIT {
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.bodyAsString()).contains("error");
                     assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void change_availability_station_wide_omits_evse(VertxTestContext ctx) {
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/change-availability?operationalStatus=Operative")
+                .send()
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("ChangeAvailability");
+                    assertThat(sent.payload())
+                            .containsEntry("operationalStatus", "Operative")
+                            .doesNotContainKey("evse");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void change_availability_evse_scope_wraps_id(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("operationalStatus", "Inoperative")
+                .add("evseId", "3");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/change-availability")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.payload())
+                            .containsEntry("operationalStatus", "Inoperative")
+                            .containsKey("evse");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> evse = (Map<String, Object>) sent.payload().get("evse");
+                    assertThat(evse)
+                            .containsEntry("id", 3)
+                            .doesNotContainKey("connectorId");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void change_availability_connector_scope_adds_connectorId(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("operationalStatus", "Operative")
+                .add("evseId", "2")
+                .add("connectorId", "1");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/change-availability")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> evse = (Map<String, Object>) sent.payload().get("evse");
+                    assertThat(evse)
+                            .containsEntry("id", 2)
+                            .containsEntry("connectorId", 1);
                     ctx.completeNow();
                 })));
     }

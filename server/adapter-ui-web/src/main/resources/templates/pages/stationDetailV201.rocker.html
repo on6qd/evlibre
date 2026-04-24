@@ -55,11 +55,39 @@
                                 reset (on idle)
                             </button>
                             <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Operative"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                set operative
+                            </button>
+                            <button class="btn btn-warn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Inoperative"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                set inoperative
+                            </button>
+                            <button class="btn"
                                     hx-post="/@tenantId/stations/@station.stationId()/v201/clear-cache"
                                     hx-target="#cmd-result"
                                     hx-swap="innerHTML">
                                 clear cache
                             </button>
+                        </div>
+
+                        <div style="margin-top:16px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">change availability (evse/connector)</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <select name="operationalStatus">
+                                    <option value="Operative">Operative</option>
+                                    <option value="Inoperative">Inoperative</option>
+                                </select>
+                                <input type="number" name="evseId" placeholder="evse id" min="1" style="width:80px;">
+                                <input type="number" name="connectorId" placeholder="conn (opt)" min="1" style="width:100px;">
+                                <button type="submit" class="btn">apply</button>
+                            </form>
                         </div>
                     } else {
                         <div style="color:var(--fg-dim);font-size:12px;">station is offline. commands unavailable.</div>
