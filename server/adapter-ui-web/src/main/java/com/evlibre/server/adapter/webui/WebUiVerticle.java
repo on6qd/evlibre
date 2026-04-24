@@ -127,6 +127,8 @@ public class WebUiVerticle extends AbstractVerticle {
                     .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler201::requestStartTransaction));
             router.post("/:tenantId/stations/:stationId/v201/request-stop")
                     .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler201::requestStopTransaction));
+            router.post("/:tenantId/stations/:stationId/v201/get-log")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler201::getLog));
         }
 
         // Root

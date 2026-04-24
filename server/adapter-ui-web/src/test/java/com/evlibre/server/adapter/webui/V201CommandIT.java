@@ -264,6 +264,57 @@ class V201CommandIT {
     }
 
     @Test
+    void get_log_wraps_remote_location_in_log_object(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("logType", "DiagnosticsLog")
+                .add("remoteLocation", "ftp://host/logs/");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/get-log")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("GetLog");
+                    assertThat(sent.payload())
+                            .containsEntry("logType", "DiagnosticsLog")
+                            .containsKey("requestId");
+                    assertThat(sent.payload().get("requestId")).isInstanceOf(Integer.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> logParams = (Map<String, Object>) sent.payload().get("log");
+                    assertThat(logParams).containsEntry("remoteLocation", "ftp://host/logs/");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void get_log_rejects_unknown_log_type(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("logType", "Bogus")
+                .add("remoteLocation", "ftp://host/logs/");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/get-log")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void get_log_rejects_missing_remote_location(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("logType", "SecurityLog");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/get-log")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
     void clear_cache_sends_empty_payload(VertxTestContext ctx) {
         webClient.post(verticle.actualPort(), "localhost",
                         "/demo-tenant/stations/CHARGER-001/v201/clear-cache")

@@ -18,6 +18,7 @@ public class StationCommandHandlerV201 {
 
     private final Ocpp201StationCommandSender commandSender;
     private final AtomicInteger remoteStartIdSeq = new AtomicInteger(1);
+    private final AtomicInteger requestIdSeq = new AtomicInteger(1);
 
     public StationCommandHandlerV201(Ocpp201StationCommandSender commandSender) {
         this.commandSender = commandSender;
@@ -50,6 +51,29 @@ public class StationCommandHandlerV201 {
             payload.put("evse", evse);
         }
         sendCommand(ctx, tenantId, stationId, "ChangeAvailability", payload);
+    }
+
+    public void getLog(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String logType = param(ctx, "logType");
+        if (logType == null || logType.isBlank()) logType = "DiagnosticsLog";
+        if (!"DiagnosticsLog".equals(logType) && !"SecurityLog".equals(logType)) {
+            respondResult(ctx, "GetLog",
+                    "error: logType must be DiagnosticsLog or SecurityLog", false);
+            return;
+        }
+        String remoteLocation = param(ctx, "remoteLocation");
+        if (remoteLocation == null || remoteLocation.isBlank()) {
+            respondResult(ctx, "GetLog",
+                    "error: remoteLocation is required", false);
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("logType", logType);
+        payload.put("requestId", requestIdSeq.getAndIncrement());
+        payload.put("log", Map.of("remoteLocation", remoteLocation));
+        sendCommand(ctx, tenantId, stationId, "GetLog", payload);
     }
 
     public void requestStartTransaction(RoutingContext ctx, TenantId tenantId) {
