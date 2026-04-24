@@ -1,11 +1,11 @@
 package com.evlibre.server.adapter.ocpp.handler.v201;
 
-import com.evlibre.common.model.ConnectorId;
+import com.evlibre.common.model.EvseId;
 import com.evlibre.common.model.MeterValue;
 import com.evlibre.common.model.SampledValue;
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.v16.dto.MeterValuesData;
+import com.evlibre.server.core.domain.v201.dto.MeterValuesData201;
 import com.evlibre.server.core.domain.v201.ports.inbound.HandleMeterValuesPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +40,7 @@ public class MeterValuesHandler201 implements OcppMessageHandler {
                         sampledValues.add(new SampledValue(
                                 sv.path("value").asText(),
                                 sv.path("context").asText(null),
-                                null, // format not in 2.0.1
+                                null, // format field is 1.6-only
                                 sv.path("measurand").asText(null),
                                 sv.path("phase").asText(null),
                                 sv.path("location").asText(null),
@@ -52,11 +52,9 @@ public class MeterValuesHandler201 implements OcppMessageHandler {
             }
         }
 
-        // In 2.0.1 MeterValues uses evseId instead of connectorId.
-        // We map evseId to ConnectorId for domain compatibility.
-        MeterValuesData data = new MeterValuesData(
+        MeterValuesData201 data = new MeterValuesData201(
                 session.tenantId(), session.stationIdentity(),
-                new ConnectorId(evseId), null, meterValues
+                new EvseId(evseId), meterValues
         );
         meterValuesPort.meterValues(data);
 
