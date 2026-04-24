@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class StationCommandHandlerV201 {
@@ -23,6 +24,24 @@ public class StationCommandHandlerV201 {
     public void clearCache(RoutingContext ctx, TenantId tenantId) {
         String stationId = ctx.pathParam("stationId");
         sendCommand(ctx, tenantId, stationId, "ClearCache", Collections.emptyMap());
+    }
+
+    public void reset(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String type = ctx.queryParams().get("type");
+        if (type == null || type.isBlank()) type = "Immediate";
+        if (!"Immediate".equals(type) && !"OnIdle".equals(type)) {
+            respondResult(ctx, "Reset", "error: type must be Immediate or OnIdle", false);
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", type);
+        String evseStr = ctx.queryParams().get("evseId");
+        if (evseStr != null && !evseStr.isBlank()) {
+            payload.put("evseId", Integer.parseInt(evseStr));
+        }
+        sendCommand(ctx, tenantId, stationId, "Reset", payload);
     }
 
     private void sendCommand(RoutingContext ctx, TenantId tenantId, String stationId,

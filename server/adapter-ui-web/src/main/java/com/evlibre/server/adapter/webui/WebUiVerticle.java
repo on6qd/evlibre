@@ -117,6 +117,8 @@ public class WebUiVerticle extends AbstractVerticle {
             StationCommandHandlerV201 cmdHandler201 = new StationCommandHandlerV201(commandSender201);
             router.post("/:tenantId/stations/:stationId/v201/clear-cache")
                     .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler201::clearCache));
+            router.post("/:tenantId/stations/:stationId/v201/reset")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, cmdHandler201::reset));
         }
 
         // Root

@@ -43,6 +43,18 @@
                     @if (station.online()) {
                         <div class="cmd-grid">
                             <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=Immediate"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                reset (immediate)
+                            </button>
+                            <button class="btn"
+                                    hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=OnIdle"
+                                    hx-target="#cmd-result"
+                                    hx-swap="innerHTML">
+                                reset (on idle)
+                            </button>
+                            <button class="btn"
                                     hx-post="/@tenantId/stations/@station.stationId()/v201/clear-cache"
                                     hx-target="#cmd-result"
                                     hx-swap="innerHTML">
