@@ -5,7 +5,11 @@ import java.util.Objects;
 /**
  * Typed result of a {@code GetCertificateStatus} response (block A04).
  * {@link #ocspResult} carries the DER-encoded / base64-wrapped OCSP response
- * from the CA. Spec allows the field to be omitted when {@link #status} is
+ * from the CA. Per the OCPP 2.0.1 schema description
+ * ({@code GetCertificateStatusResponse.ocspResult}: "MAY only be omitted
+ * when status is not Accepted"), the contract is enforced here:
+ * {@code ocspResult} MUST be non-blank when {@link #status} is
+ * {@link GetCertificateStatus#ACCEPTED}, and is typically absent for
  * {@link GetCertificateStatus#FAILED}.
  */
 public record GetCertificateStatusResult(
@@ -15,6 +19,13 @@ public record GetCertificateStatusResult(
 
     public GetCertificateStatusResult {
         Objects.requireNonNull(status, "status");
+        if (status == GetCertificateStatus.ACCEPTED) {
+            Objects.requireNonNull(ocspResult, "ocspResult is required when status=Accepted");
+            if (ocspResult.isBlank()) {
+                throw new IllegalArgumentException(
+                        "ocspResult must not be blank when status=Accepted");
+            }
+        }
         if (ocspResult != null && ocspResult.length() > 5500) {
             throw new IllegalArgumentException(
                     "ocspResult exceeds 5500 char limit (" + ocspResult.length() + ")");

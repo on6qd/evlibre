@@ -46,4 +46,25 @@ class CertificateHashDataTest {
                 GetCertificateIdUse.CSMS_ROOT_CERTIFICATE, d);
         assertThat(c.childCertificateHashData()).isEmpty();
     }
+
+    @Test
+    void chain_allows_up_to_four_children() {
+        CertificateHashData d = new CertificateHashData(
+                HashAlgorithm.SHA256, "n", "k", "s");
+        java.util.List<CertificateHashData> four = java.util.List.of(d, d, d, d);
+        CertificateHashDataChain c = new CertificateHashDataChain(
+                GetCertificateIdUse.V2G_CERTIFICATE_CHAIN, d, four);
+        assertThat(c.childCertificateHashData()).hasSize(4);
+    }
+
+    @Test
+    void chain_rejects_more_than_four_children() {
+        CertificateHashData d = new CertificateHashData(
+                HashAlgorithm.SHA256, "n", "k", "s");
+        java.util.List<CertificateHashData> five = java.util.List.of(d, d, d, d, d);
+        assertThatThrownBy(() -> new CertificateHashDataChain(
+                GetCertificateIdUse.V2G_CERTIFICATE_CHAIN, d, five))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("maxItems");
+    }
 }
