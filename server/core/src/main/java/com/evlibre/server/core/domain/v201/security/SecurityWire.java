@@ -28,6 +28,26 @@ public final class SecurityWire {
         };
     }
 
+    public static String installCertificateUseToWire(InstallCertificateUse use) {
+        return switch (use) {
+            case V2G_ROOT_CERTIFICATE -> "V2GRootCertificate";
+            case MO_ROOT_CERTIFICATE -> "MORootCertificate";
+            case CSMS_ROOT_CERTIFICATE -> "CSMSRootCertificate";
+            case MANUFACTURER_ROOT_CERTIFICATE -> "ManufacturerRootCertificate";
+        };
+    }
+
+    public static InstallCertificateUse installCertificateUseFromWire(String wire) {
+        return switch (wire) {
+            case "V2GRootCertificate" -> InstallCertificateUse.V2G_ROOT_CERTIFICATE;
+            case "MORootCertificate" -> InstallCertificateUse.MO_ROOT_CERTIFICATE;
+            case "CSMSRootCertificate" -> InstallCertificateUse.CSMS_ROOT_CERTIFICATE;
+            case "ManufacturerRootCertificate" -> InstallCertificateUse.MANUFACTURER_ROOT_CERTIFICATE;
+            default -> throw new IllegalArgumentException(
+                    "Unknown InstallCertificateUseEnumType: " + wire);
+        };
+    }
+
     public static String getCertificateIdUseToWire(GetCertificateIdUse use) {
         return switch (use) {
             case V2G_ROOT_CERTIFICATE -> "V2GRootCertificate";

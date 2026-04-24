@@ -5,9 +5,12 @@ import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
 import com.evlibre.server.core.domain.v201.dto.GetInstalledCertificateIdsStatus;
+import com.evlibre.server.core.domain.v201.dto.InstallCertificateStatus;
 import com.evlibre.server.core.domain.v201.security.GetCertificateIdUse;
 import com.evlibre.server.core.domain.v201.security.HashAlgorithm;
+import com.evlibre.server.core.domain.v201.security.InstallCertificateUse;
 import com.evlibre.server.core.usecases.v201.GetInstalledCertificateIdsUseCaseV201;
+import com.evlibre.server.core.usecases.v201.InstallCertificateUseCaseV201;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -104,6 +107,80 @@ class SecurityCommand201IT {
                                     // Without a filter, the request MUST NOT carry a certificateType.
                                     var cmd = client.receivedCommands("GetInstalledCertificateIds").get(0);
                                     assertThat(cmd.payload().has("certificateType")).isFalse();
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void install_certificate_csms_root_accepted(Vertx vertx, VertxTestContext ctx) {
+        String pem = """
+                -----BEGIN CERTIFICATE-----
+                MIICljCCAX4CCQDkY7k9RhEcjzANBgkqhkiG9w0BAQsFADCBkTELMAkGA1UEBhMC
+                -----END CERTIFICATE-----""";
+
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("InstallCertificate", "Accepted");
+                    InstallCertificateUseCaseV201 useCase =
+                            new InstallCertificateUseCaseV201(harness.commandSender201);
+                    return useCase.installCertificate(TENANT, STATION,
+                                    InstallCertificateUse.CSMS_ROOT_CERTIFICATE, pem)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status())
+                                            .isEqualTo(InstallCertificateStatus.ACCEPTED);
+                                    assertThat(result.statusInfoReason()).isNull();
+
+                                    var cmd = client.receivedCommands("InstallCertificate").get(0);
+                                    assertThat(cmd.payload().get("certificateType").asText())
+                                            .isEqualTo("CSMSRootCertificate");
+                                    assertThat(cmd.payload().get("certificate").asText())
+                                            .contains("BEGIN CERTIFICATE");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void install_certificate_failed_surfaces_reason(Vertx vertx, VertxTestContext ctx) {
+        String pem = """
+                -----BEGIN CERTIFICATE-----
+                invalid
+                -----END CERTIFICATE-----""";
+
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("InstallCertificate", payload -> Map.of(
+                            "status", "Failed",
+                            "statusInfo", Map.of("reasonCode", "InvalidSignature")));
+                    InstallCertificateUseCaseV201 useCase =
+                            new InstallCertificateUseCaseV201(harness.commandSender201);
+                    return useCase.installCertificate(TENANT, STATION,
+                                    InstallCertificateUse.V2G_ROOT_CERTIFICATE, pem)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status())
+                                            .isEqualTo(InstallCertificateStatus.FAILED);
+                                    assertThat(result.statusInfoReason()).isEqualTo("InvalidSignature");
+
+                                    var cmd = client.receivedCommands("InstallCertificate").get(0);
+                                    assertThat(cmd.payload().get("certificateType").asText())
+                                            .isEqualTo("V2GRootCertificate");
                                 });
                                 client.close();
                                 return result;
