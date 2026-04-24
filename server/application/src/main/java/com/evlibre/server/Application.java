@@ -5,6 +5,7 @@ import com.evlibre.server.adapter.ocpp.*;
 import com.evlibre.server.adapter.ocpp.handler.v16.*;
 import com.evlibre.server.adapter.ocpp.handler.v201.*;
 import com.evlibre.server.adapter.persistence.inmemory.InMemoryDeviceModelRepository;
+import com.evlibre.server.adapter.persistence.inmemory.InMemoryMonitorRepository;
 import com.evlibre.server.adapter.persistence.inmemory.InMemoryStationConfigurationRepository;
 import com.evlibre.server.adapter.webui.EventBusStationEventPublisher;
 import com.evlibre.server.adapter.webui.WebUiVerticle;
@@ -37,6 +38,7 @@ import com.evlibre.server.core.usecases.v201.HandleNotifyEventUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandlePublishFirmwareStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyMonitoringReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleGet15118EVCertificateUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleGetCertificateStatusUseCaseV201;
@@ -170,6 +172,7 @@ public class Application {
         // Station configuration storage
         var stationConfigRepo = new InMemoryStationConfigurationRepository();
         var deviceModelRepo = new InMemoryDeviceModelRepository();
+        var monitorRepo = new InMemoryMonitorRepository();
 
         // CSMS-initiated v2.0.1 use cases
         GetBaseReportUseCaseV201 getBaseReport = new GetBaseReportUseCaseV201(commandSender.v201());
@@ -180,6 +183,14 @@ public class Application {
                 deviceModelRepo,
                 (t, s, requestId) -> log.info("NotifyReport complete for station {} (requestId={})",
                         s.value(), requestId));
+
+        // NotifyMonitoringReport aggregation — same multi-frame shape as NotifyReport,
+        // distinct repository so device-model and monitor-inventory refreshes stay separate.
+        HandleNotifyMonitoringReportUseCaseV201 handleNotifyMonitoringReport =
+                new HandleNotifyMonitoringReportUseCaseV201(
+                        monitorRepo,
+                        (t, s, requestId) -> log.info("NotifyMonitoringReport complete for station {} (requestId={})",
+                                s.value(), requestId));
 
         // ReportChargingProfiles pass-through: no persistence target yet, so the
         // sink just logs. A subscriber can swap in when a charging-profile repo lands.
@@ -338,6 +349,8 @@ public class Application {
                 new MeterValuesHandler201(handleMeterValues201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyReport",
                 new NotifyReportHandler201(handleNotifyReport, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyMonitoringReport",
+                new NotifyMonitoringReportHandler201(handleNotifyMonitoringReport, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
