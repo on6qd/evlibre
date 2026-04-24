@@ -50,6 +50,21 @@ public class StationCommandHandlerV201 {
         sendCommand(ctx, tenantId, stationId, "ChangeAvailability", payload);
     }
 
+    public void unlockConnector(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String evseStr = param(ctx, "evseId");
+        String connStr = param(ctx, "connectorId");
+        if (evseStr == null || evseStr.isBlank() || connStr == null || connStr.isBlank()) {
+            respondResult(ctx, "UnlockConnector",
+                    "error: evseId and connectorId are both required", false);
+            return;
+        }
+        Map<String, Object> payload = Map.of(
+                "evseId", Integer.parseInt(evseStr),
+                "connectorId", Integer.parseInt(connStr));
+        sendCommand(ctx, tenantId, stationId, "UnlockConnector", payload);
+    }
+
     public void reset(RoutingContext ctx, TenantId tenantId) {
         String stationId = ctx.pathParam("stationId");
         String type = ctx.queryParams().get("type");

@@ -75,6 +75,18 @@
                         </div>
 
                         <div style="margin-top:16px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">unlock connector</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/unlock-connector"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                <input type="number" name="evseId" placeholder="evse id" min="1" required style="width:80px;">
+                                <input type="number" name="connectorId" placeholder="conn id" min="1" required style="width:80px;">
+                                <button type="submit" class="btn">unlock</button>
+                            </form>
+                        </div>
+
+                        <div style="margin-top:16px;">
                             <div class="panel-header" style="border:none;padding:0 0 8px 0;">change availability (evse/connector)</div>
                             <form hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability"
                                   hx-target="#cmd-result"

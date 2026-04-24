@@ -149,6 +149,38 @@ class V201CommandIT {
     }
 
     @Test
+    void unlock_connector_requires_both_ids(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("evseId", "1");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/unlock-connector")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void unlock_connector_sends_evse_and_connector_ids(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("evseId", "2")
+                .add("connectorId", "1");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/unlock-connector")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("UnlockConnector");
+                    assertThat(sent.payload())
+                            .containsEntry("evseId", 2)
+                            .containsEntry("connectorId", 1);
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
     void clear_cache_sends_empty_payload(VertxTestContext ctx) {
         webClient.post(verticle.actualPort(), "localhost",
                         "/demo-tenant/stations/CHARGER-001/v201/clear-cache")
