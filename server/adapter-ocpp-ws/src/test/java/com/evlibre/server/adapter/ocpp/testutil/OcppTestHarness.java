@@ -19,6 +19,7 @@ import com.evlibre.server.core.usecases.v201.HandleLogStatusNotificationUseCaseV
 import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEventUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyCustomerInformationUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyDisplayMessagesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyMonitoringReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandlePublishFirmwareStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
@@ -61,6 +62,7 @@ public class OcppTestHarness {
     public final FakeMonitorRepository monitorRepo = new FakeMonitorRepository();
     public final FakeNotifyMonitoringReportCompletionPublisher notifyMonitoringReportCompletion = new FakeNotifyMonitoringReportCompletionPublisher();
     public final FakeCustomerInformationSink customerInformationSink = new FakeCustomerInformationSink();
+    public final FakeDisplayMessagesSink displayMessagesSink = new FakeDisplayMessagesSink();
     public final FakeReportChargingProfilesSink reportChargingProfilesSink = new FakeReportChargingProfilesSink();
     public final FakeChargingLimitSink chargingLimitSink = new FakeChargingLimitSink();
     public final FakeEVChargingSink evChargingSink = new FakeEVChargingSink();
@@ -120,6 +122,8 @@ public class OcppTestHarness {
                 new HandleNotifyMonitoringReportUseCaseV201(monitorRepo, notifyMonitoringReportCompletion);
         HandleNotifyCustomerInformationUseCaseV201 handleNotifyCustomerInformation201 =
                 new HandleNotifyCustomerInformationUseCaseV201(customerInformationSink);
+        HandleNotifyDisplayMessagesUseCaseV201 handleNotifyDisplayMessages201 =
+                new HandleNotifyDisplayMessagesUseCaseV201(displayMessagesSink);
         HandleReportChargingProfilesUseCaseV201 handleReportChargingProfiles201 =
                 new HandleReportChargingProfilesUseCaseV201(reportChargingProfilesSink);
         HandleNotifyChargingLimitUseCaseV201 handleNotifyChargingLimit201 =
@@ -202,6 +206,8 @@ public class OcppTestHarness {
                 new NotifyMonitoringReportHandler201(handleNotifyMonitoringReport201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyCustomerInformation",
                 new NotifyCustomerInformationHandler201(handleNotifyCustomerInformation201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyDisplayMessages",
+                new NotifyDisplayMessagesHandler201(handleNotifyDisplayMessages201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",

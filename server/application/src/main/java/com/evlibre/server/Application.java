@@ -39,6 +39,7 @@ import com.evlibre.server.core.usecases.v201.HandlePublishFirmwareStatusNotifica
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyCustomerInformationUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleNotifyDisplayMessagesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyMonitoringReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleGet15118EVCertificateUseCaseV201;
@@ -201,6 +202,14 @@ public class Application {
                                 "NotifyCustomerInformation complete for station {} (requestId={}, totalChars={})",
                                 s.value(), requestId, data.length()));
 
+        // NotifyDisplayMessages aggregation — combines per-frame MessageInfo lists into
+        // one sink call per completed requestId. Default sink is log-only.
+        HandleNotifyDisplayMessagesUseCaseV201 handleNotifyDisplayMessages =
+                new HandleNotifyDisplayMessagesUseCaseV201(
+                        (t, s, requestId, messages) -> log.info(
+                                "NotifyDisplayMessages complete for station {} (requestId={}, totalMessages={})",
+                                s.value(), requestId, messages.size()));
+
         // ReportChargingProfiles pass-through: no persistence target yet, so the
         // sink just logs. A subscriber can swap in when a charging-profile repo lands.
         HandleReportChargingProfilesUseCaseV201 handleReportChargingProfiles =
@@ -362,6 +371,8 @@ public class Application {
                 new NotifyMonitoringReportHandler201(handleNotifyMonitoringReport, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyCustomerInformation",
                 new NotifyCustomerInformationHandler201(handleNotifyCustomerInformation, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "NotifyDisplayMessages",
+                new NotifyDisplayMessagesHandler201(handleNotifyDisplayMessages, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "DataTransfer",
                 new DataTransferHandler201(handleDataTransfer201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "ReportChargingProfiles",
