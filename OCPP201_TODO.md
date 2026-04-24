@@ -9,6 +9,7 @@ Phase 5 (Blocks E, H, K — Reservations, Transactions, Smart Charging) complete
 Phase 6 (Blocks L, N — Firmware & Diagnostics) completed: 2026-04-23.
 Phase 7 (Blocks A, M — Security & Certificates) completed: 2026-04-24.
 Phase 8 (Block N monitoring + Blocks O, I — Monitoring, Customer/Display, Tariff) completed: 2026-04-24. **All planned phases are now complete.**
+0.1 StatusNotification/MeterValues v201 reshape (the last deferred item) closed 2026-04-24.
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -68,7 +69,7 @@ Phase 8 (Block N monitoring + Blocks O, I — Monitoring, Customer/Display, Tari
 - [x] Move to `shared`: `ChargingStation`, `Tenant`, `TenantId`, `ConnectorStatus`, `RegistrationStatus`, `TransactionStatus`, `TimeProvider`, `StationRegistration`, `RegistrationResult`, `CommandResult`, `StationRepositoryPort`, `TenantRepositoryPort`, `StationEventPublisher`, `OcppEventLogPort`. (`ChargePointIdentity` + `ConnectorId` were already in the `common` module, protocol-neutral.)
 - [x] Move to `v16`: `Transaction`, `IdTagInfo`, `Reservation`, `ReservationStatus`, `StationConfigurationKey`, `StartTransactionData`, `StartTransactionResult`, `StopTransactionData`, `AuthorizationResult`, `AuthorizationStatus`, `TransactionRepositoryPort`, `ReservationRepositoryPort`, `AuthorizationRepositoryPort`, `StationConfigurationPort`, `StatusNotificationData`, `MeterValuesData`.
 - [x] Move to `v201`: `DeviceModelVariable`, `DeviceModelPort`, `TransactionEventData`, `TransactionEventResult`.
-- [ ] **Deferred to phase 1+**: reshape `StatusNotificationData` / `MeterValuesData` per protocol (currently both in `v16`; `v201` versions will be introduced when EVSE-shaped data is needed).
+- [x] Reshape `StatusNotificationData` / `MeterValuesData` per protocol (2026-04-24): new `StatusNotificationData201` (evseId + connectorId + status + timestamp — drops 1.6-only info/vendorId/vendorErrorCode/errorCode) and `MeterValuesData201` (EvseId addressing, no transactionId — that flows via `TransactionEvent` in v2.0.1) live under `domain/v201/dto/`; v201 ports, use cases, and handlers are now wired to them. No v201 path references a v16-shaped DTO.
 
 ### 0.2 — Split use cases ✅
 - [x] Move existing use cases to `usecases/v16/` (all 29).
