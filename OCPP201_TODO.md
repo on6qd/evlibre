@@ -7,6 +7,7 @@ plus full response-schema authoring and hard-reject validation, see 0.4).
 Phase 4 (Block P / DataTransfer) completed: 2026-04-22.
 Phase 5 (Blocks E, H, K — Reservations, Transactions, Smart Charging) completed: 2026-04-23.
 Phase 6 (Blocks L, N — Firmware & Diagnostics) completed: 2026-04-23.
+Phase 7 (Blocks A, M — Security & Certificates) completed: 2026-04-24.
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -158,12 +159,16 @@ Phase 6 tally: 4 new outbound use cases (UpdateFirmware, GetLog, PublishFirmware
 - [x] L01.FR.11 + L01.FR.12: `Firmware` now rejects lopsided `signingCertificate` / `signature` pairs (either both present for a secure update, or both absent for L02). Covered by new `FirmwareTest`.
 - [x] L03.FR.02: `PublishFirmwareUseCaseV201` now enforces checksum is a 32-char hex string (regex), matching the spec's "hexadecimal string of length 32" contract — not just `length == 32`. Also cleaned up the put-then-remove payload builder to the conditional-put pattern used by `UpdateFirmwareUseCaseV201`. Covered by new `PublishFirmwareUseCaseV201Test`.
 
-## Phase 7 — Security & Certificates (Blocks A, M)
-- [ ] Inbound: `SecurityEventNotification`.
-- [ ] Inbound: `SignCertificate`.
-- [ ] Outbound: `GetInstalledCertificateIds`, `InstallCertificate`, `DeleteCertificate`.
-- [ ] Outbound: `GetCertificateStatus`.
-- [ ] Inbound: `Get15118EVCertificate` (ISO 15118 Plug & Charge).
+## Phase 7 — Security & Certificates (Blocks A, M) ✅
+- [x] Inbound: `SecurityEventNotification` — `SecurityEventNotificationHandler201` + `HandleSecurityEventNotificationUseCaseV201` (Sink). New `SecurityEvent` record under `domain/v201/security/` enforcing spec maxLengths (type 50, techInfo 255). Empty ack response.
+- [x] Inbound: `SignCertificate` — `SignCertificateHandler201` + `HandleSignCertificateUseCaseV201` (Policy pattern — caller decides Accept/Reject). New `CertificateSigningUse` enum (ChargingStationCertificate / V2GCertificate) with absent-defaults-to-CS per the spec; csr maxLength 5500 enforced. Typed `SignCertificateResult` carries optional `statusInfo.reasonCode`.
+- [x] Outbound: `GetInstalledCertificateIds` — `GetInstalledCertificateIdsUseCaseV201`. New cert-management domain vocabulary under `domain/v201/security/`: `HashAlgorithm` (3 values), `GetCertificateIdUse` (5 values — superset of InstallCertificateUse because V2GCertificateChain is discoverable but not installable), `CertificateHashData` (spec maxLengths 128/128/40 enforced at construction), `CertificateHashDataChain` (leaf + optional children). `SecurityWire` centralises the wire codec. 2-valued status (Accepted / NotFound).
+- [x] Outbound: `InstallCertificate` — `InstallCertificateUseCaseV201`. New `InstallCertificateUse` enum (strict subset of `GetCertificateIdUse` — no V2GCertificateChain; it's discoverable only, never directly installed). Tri-state `InstallCertificateStatus` (Accepted / Rejected / Failed) distinguishing "station policy-denied" from "chain failed verification". Certificate PEM maxLength 5500.
+- [x] Outbound: `DeleteCertificate` — `DeleteCertificateUseCaseV201`. Reuses the `CertificateHashData` + `SecurityWire.certificateHashDataToWire` codec from 7.3 so the wire tuple is emitted identically by every cert-management use case. Tri-state `DeleteCertificateStatus` (Accepted / Failed / NotFound).
+- [x] Inbound: `GetCertificateStatus` — `GetCertificateStatusHandler201` + `HandleGetCertificateStatusUseCaseV201` (OcspResolver policy). New `OcspRequestData` record (reuses `HashAlgorithm`; adds `responderURL` maxLength 512). Typed `GetCertificateStatusResult` with `accepted(ocspResult)` / `failed(reasonCode)` factories; ocspResult maxLength 5600 enforced. Required for ISO 15118 Plug & Charge so stations can verify EV contract certs without direct CA OCSP network access.
+- [x] Inbound: `Get15118EVCertificate` — `Get15118EVCertificateHandler201` + `HandleGet15118EVCertificateUseCaseV201` (ExiProcessor policy). New `CertificateAction` enum (Install / Update). 2-valued `Iso15118EVCertificateStatus`; `exiResponse` is REQUIRED on the wire even for Failed so the station can forward a valid EXI ResponseCode back to the EV. `iso15118SchemaVersion` maxLength 50; `exiRequest` / `exiResponse` maxLength 5600.
+
+Phase 7 tally: 3 new outbound use cases (GetInstalledCertificateIds, InstallCertificate, DeleteCertificate), 4 new inbound handlers (SecurityEventNotification, SignCertificate, GetCertificateStatus, Get15118EVCertificate); ~14 new schema files; 162 integration tests in `adapter-ocpp-ws` (up from 147 at end of Phase 6). New `domain/v201/security/` package bootstraps the certificate vocabulary (HashAlgorithm, CertificateHashData, the Use enums, OcspRequestData) that future work on block A05 (`CertificateSigned` outbound) and A08 (`PublishFirmware` security extensions) will extend naturally.
 
 ## Phase 8 — Monitoring & Display (Blocks N, O, I)
 Largely 2.0.1-only features.
