@@ -73,6 +73,18 @@ public class StationCommandHandlerV201 {
         sendCommand(ctx, tenantId, stationId, "RequestStartTransaction", payload);
     }
 
+    public void requestStopTransaction(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String txId = param(ctx, "transactionId");
+        if (txId == null || txId.isBlank()) {
+            respondResult(ctx, "RequestStopTransaction",
+                    "error: transactionId is required", false);
+            return;
+        }
+        sendCommand(ctx, tenantId, stationId, "RequestStopTransaction",
+                Map.of("transactionId", txId));
+    }
+
     public void unlockConnector(RoutingContext ctx, TenantId tenantId) {
         String stationId = ctx.pathParam("stationId");
         String evseStr = param(ctx, "evseId");

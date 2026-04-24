@@ -205,6 +205,33 @@ class V201CommandIT {
     }
 
     @Test
+    void request_stop_passes_transaction_id_as_string(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("transactionId", "abc-123-def-uuid");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/request-stop")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("RequestStopTransaction");
+                    assertThat(sent.payload()).containsEntry("transactionId", "abc-123-def-uuid");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void request_stop_rejects_missing_transaction_id(VertxTestContext ctx) {
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/request-stop")
+                .send()
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
     void unlock_connector_requires_both_ids(VertxTestContext ctx) {
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .add("evseId", "1");

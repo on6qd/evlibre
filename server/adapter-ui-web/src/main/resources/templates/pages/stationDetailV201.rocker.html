@@ -96,6 +96,17 @@
                             </form>
                         </div>
 
+                        <div style="margin-top:12px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">request stop transaction</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/request-stop"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" name="transactionId" placeholder="tx id" required maxlength="36" style="width:220px;">
+                                <button type="submit" class="btn">stop</button>
+                            </form>
+                        </div>
+
                         <div style="margin-top:16px;">
                             <div class="panel-header" style="border:none;padding:0 0 8px 0;">unlock connector</div>
                             <form hx-post="/@tenantId/stations/@station.stationId()/v201/unlock-connector"
