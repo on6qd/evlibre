@@ -3,7 +3,9 @@ package com.evlibre.server.core.domain.v201.devicemodel.wire;
 import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
 import com.evlibre.server.core.domain.v201.devicemodel.Component;
 import com.evlibre.server.core.domain.v201.devicemodel.Evse;
+import com.evlibre.server.core.domain.v201.devicemodel.MonitorType;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.devicemodel.VariableMonitor;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -92,5 +94,59 @@ class DeviceModelWireTest {
         // must normalize via Number.intValue().
         Map<String, Object> wire = Map.of("id", 5L, "connectorId", 7L);
         assertThat(DeviceModelWire.evseFromWire(wire)).isEqualTo(Evse.of(5, 7));
+    }
+
+    @Test
+    void monitor_type_round_trip_for_every_value() {
+        for (MonitorType t : MonitorType.values()) {
+            String wire = DeviceModelWire.monitorTypeToWire(t);
+            assertThat(DeviceModelWire.monitorTypeFromWire(wire)).isEqualTo(t);
+        }
+    }
+
+    @Test
+    void monitor_type_wire_uses_spec_pascal_case() {
+        assertThat(DeviceModelWire.monitorTypeToWire(MonitorType.UPPER_THRESHOLD)).isEqualTo("UpperThreshold");
+        assertThat(DeviceModelWire.monitorTypeToWire(MonitorType.LOWER_THRESHOLD)).isEqualTo("LowerThreshold");
+        assertThat(DeviceModelWire.monitorTypeToWire(MonitorType.DELTA)).isEqualTo("Delta");
+        assertThat(DeviceModelWire.monitorTypeToWire(MonitorType.PERIODIC)).isEqualTo("Periodic");
+        assertThat(DeviceModelWire.monitorTypeToWire(MonitorType.PERIODIC_CLOCK_ALIGNED)).isEqualTo("PeriodicClockAligned");
+    }
+
+    @Test
+    void unknown_monitor_type_wire_raises() {
+        assertThatThrownBy(() -> DeviceModelWire.monitorTypeFromWire("Nope"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("MonitorType")
+                .hasMessageContaining("Nope");
+    }
+
+    @Test
+    void variable_monitor_round_trips() {
+        VariableMonitor original = new VariableMonitor(42, true, 15.5, MonitorType.UPPER_THRESHOLD, 3);
+        Map<String, Object> wire = DeviceModelWire.variableMonitorToWire(original);
+
+        assertThat(wire)
+                .containsEntry("id", 42)
+                .containsEntry("transaction", true)
+                .containsEntry("value", 15.5)
+                .containsEntry("type", "UpperThreshold")
+                .containsEntry("severity", 3);
+
+        assertThat(DeviceModelWire.variableMonitorFromWire(wire)).isEqualTo(original);
+    }
+
+    @Test
+    void variable_monitor_accepts_numeric_ids_from_deserialisers_returning_long() {
+        Map<String, Object> wire = Map.of(
+                "id", 5L,
+                "transaction", false,
+                "value", 30,
+                "type", "Periodic",
+                "severity", 5L);
+
+        VariableMonitor m = DeviceModelWire.variableMonitorFromWire(wire);
+
+        assertThat(m).isEqualTo(new VariableMonitor(5, false, 30.0, MonitorType.PERIODIC, 5));
     }
 }

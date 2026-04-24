@@ -3,7 +3,9 @@ package com.evlibre.server.core.domain.v201.devicemodel.wire;
 import com.evlibre.server.core.domain.v201.devicemodel.AttributeType;
 import com.evlibre.server.core.domain.v201.devicemodel.Component;
 import com.evlibre.server.core.domain.v201.devicemodel.Evse;
+import com.evlibre.server.core.domain.v201.devicemodel.MonitorType;
 import com.evlibre.server.core.domain.v201.devicemodel.Variable;
+import com.evlibre.server.core.domain.v201.devicemodel.VariableMonitor;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -97,5 +99,50 @@ public final class DeviceModelWire {
         Number id = (Number) wire.get("id");
         Number connectorId = (Number) wire.get("connectorId");
         return new Evse(id.intValue(), connectorId != null ? connectorId.intValue() : null);
+    }
+
+    public static String monitorTypeToWire(MonitorType type) {
+        return switch (type) {
+            case UPPER_THRESHOLD -> "UpperThreshold";
+            case LOWER_THRESHOLD -> "LowerThreshold";
+            case DELTA -> "Delta";
+            case PERIODIC -> "Periodic";
+            case PERIODIC_CLOCK_ALIGNED -> "PeriodicClockAligned";
+        };
+    }
+
+    public static MonitorType monitorTypeFromWire(String wire) {
+        return switch (wire) {
+            case "UpperThreshold" -> MonitorType.UPPER_THRESHOLD;
+            case "LowerThreshold" -> MonitorType.LOWER_THRESHOLD;
+            case "Delta" -> MonitorType.DELTA;
+            case "Periodic" -> MonitorType.PERIODIC;
+            case "PeriodicClockAligned" -> MonitorType.PERIODIC_CLOCK_ALIGNED;
+            default -> throw new IllegalArgumentException("Unknown MonitorType wire value: " + wire);
+        };
+    }
+
+    public static Map<String, Object> variableMonitorToWire(VariableMonitor monitor) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", monitor.id());
+        out.put("transaction", monitor.transactionOnly());
+        out.put("value", monitor.value());
+        out.put("type", monitorTypeToWire(monitor.type()));
+        out.put("severity", monitor.severity());
+        return out;
+    }
+
+    public static VariableMonitor variableMonitorFromWire(Map<String, Object> wire) {
+        Number id = (Number) wire.get("id");
+        Boolean transactionOnly = (Boolean) wire.get("transaction");
+        Number value = (Number) wire.get("value");
+        String type = (String) wire.get("type");
+        Number severity = (Number) wire.get("severity");
+        return new VariableMonitor(
+                id.intValue(),
+                transactionOnly,
+                value.doubleValue(),
+                monitorTypeFromWire(type),
+                severity.intValue());
     }
 }
