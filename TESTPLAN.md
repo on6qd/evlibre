@@ -130,7 +130,7 @@ mvn -q clean package -DskipTests
 java -jar server/application/target/application-1.0-SNAPSHOT.jar
 ```
 
-Verify the console shows OCPP WebSocket on **9090** and Web UI on **8080**. Variants worth spot-checking when touching config loading:
+Verify the console shows OCPP WebSocket on **9090** and Web UI on **9080**. Variants worth spot-checking when touching config loading:
 
 | # | Test | Expected |
 |---|---|---|
@@ -143,10 +143,10 @@ Verify the console shows OCPP WebSocket on **9090** and Web UI on **8080**. Vari
 
 With a station registered via OCPP (or the SAP simulator running), visit:
 
-- `http://localhost:8080/` — landing
-- `http://localhost:8080/demo-tenant/dashboard` — stats reflect connected stations
-- `http://localhost:8080/demo-tenant/stations` — registered stations list and detail pages
-- `http://localhost:8080/unknown-tenant/dashboard` — tenant-scoped error page
+- `http://localhost:9080/` — landing
+- `http://localhost:9080/demo-tenant/dashboard` — stats reflect connected stations
+- `http://localhost:9080/demo-tenant/stations` — registered stations list and detail pages
+- `http://localhost:9080/unknown-tenant/dashboard` — tenant-scoped error page
 
 Automated HTTP-level coverage exists in `WebUiIT`; this step is just visual confirmation of rendered HTML.
 

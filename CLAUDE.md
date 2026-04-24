@@ -30,7 +30,7 @@ mvn -pl <module> test -Dtest=ClassName#method
 
 mvn -q clean package -DskipTests             # fat jar
 java -jar server/application/target/application-1.0-SNAPSHOT.jar
-# Optional: pass `--config /path/to/server.toml`. OCPP WS on 9090, Web UI on 8080.
+# Optional: pass `--config /path/to/server.toml`. OCPP WS on 9090, Web UI on 9080.
 ```
 
 Reference simulator (SAP) for end-to-end acceptance lives in `reference-simulators/`; run with `docker compose up --build` while the CSMS is running locally. See `TESTPLAN.md` for the full strategy.

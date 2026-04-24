@@ -66,7 +66,7 @@ public class ServerConfig {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class WebUiConfig {
         @JsonProperty("port")
-        private int port = 8080;
+        private int port = 9080;
 
         public int port() { return port; }
     }
