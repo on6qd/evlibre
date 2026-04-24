@@ -71,7 +71,20 @@ public class Application {
 
     public static void main(String[] args) {
         ServerConfig config = ConfigLoader.load(args);
+        start(config);
+    }
 
+    /**
+     * Wires all adapters, use cases, and verticles from the given configuration and
+     * blocks until both the OCPP WebSocket server and the Web UI server have bound
+     * their listening ports. The returned {@link AppHandle} exposes the actual bound
+     * ports (useful when the config requested port 0) plus repositories acceptance
+     * tests assert on.
+     *
+     * Throws if either verticle fails to deploy — the partially-started {@link Vertx}
+     * is closed before propagating.
+     */
+    public static AppHandle start(ServerConfig config) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -414,18 +427,35 @@ public class Application {
                 tenantRepo, stationRepo, transactionRepo, sessionManager,
                 commandSender.v16(), config.webui().port());
 
-        vertx.deployVerticle(ocppVerticle).onSuccess(id -> {
-            log.info("OCPP server started on port {} (database: {})",
-                    config.ocpp().websocketPort(), dbType);
-        }).onFailure(err -> {
-            log.error("Failed to start OCPP server: {}", err.getMessage());
-            vertx.close();
-        });
+        awaitDeploy(vertx, ocppVerticle, "OCPP server");
+        log.info("OCPP server started on port {} (database: {})",
+                ocppVerticle.actualPort(), dbType);
 
-        vertx.deployVerticle(webUiVerticle).onSuccess(id -> {
-            log.info("Web UI started on port {}", config.webui().port());
-        }).onFailure(err -> {
-            log.error("Failed to start Web UI: {}", err.getMessage());
-        });
+        awaitDeploy(vertx, webUiVerticle, "Web UI");
+        log.info("Web UI started on port {}", webUiVerticle.actualPort());
+
+        return new AppHandle(
+                vertx,
+                ocppVerticle.actualPort(),
+                webUiVerticle.actualPort(),
+                tenantRepo,
+                stationRepo,
+                transactionRepo,
+                authorizationRepo,
+                eventLog);
+    }
+
+    private static void awaitDeploy(Vertx vertx, io.vertx.core.Verticle verticle, String label) {
+        try {
+            vertx.deployVerticle(verticle).toCompletionStage().toCompletableFuture().get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            vertx.close();
+            throw new RuntimeException("Interrupted while starting " + label, e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            log.error("Failed to start {}: {}", label, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            vertx.close();
+            throw new RuntimeException("Failed to start " + label, e.getCause() != null ? e.getCause() : e);
+        }
     }
 }

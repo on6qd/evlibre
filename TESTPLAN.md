@@ -11,11 +11,11 @@ Last refreshed at commit `bdf1858` (Phases 0–8 complete — OCPP 2.0.1 feature
 | Layer | What it covers | Command | Where tests live | Roughly |
 |---|---|---|---|---|
 | **Unit** | Domain model invariants, use-case happy/sad paths, codec + schema validator, persistence adapters against their contracts | `mvn test` | `*Test.java` under each module's `src/test/java` | ~608 tests, ~10 s |
-| **In-process integration** | Full WebSocket stack + dispatcher + handlers + use cases, exercised against an in-memory test harness (`OcppTestHarness`) | `mvn verify` | `*IT.java` tagged `@Tag("integration")` in `adapter-ocpp-ws` and `adapter-ui-web` | ~174 tests, ~30 s |
+| **In-process integration** | Full WebSocket stack + dispatcher + handlers + use cases, exercised against an in-memory test harness (`OcppTestHarness`); plus `ApplicationIT` smoke test for the `start(ServerConfig)` test hook | `mvn verify` | `*IT.java` tagged `@Tag("integration")` in `adapter-ocpp-ws`, `adapter-ui-web`, and `application` | ~175 tests, ~30 s |
 | **SAP simulator acceptance** | The real SAP OCPP client driving the CSMS end-to-end over a live WebSocket | Manual today (`docker compose up` in `reference-simulators/`). **Automation is planned — see §5.** | `reference-simulators/` | N/A |
 | **Manual / exploratory** | Startup config permutations, browser smoke tests, multi-tenant spot checks, H2 persistence across restarts | Human | §3 of this doc | ~15 min |
 
-Totals as of the refresh commit: **782 tests passing** (`mvn verify`). Counts per module in §2.
+Totals as of the refresh commit: **783 tests passing** (`mvn verify`). Counts per module in §2.
 
 ---
 
@@ -219,7 +219,7 @@ A Maven profile `-Psap` activates failsafe with `<groups>sap-acceptance</groups>
 
 ### 5.3 CSMS lifecycle
 
-- Refactor `Application.main` to expose a `start(OcppConfig)` helper that accepts an ephemeral port and returns the `Vertx` + handles for teardown. (Minor; see §6.3.)
+- `Application.start(ServerConfig)` returns an `AppHandle` (see §6.3). Tests construct a `ServerConfig` with `websocket_port = 0` / `webui.port = 0`, call `start`, and read `handle.ocppPort()` for the container-side config.
 - Test boots the CSMS on port 0, captures the bound port, passes it to the container via the mounted config.
 - Uses the in-memory persistence adapter (no DB setup). Seeds `demo-tenant` and `TAG001` / `TAG002`.
 
@@ -249,8 +249,8 @@ No load test, no soak test, no benchmark. The SAP-sim IT (§5) with larger stati
 ### 6.2 Chaos — dropped WebSocket, reconnect, stale pending calls
 Not covered at any layer. `OcppPendingCallManager` has a 30 s timeout but the code path is not exercised by any test. Add to future work.
 
-### 6.3 `Application` test-hook
-`Application.main` currently binds ports from config and runs indefinitely. For §5 and for any future acceptance test it needs an extracted `start(OcppConfig): AppHandle` method that returns something closeable. Small refactor, no behaviour change.
+### 6.3 `Application` test-hook — done 2026-04-24
+`Application.start(ServerConfig)` returns an `AppHandle` (implements `AutoCloseable`) exposing `Vertx`, the actual bound OCPP / Web UI ports, and the repositories acceptance tests assert on (tenant, station, transaction, authorization, event log). `main` delegates to it. `ApplicationIT` smoke-tests the contract: boots on ephemeral ports, verifies seeding, closes cleanly. Startup failures now throw instead of being silently logged.
 
 ### Closed
 - **Response + v1.6 parity schemas** (Phase 0.4, 2026-04-21) — every wired action in both protocols now has request + response schemas on classpath; the warn-only validation checkpoints in §2.4 are hard rejections.

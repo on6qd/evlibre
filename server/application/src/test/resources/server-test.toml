@@ -1,0 +1,8 @@
+[ocpp]
+websocket_port = 0
+
+[webui]
+port = 0
+
+[database]
+type = "in-memory"
