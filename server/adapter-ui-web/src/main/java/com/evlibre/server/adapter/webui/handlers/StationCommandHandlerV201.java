@@ -7,6 +7,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +52,23 @@ public class StationCommandHandlerV201 {
             payload.put("evse", evse);
         }
         sendCommand(ctx, tenantId, stationId, "ChangeAvailability", payload);
+    }
+
+    public void updateFirmware(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String location = param(ctx, "location");
+        if (location == null || location.isBlank()) {
+            respondResult(ctx, "UpdateFirmware",
+                    "error: location is required", false);
+            return;
+        }
+        Map<String, Object> firmware = Map.of(
+                "location", location,
+                "retrieveDateTime", Instant.now().toString());
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("requestId", requestIdSeq.getAndIncrement());
+        payload.put("firmware", firmware);
+        sendCommand(ctx, tenantId, stationId, "UpdateFirmware", payload);
     }
 
     public void getLog(RoutingContext ctx, TenantId tenantId) {

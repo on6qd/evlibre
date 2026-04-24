@@ -120,6 +120,17 @@
                         </div>
 
                         <div style="margin-top:16px;">
+                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">update firmware</div>
+                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/update-firmware"
+                                  hx-target="#cmd-result"
+                                  hx-swap="innerHTML"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" name="location" placeholder="ftp://host/fw.bin" required maxlength="512" style="width:240px;">
+                                <button type="submit" class="btn btn-warn">update firmware</button>
+                            </form>
+                        </div>
+
+                        <div style="margin-top:16px;">
                             <div class="panel-header" style="border:none;padding:0 0 8px 0;">get log</div>
                             <form hx-post="/@tenantId/stations/@station.stationId()/v201/get-log"
                                   hx-target="#cmd-result"

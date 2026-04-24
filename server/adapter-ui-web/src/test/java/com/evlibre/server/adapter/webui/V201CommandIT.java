@@ -264,6 +264,41 @@ class V201CommandIT {
     }
 
     @Test
+    void update_firmware_wraps_location_and_retrieve_date(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("location", "ftp://host/fw.bin");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/update-firmware")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("UpdateFirmware");
+                    assertThat(sent.payload()).containsKey("requestId");
+                    assertThat(sent.payload().get("requestId")).isInstanceOf(Integer.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> firmware = (Map<String, Object>) sent.payload().get("firmware");
+                    assertThat(firmware)
+                            .containsEntry("location", "ftp://host/fw.bin")
+                            .containsKey("retrieveDateTime");
+                    assertThat(String.valueOf(firmware.get("retrieveDateTime")))
+                            .matches("^\\d{4}-\\d{2}-\\d{2}T.*Z$");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void update_firmware_rejects_missing_location(VertxTestContext ctx) {
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/update-firmware")
+                .send()
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
     void get_log_wraps_remote_location_in_log_object(VertxTestContext ctx) {
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .add("logType", "DiagnosticsLog")
