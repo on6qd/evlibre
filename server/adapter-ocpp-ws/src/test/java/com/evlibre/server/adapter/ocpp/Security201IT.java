@@ -2,8 +2,11 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.server.adapter.ocpp.testutil.OcppMessages;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
+import com.evlibre.server.core.domain.v201.dto.GetCertificateStatusResult;
 import com.evlibre.server.core.domain.v201.dto.SignCertificateResult;
 import com.evlibre.server.core.domain.v201.security.CertificateSigningUse;
+import com.evlibre.server.core.domain.v201.security.HashAlgorithm;
+import com.evlibre.server.test.fakes.FakeOcspResolver;
 import com.evlibre.server.test.fakes.FakeSecurityEventSink;
 import com.evlibre.server.test.fakes.FakeSignCertificatePolicy;
 import io.vertx.core.Vertx;
@@ -19,11 +22,11 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * End-to-end tests for the Phase 7 security inbound flows (blocks A02 and
- * A03 — SignCertificate and SecurityEventNotification). Exercises wire→domain
- * decoding plus dispatcher registration through {@link OcppTestHarness};
- * payloads are schema-validated by {@code OcppSchemaValidator} in hard-reject
- * mode.
+ * End-to-end tests for the Phase 7 security inbound flows (blocks A02,
+ * A03 and A04 — SignCertificate, SecurityEventNotification, and OCSP relay
+ * via GetCertificateStatus). Exercises wire→domain decoding plus dispatcher
+ * registration through {@link OcppTestHarness}; payloads are schema-validated
+ * by {@code OcppSchemaValidator} in hard-reject mode.
  */
 @ExtendWith(VertxExtension.class)
 @Tag("integration")
@@ -109,6 +112,69 @@ class Security201IT {
                             harness.signCertificatePolicy.submissions().get(0);
                     assertThat(s.certificateType())
                             .isEqualTo(CertificateSigningUse.V2G_CERTIFICATE);
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void get_certificate_status_accepted_returns_ocsp_result(Vertx vertx, VertxTestContext ctx) {
+        harness.ocspResolver.setNextResult(GetCertificateStatusResult.accepted(
+                "MIIBxQoBAKCCAb4wggG6BgkrBgEFBQcwAQEEggGrMIIBpzCBkKIWB"));
+
+        String msg = """
+                [2,"gcs-1","GetCertificateStatus",{
+                  "ocspRequestData": {
+                    "hashAlgorithm": "SHA256",
+                    "issuerNameHash": "name-hash-hex",
+                    "issuerKeyHash": "key-hash-hex",
+                    "serialNumber": "0A1B2C3D",
+                    "responderURL": "http://ocsp.example.com"
+                  }
+                }]""";
+
+        harness.send201(vertx, "OCSP-STATION-201", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "OCSP-STATION-201", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Accepted");
+                    assertThat(resp.get(2).get("ocspResult").asText()).startsWith("MIIBxQoBA");
+                    assertThat(resp.get(2).has("statusInfo")).isFalse();
+
+                    assertThat(harness.ocspResolver.requests()).hasSize(1);
+                    FakeOcspResolver.Request captured = harness.ocspResolver.requests().get(0);
+                    assertThat(captured.ocspRequestData().hashAlgorithm())
+                            .isEqualTo(HashAlgorithm.SHA256);
+                    assertThat(captured.ocspRequestData().serialNumber()).isEqualTo("0A1B2C3D");
+                    assertThat(captured.ocspRequestData().responderURL())
+                            .isEqualTo("http://ocsp.example.com");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void get_certificate_status_failed_omits_ocsp_result(Vertx vertx, VertxTestContext ctx) {
+        harness.ocspResolver.setNextResult(
+                GetCertificateStatusResult.failed("OcspUnreachable"));
+
+        String msg = """
+                [2,"gcs-2","GetCertificateStatus",{
+                  "ocspRequestData": {
+                    "hashAlgorithm": "SHA384",
+                    "issuerNameHash": "nh",
+                    "issuerKeyHash": "kh",
+                    "serialNumber": "F00F",
+                    "responderURL": "http://ocsp.down.example.com"
+                  }
+                }]""";
+
+        harness.send201(vertx, "OCSP-STATION-202", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "OCSP-STATION-202", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Failed");
+                    assertThat(resp.get(2).has("ocspResult")).isFalse();
+                    assertThat(resp.get(2).get("statusInfo").get("reasonCode").asText())
+                            .isEqualTo("OcspUnreachable");
                     ctx.completeNow();
                 }));
     }

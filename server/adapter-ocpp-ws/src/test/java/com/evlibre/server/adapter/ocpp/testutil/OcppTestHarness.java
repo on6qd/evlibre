@@ -13,6 +13,7 @@ import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleFirmwareStatusNotificationUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleGetCertificateStatusUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleLogStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEventUseCaseV201;
@@ -63,6 +64,7 @@ public class OcppTestHarness {
     public final FakePublishFirmwareStatusSink publishFirmwareStatusSink = new FakePublishFirmwareStatusSink();
     public final FakeSecurityEventSink securityEventSink = new FakeSecurityEventSink();
     public final FakeSignCertificatePolicy signCertificatePolicy = new FakeSignCertificatePolicy();
+    public final FakeOcspResolver ocspResolver = new FakeOcspResolver();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -129,6 +131,8 @@ public class OcppTestHarness {
                 new HandleSecurityEventNotificationUseCaseV201(securityEventSink);
         HandleSignCertificateUseCaseV201 handleSignCertificate201 =
                 new HandleSignCertificateUseCaseV201(signCertificatePolicy);
+        HandleGetCertificateStatusUseCaseV201 handleGetCertificateStatus201 =
+                new HandleGetCertificateStatusUseCaseV201(ocspResolver);
         // v201 DataTransfer allow-list mirrors v16: empty by default, so incoming requests
         // hit the UnknownVendorId branch unless tests specifically rewire a known vendor.
         HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
@@ -205,6 +209,8 @@ public class OcppTestHarness {
                 new SecurityEventNotificationHandler201(handleSecurityEvent201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "SignCertificate",
                 new SignCertificateHandler201(handleSignCertificate201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "GetCertificateStatus",
+                new GetCertificateStatusHandler201(handleGetCertificateStatus201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
