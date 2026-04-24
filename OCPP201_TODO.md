@@ -170,6 +170,10 @@ Phase 6 tally: 4 new outbound use cases (UpdateFirmware, GetLog, PublishFirmware
 
 Phase 7 tally: 3 new outbound use cases (GetInstalledCertificateIds, InstallCertificate, DeleteCertificate), 4 new inbound handlers (SecurityEventNotification, SignCertificate, GetCertificateStatus, Get15118EVCertificate); ~14 new schema files; 162 integration tests in `adapter-ocpp-ws` (up from 147 at end of Phase 6). New `domain/v201/security/` package bootstraps the certificate vocabulary (HashAlgorithm, CertificateHashData, the Use enums, OcspRequestData) that future work on block A05 (`CertificateSigned` outbound) and A08 (`PublishFirmware` security extensions) will extend naturally.
 
+### Phase 7 audit follow-ups (2026-04-24)
+- [x] A04: `GetCertificateStatusResult` now enforces the schema's "ocspResult MAY only be omitted when status is not Accepted" at construction — a non-blank `ocspResult` is required when status=Accepted. Covered by new `GetCertificateStatusResultTest`.
+- [x] M03: `CertificateHashDataChain` now enforces `childCertificateHashData` maxItems 4 in the record (schema already enforced on the wire). Covered by new cases in `CertificateHashDataTest`.
+
 ## Phase 8 — Monitoring & Display (Blocks N, O, I)
 Largely 2.0.1-only features.
 - [ ] Variable monitoring: `SetMonitoringBase`, `SetMonitoringLevel`, `SetVariableMonitoring`, `ClearVariableMonitoring`, `GetMonitoringReport`.
