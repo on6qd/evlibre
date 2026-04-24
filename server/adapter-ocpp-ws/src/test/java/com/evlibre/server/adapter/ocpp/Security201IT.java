@@ -2,10 +2,13 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.server.adapter.ocpp.testutil.OcppMessages;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
+import com.evlibre.server.core.domain.v201.dto.Get15118EVCertificateResult;
 import com.evlibre.server.core.domain.v201.dto.GetCertificateStatusResult;
 import com.evlibre.server.core.domain.v201.dto.SignCertificateResult;
+import com.evlibre.server.core.domain.v201.security.CertificateAction;
 import com.evlibre.server.core.domain.v201.security.CertificateSigningUse;
 import com.evlibre.server.core.domain.v201.security.HashAlgorithm;
+import com.evlibre.server.test.fakes.FakeIso15118ExiProcessor;
 import com.evlibre.server.test.fakes.FakeOcspResolver;
 import com.evlibre.server.test.fakes.FakeSecurityEventSink;
 import com.evlibre.server.test.fakes.FakeSignCertificatePolicy;
@@ -23,10 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * End-to-end tests for the Phase 7 security inbound flows (blocks A02,
- * A03 and A04 — SignCertificate, SecurityEventNotification, and OCSP relay
- * via GetCertificateStatus). Exercises wire→domain decoding plus dispatcher
- * registration through {@link OcppTestHarness}; payloads are schema-validated
- * by {@code OcppSchemaValidator} in hard-reject mode.
+ * A03, A04 and M06 — SignCertificate, SecurityEventNotification, OCSP
+ * relay via GetCertificateStatus, and the ISO 15118 EV-certificate EXI
+ * relay). Exercises wire→domain decoding plus dispatcher registration
+ * through {@link OcppTestHarness}; payloads are schema-validated by
+ * {@code OcppSchemaValidator} in hard-reject mode.
  */
 @ExtendWith(VertxExtension.class)
 @Tag("integration")
@@ -175,6 +179,69 @@ class Security201IT {
                     assertThat(resp.get(2).has("ocspResult")).isFalse();
                     assertThat(resp.get(2).get("statusInfo").get("reasonCode").asText())
                             .isEqualTo("OcspUnreachable");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void get_15118_ev_certificate_install_accepted(Vertx vertx, VertxTestContext ctx) {
+        harness.iso15118ExiProcessor.setNextResult(
+                Get15118EVCertificateResult.accepted("exi-install-response-b64"));
+
+        String msg = """
+                [2,"g15-1","Get15118EVCertificate",{
+                  "iso15118SchemaVersion": "urn:iso:15118:2:2013:MsgDef",
+                  "action": "Install",
+                  "exiRequest": "exi-install-request-b64"
+                }]""";
+
+        harness.send201(vertx, "ISO-STATION-201", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "ISO-STATION-201", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Accepted");
+                    assertThat(resp.get(2).get("exiResponse").asText())
+                            .isEqualTo("exi-install-response-b64");
+                    assertThat(resp.get(2).has("statusInfo")).isFalse();
+
+                    assertThat(harness.iso15118ExiProcessor.requests()).hasSize(1);
+                    FakeIso15118ExiProcessor.Request captured =
+                            harness.iso15118ExiProcessor.requests().get(0);
+                    assertThat(captured.iso15118SchemaVersion())
+                            .isEqualTo("urn:iso:15118:2:2013:MsgDef");
+                    assertThat(captured.action()).isEqualTo(CertificateAction.INSTALL);
+                    assertThat(captured.exiRequest()).isEqualTo("exi-install-request-b64");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void get_15118_ev_certificate_update_failed_still_returns_exi(Vertx vertx, VertxTestContext ctx) {
+        // Spec marks exiResponse as required on the wire even for Failed — the
+        // station must forward a valid EXI response code back to the EV.
+        harness.iso15118ExiProcessor.setNextResult(
+                Get15118EVCertificateResult.failed("exi-failure-response-b64", "ExiDecodeFailed"));
+
+        String msg = """
+                [2,"g15-2","Get15118EVCertificate",{
+                  "iso15118SchemaVersion": "urn:iso:15118:2:2013:MsgDef",
+                  "action": "Update",
+                  "exiRequest": "exi-update-request-b64"
+                }]""";
+
+        harness.send201(vertx, "ISO-STATION-202", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "ISO-STATION-202", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Failed");
+                    assertThat(resp.get(2).get("exiResponse").asText())
+                            .isEqualTo("exi-failure-response-b64");
+                    assertThat(resp.get(2).get("statusInfo").get("reasonCode").asText())
+                            .isEqualTo("ExiDecodeFailed");
+
+                    FakeIso15118ExiProcessor.Request captured =
+                            harness.iso15118ExiProcessor.requests().get(0);
+                    assertThat(captured.action()).isEqualTo(CertificateAction.UPDATE);
                     ctx.completeNow();
                 }));
     }

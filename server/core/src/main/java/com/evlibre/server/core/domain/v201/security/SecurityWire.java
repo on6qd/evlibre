@@ -70,6 +70,22 @@ public final class SecurityWire {
         };
     }
 
+    public static String certificateActionToWire(CertificateAction action) {
+        return switch (action) {
+            case INSTALL -> "Install";
+            case UPDATE -> "Update";
+        };
+    }
+
+    public static CertificateAction certificateActionFromWire(String wire) {
+        return switch (wire) {
+            case "Install" -> CertificateAction.INSTALL;
+            case "Update" -> CertificateAction.UPDATE;
+            default -> throw new IllegalArgumentException(
+                    "Unknown CertificateActionEnumType: " + wire);
+        };
+    }
+
     public static String hashAlgorithmToWire(HashAlgorithm algorithm) {
         return switch (algorithm) {
             case SHA256 -> "SHA256";
