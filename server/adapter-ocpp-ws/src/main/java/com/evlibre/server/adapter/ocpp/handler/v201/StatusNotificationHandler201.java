@@ -1,10 +1,11 @@
 package com.evlibre.server.adapter.ocpp.handler.v201;
 
 import com.evlibre.common.model.ConnectorId;
+import com.evlibre.common.model.EvseId;
 import com.evlibre.server.adapter.ocpp.OcppSession;
 import com.evlibre.server.adapter.ocpp.handler.OcppMessageHandler;
-import com.evlibre.server.core.domain.v16.dto.StatusNotificationData;
 import com.evlibre.server.core.domain.shared.model.ConnectorStatus;
+import com.evlibre.server.core.domain.v201.dto.StatusNotificationData201;
 import com.evlibre.server.core.domain.v201.ports.inbound.HandleStatusNotificationPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,11 +29,10 @@ public class StatusNotificationHandler201 implements OcppMessageHandler {
         int evseId = payload.path("evseId").asInt();
         int connectorId = payload.path("connectorId").asInt();
 
-        // In 2.0.1 the connectorId in StatusNotification refers to a connector within an EVSE.
-        // We map it to the domain ConnectorId for now.
-        StatusNotificationData data = new StatusNotificationData(
+        StatusNotificationData201 data = new StatusNotificationData201(
                 session.tenantId(), session.stationIdentity(),
-                new ConnectorId(connectorId), status, "NoError", timestamp
+                new EvseId(evseId), new ConnectorId(connectorId),
+                status, timestamp
         );
 
         statusPort.statusNotification(data);
