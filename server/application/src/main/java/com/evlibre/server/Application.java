@@ -24,8 +24,11 @@ import com.evlibre.server.core.usecases.v201.GetBaseReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleDataTransferUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleHeartbeatUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleMeterValuesUseCaseV201;
+import com.evlibre.server.core.domain.v201.dto.Get15118EVCertificateResult;
 import com.evlibre.server.core.domain.v201.dto.GenericStatus;
+import com.evlibre.server.core.domain.v201.dto.GetCertificateStatusResult;
 import com.evlibre.server.core.domain.v201.dto.NotifyEVChargingNeedsStatus;
+import com.evlibre.server.core.domain.v201.dto.SignCertificateResult;
 import com.evlibre.server.core.usecases.v201.HandleClearedChargingLimitUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleFirmwareStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleLogStatusNotificationUseCaseV201;
@@ -35,7 +38,11 @@ import com.evlibre.server.core.usecases.v201.HandlePublishFirmwareStatusNotifica
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleGet15118EVCertificateUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleGetCertificateStatusUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleSecurityEventNotificationUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleSignCertificateUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -245,6 +252,51 @@ public class Application {
                                 log.info("PublishFirmwareStatusNotification from {} (status={}, requestId={}, locations={})",
                                         s.value(), status, requestId, locations.size()));
 
+        // Security events from the station (A03). No persistence yet — the sink logs
+        // tamper detection, invalid-cert-presented, firmware-update-failed, etc.
+        HandleSecurityEventNotificationUseCaseV201 handleSecurityEvent201 =
+                new HandleSecurityEventNotificationUseCaseV201(
+                        (t, s, event) ->
+                                log.info("SecurityEventNotification from {} (type={}, at={}, techInfo={})",
+                                        s.value(), event.type(), event.timestamp(), event.techInfo()));
+
+        // CSR submissions from the station (A02). The default accepts every CSR so
+        // stations aren't blocked; real deployments plug in policy (match CommonName
+        // against station identity, rate-limit, forward to internal CA). The actual
+        // signed-cert delivery is block A05 (CertificateSigned outbound), out of Phase 7 scope.
+        HandleSignCertificateUseCaseV201 handleSignCertificate201 =
+                new HandleSignCertificateUseCaseV201(
+                        (t, s, csr, type) -> {
+                            log.info("SignCertificate from {} (type={}, csrLength={}) — accepting by default",
+                                    s.value(), type, csr.length());
+                            return SignCertificateResult.accepted();
+                        });
+
+        // OCSP relay from the station (A04). Without an OCSP-responder client wired
+        // up the CSMS cannot answer, so the default returns Failed with a reasonCode
+        // that signals the feature isn't configured yet. Plug & Charge deployments
+        // replace this resolver with a real OCSP client.
+        HandleGetCertificateStatusUseCaseV201 handleGetCertificateStatus201 =
+                new HandleGetCertificateStatusUseCaseV201(
+                        (t, s, ocsp) -> {
+                            log.info("GetCertificateStatus from {} (serial={}, responder={}) — no OCSP resolver wired",
+                                    s.value(), ocsp.serialNumber(), ocsp.responderURL());
+                            return GetCertificateStatusResult.failed("NotConfigured");
+                        });
+
+        // ISO 15118 EV-certificate EXI relay from the station (M06). Without a
+        // Mobility-Operator / CPS client the CSMS cannot answer, but the spec
+        // requires exiResponse on the wire — return a minimal placeholder so the
+        // message round-trips. Real Plug & Charge deployments replace this.
+        HandleGet15118EVCertificateUseCaseV201 handleGet15118EVCertificate201 =
+                new HandleGet15118EVCertificateUseCaseV201(
+                        (t, s, schema, action, exiRequest) -> {
+                            log.info("Get15118EVCertificate from {} (schema={}, action={}) — no EXI processor wired",
+                                    s.value(), schema, action);
+                            return Get15118EVCertificateResult.failed(
+                                    "not-configured", "NotConfigured");
+                        });
+
         // Post-boot actions (GetConfiguration for 1.6, GetBaseReport for 2.0.1)
         PostBootActionService postBootActionService = new PostBootActionService(
                 commandSender.v16(), getBaseReport, stationConfigRepo);
@@ -306,6 +358,14 @@ public class Application {
                 new NotifyEventHandler201(handleNotifyEvent201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "PublishFirmwareStatusNotification",
                 new PublishFirmwareStatusNotificationHandler201(handlePublishFirmwareStatus201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "SecurityEventNotification",
+                new SecurityEventNotificationHandler201(handleSecurityEvent201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "SignCertificate",
+                new SignCertificateHandler201(handleSignCertificate201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "GetCertificateStatus",
+                new GetCertificateStatusHandler201(handleGetCertificateStatus201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "Get15118EVCertificate",
+                new Get15118EVCertificateHandler201(handleGet15118EVCertificate201, objectMapper));
 
         // Create and deploy verticle
         OcppWebSocketVerticle ocppVerticle = new OcppWebSocketVerticle(
