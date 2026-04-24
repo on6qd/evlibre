@@ -10,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StationCommandHandlerV201 {
 
     private static final Logger log = LoggerFactory.getLogger(StationCommandHandlerV201.class);
 
     private final Ocpp201StationCommandSender commandSender;
+    private final AtomicInteger remoteStartIdSeq = new AtomicInteger(1);
 
     public StationCommandHandlerV201(Ocpp201StationCommandSender commandSender) {
         this.commandSender = commandSender;
@@ -48,6 +50,27 @@ public class StationCommandHandlerV201 {
             payload.put("evse", evse);
         }
         sendCommand(ctx, tenantId, stationId, "ChangeAvailability", payload);
+    }
+
+    public void requestStartTransaction(RoutingContext ctx, TenantId tenantId) {
+        String stationId = ctx.pathParam("stationId");
+        String idTokenValue = param(ctx, "idToken");
+        String tokenType = param(ctx, "tokenType");
+        if (tokenType == null || tokenType.isBlank()) tokenType = "ISO14443";
+        if (idTokenValue == null || idTokenValue.isBlank()) {
+            respondResult(ctx, "RequestStartTransaction",
+                    "error: idToken is required", false);
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("remoteStartId", remoteStartIdSeq.getAndIncrement());
+        payload.put("idToken", Map.of("idToken", idTokenValue, "type", tokenType));
+        String evseStr = param(ctx, "evseId");
+        if (evseStr != null && !evseStr.isBlank()) {
+            payload.put("evseId", Integer.parseInt(evseStr));
+        }
+        sendCommand(ctx, tenantId, stationId, "RequestStartTransaction", payload);
     }
 
     public void unlockConnector(RoutingContext ctx, TenantId tenantId) {

@@ -149,6 +149,62 @@ class V201CommandIT {
     }
 
     @Test
+    void request_start_wraps_idtoken_as_object(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("idToken", "TAG001")
+                .add("tokenType", "ISO14443");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/request-start")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.action()).isEqualTo("RequestStartTransaction");
+                    assertThat(sent.payload()).containsKey("remoteStartId");
+                    assertThat(sent.payload().get("remoteStartId")).isInstanceOf(Integer.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> idToken = (Map<String, Object>) sent.payload().get("idToken");
+                    assertThat(idToken)
+                            .containsEntry("idToken", "TAG001")
+                            .containsEntry("type", "ISO14443");
+                    assertThat(sent.payload()).doesNotContainKey("evseId");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void request_start_includes_evse_id_when_provided(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("idToken", "TAG002")
+                .add("tokenType", "Central")
+                .add("evseId", "3");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/request-start")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    SentCommand sent = fakeV201.lastCommand();
+                    assertThat(sent.payload()).containsEntry("evseId", 3);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> idToken = (Map<String, Object>) sent.payload().get("idToken");
+                    assertThat(idToken).containsEntry("type", "Central");
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
+    void request_start_rejects_missing_idtoken(VertxTestContext ctx) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add("tokenType", "Central");
+        webClient.post(verticle.actualPort(), "localhost",
+                        "/demo-tenant/stations/CHARGER-001/v201/request-start")
+                .sendForm(form)
+                .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                    assertThat(response.bodyAsString()).contains("error");
+                    assertThat(fakeV201.commands()).isEmpty();
+                    ctx.completeNow();
+                })));
+    }
+
+    @Test
     void unlock_connector_requires_both_ids(VertxTestContext ctx) {
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .add("evseId", "1");
