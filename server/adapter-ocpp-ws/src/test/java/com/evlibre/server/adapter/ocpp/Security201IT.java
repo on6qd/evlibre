@@ -2,7 +2,10 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.server.adapter.ocpp.testutil.OcppMessages;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
+import com.evlibre.server.core.domain.v201.dto.SignCertificateResult;
+import com.evlibre.server.core.domain.v201.security.CertificateSigningUse;
 import com.evlibre.server.test.fakes.FakeSecurityEventSink;
+import com.evlibre.server.test.fakes.FakeSignCertificatePolicy;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -16,10 +19,11 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * End-to-end tests for the Phase 7 security inbound flows (block A03 —
- * SecurityEventNotification). Exercises wire→domain decoding plus dispatcher
- * registration through {@link OcppTestHarness}; payloads are schema-validated
- * by {@code OcppSchemaValidator} in hard-reject mode.
+ * End-to-end tests for the Phase 7 security inbound flows (blocks A02 and
+ * A03 — SignCertificate and SecurityEventNotification). Exercises wire→domain
+ * decoding plus dispatcher registration through {@link OcppTestHarness};
+ * payloads are schema-validated by {@code OcppSchemaValidator} in hard-reject
+ * mode.
  */
 @ExtendWith(VertxExtension.class)
 @Tag("integration")
@@ -55,6 +59,56 @@ class Security201IT {
                     assertThat(captured.event().timestamp())
                             .isEqualTo(Instant.parse("2027-05-01T10:00:00Z"));
                     assertThat(captured.event().techInfo()).isEqualTo("fw=2.4.1 from CSMS");
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void sign_certificate_default_type_accepted(Vertx vertx, VertxTestContext ctx) {
+        // certificateType omitted — spec defaults it to ChargingStationCertificate.
+        String msg = """
+                [2,"sc-1","SignCertificate",{
+                  "csr": "-----BEGIN CERTIFICATE REQUEST-----\\nMIIBYTCBy\\n-----END CERTIFICATE REQUEST-----"
+                }]""";
+
+        harness.send201(vertx, "CSR-STATION-201", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "CSR-STATION-201", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Accepted");
+                    assertThat(resp.get(2).has("statusInfo")).isFalse();
+
+                    assertThat(harness.signCertificatePolicy.submissions()).hasSize(1);
+                    FakeSignCertificatePolicy.Submission s =
+                            harness.signCertificatePolicy.submissions().get(0);
+                    assertThat(s.certificateType())
+                            .isEqualTo(CertificateSigningUse.CHARGING_STATION_CERTIFICATE);
+                    ctx.completeNow();
+                }));
+    }
+
+    @Test
+    void sign_certificate_v2g_rejected_with_reason(Vertx vertx, VertxTestContext ctx) {
+        harness.signCertificatePolicy.setNextResult(SignCertificateResult.rejected("InvalidCsr"));
+
+        String msg = """
+                [2,"sc-2","SignCertificate",{
+                  "csr": "-----BEGIN CERTIFICATE REQUEST-----\\nMIIBYTCBy\\n-----END CERTIFICATE REQUEST-----",
+                  "certificateType": "V2GCertificate"
+                }]""";
+
+        harness.send201(vertx, "CSR-STATION-202", OcppMessages.bootNotification201("ABB", "Terra AC"))
+                .thenCompose(boot -> harness.send201(vertx, "CSR-STATION-202", msg))
+                .whenComplete((resp, err) -> ctx.verify(() -> {
+                    assertThat(err).isNull();
+                    assertThat(resp.get(2).get("status").asText()).isEqualTo("Rejected");
+                    assertThat(resp.get(2).get("statusInfo").get("reasonCode").asText())
+                            .isEqualTo("InvalidCsr");
+
+                    FakeSignCertificatePolicy.Submission s =
+                            harness.signCertificatePolicy.submissions().get(0);
+                    assertThat(s.certificateType())
+                            .isEqualTo(CertificateSigningUse.V2G_CERTIFICATE);
                     ctx.completeNow();
                 }));
     }
