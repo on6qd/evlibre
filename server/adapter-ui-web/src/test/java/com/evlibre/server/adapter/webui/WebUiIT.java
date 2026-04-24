@@ -1,5 +1,6 @@
 package com.evlibre.server.adapter.webui;
 
+import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import com.evlibre.server.test.fakes.FakeStationRepository;
 import com.evlibre.server.test.fakes.FakeTenantRepository;
@@ -81,6 +82,43 @@ class WebUiIT {
             .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
                 assertThat(response.statusCode()).isEqualTo(200);
                 assertThat(response.bodyAsString()).contains("CHARGER-001");
+                ctx.completeNow();
+            })));
+    }
+
+    @Test
+    void detail_view_for_v16_station_uses_v16_template(VertxTestContext ctx) {
+        stationRepo.save(Stations.accepted(Tenants.DEMO_TENANT_ID));
+
+        webClient.get(verticle.actualPort(), "localhost", "/demo-tenant/stations/CHARGER-001")
+            .send()
+            .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                assertThat(response.statusCode()).isEqualTo(200);
+                String body = response.bodyAsString();
+                // v1.6 template has a plain "commands" panel header; v2.0.1 has "commands (ocpp 2.0.1)".
+                assertThat(body).contains(">commands</div>");
+                assertThat(body).doesNotContain("OCPP 2.0.1");
+                ctx.completeNow();
+            })));
+    }
+
+    @Test
+    void detail_view_for_v201_station_uses_v201_template(VertxTestContext ctx) {
+        stationRepo.save(Stations.builder(Tenants.DEMO_TENANT_ID)
+                .protocol(OcppProtocol.OCPP_201)
+                .registrationStatus(com.evlibre.server.core.domain.shared.model.RegistrationStatus.ACCEPTED)
+                .build());
+
+        webClient.get(verticle.actualPort(), "localhost", "/demo-tenant/stations/CHARGER-001")
+            .send()
+            .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
+                assertThat(response.statusCode()).isEqualTo(200);
+                String body = response.bodyAsString();
+                assertThat(body).contains("OCPP 2.0.1");
+                assertThat(body).contains("commands (ocpp 2.0.1)");
+                // v1.6-only endpoints must not be rendered for a v2.0.1 station.
+                assertThat(body).doesNotContain("/remote-start");
+                assertThat(body).doesNotContain("/get-diagnostics");
                 ctx.completeNow();
             })));
     }

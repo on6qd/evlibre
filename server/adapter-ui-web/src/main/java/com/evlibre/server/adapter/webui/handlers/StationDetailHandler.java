@@ -1,6 +1,7 @@
 package com.evlibre.server.adapter.webui.handlers;
 
 import com.evlibre.common.model.ChargePointIdentity;
+import com.evlibre.common.ocpp.OcppProtocol;
 import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import com.evlibre.server.adapter.webui.dto.StationView;
 import com.evlibre.server.core.domain.shared.model.ChargingStation;
@@ -43,6 +44,11 @@ public class StationDetailHandler {
             Set<ChargePointIdentity> connected = sessionManager.connectedStations(tenantId);
             StationView view = StationView.fromDomain(station.get(), connected);
 
+            if (station.get().protocol() == OcppProtocol.OCPP_201) {
+                return pages.stationDetailV201.template(view, tenantId.value())
+                        .render()
+                        .toString();
+            }
             return pages.stationDetail.template(view, tenantId.value())
                     .render()
                     .toString();

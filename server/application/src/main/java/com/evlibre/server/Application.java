@@ -422,10 +422,11 @@ public class Application {
                 dispatcher, sessionManager, protocolNegotiator, pendingCallManager,
                 stationEventPublisher, handleHeartbeat);
 
-        // Web UI — wired to the v1.6 sender for now; v2.0.1 remote commands land in a later phase.
+        // Web UI — separate v1.6 and v2.0.1 command ports; the detail view picks its
+        // template (and thus which port it targets) by the station's negotiated protocol.
         WebUiVerticle webUiVerticle = new WebUiVerticle(
                 tenantRepo, stationRepo, transactionRepo, sessionManager,
-                commandSender.v16(), config.webui().port());
+                commandSender.v16(), commandSender.v201(), config.webui().port());
 
         awaitDeploy(vertx, ocppVerticle, "OCPP server");
         log.info("OCPP server started on port {} (database: {})",
