@@ -21,6 +21,7 @@ import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingNeedsUseCaseV
 import com.evlibre.server.core.usecases.v201.HandleNotifyEVChargingScheduleUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleNotifyReportUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleReportChargingProfilesUseCaseV201;
+import com.evlibre.server.core.usecases.v201.HandleSecurityEventNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleStatusNotificationUseCaseV201;
 import com.evlibre.server.core.usecases.v201.HandleTransactionEventUseCase;
 import com.evlibre.server.core.usecases.v201.RegisterStationUseCaseV201;
@@ -59,6 +60,7 @@ public class OcppTestHarness {
     public final FakeLogStatusSink logStatusSink = new FakeLogStatusSink();
     public final FakeNotifyEventSink notifyEventSink = new FakeNotifyEventSink();
     public final FakePublishFirmwareStatusSink publishFirmwareStatusSink = new FakePublishFirmwareStatusSink();
+    public final FakeSecurityEventSink securityEventSink = new FakeSecurityEventSink();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -121,6 +123,8 @@ public class OcppTestHarness {
                 new HandleNotifyEventUseCaseV201(notifyEventSink);
         HandlePublishFirmwareStatusNotificationUseCaseV201 handlePublishFirmwareStatus201 =
                 new HandlePublishFirmwareStatusNotificationUseCaseV201(publishFirmwareStatusSink);
+        HandleSecurityEventNotificationUseCaseV201 handleSecurityEvent201 =
+                new HandleSecurityEventNotificationUseCaseV201(securityEventSink);
         // v201 DataTransfer allow-list mirrors v16: empty by default, so incoming requests
         // hit the UnknownVendorId branch unless tests specifically rewire a known vendor.
         HandleDataTransferUseCaseV201 handleDataTransfer201 = new HandleDataTransferUseCaseV201(eventLog);
@@ -193,6 +197,8 @@ public class OcppTestHarness {
                 new NotifyEventHandler201(handleNotifyEvent201, objectMapper));
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "PublishFirmwareStatusNotification",
                 new PublishFirmwareStatusNotificationHandler201(handlePublishFirmwareStatus201, objectMapper));
+        dispatcher.registerHandler(OcppProtocol.OCPP_201, "SecurityEventNotification",
+                new SecurityEventNotificationHandler201(handleSecurityEvent201, objectMapper));
 
         verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
     }
