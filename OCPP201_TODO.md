@@ -1,13 +1,14 @@
 # OCPP 2.0.1 Implementation TODO
 
 Source: OCPP 2.0.1 Edition 4 Errata February 2026 (NotebookLM).
-Last audit: 2026-04-23.
+Last audit: 2026-04-24.
 Phase 0 completed: 2026-04-21 (all subsections done — separation groundwork
 plus full response-schema authoring and hard-reject validation, see 0.4).
 Phase 4 (Block P / DataTransfer) completed: 2026-04-22.
 Phase 5 (Blocks E, H, K — Reservations, Transactions, Smart Charging) completed: 2026-04-23.
 Phase 6 (Blocks L, N — Firmware & Diagnostics) completed: 2026-04-23.
 Phase 7 (Blocks A, M — Security & Certificates) completed: 2026-04-24.
+Phase 8 (Block N monitoring + Blocks O, I — Monitoring, Customer/Display, Tariff) completed: 2026-04-24. **All planned phases are now complete.**
 
 ## Architectural rule: strict 1.6 / 2.0.1 separation
 
@@ -174,10 +175,85 @@ Phase 7 tally: 3 new outbound use cases (GetInstalledCertificateIds, InstallCert
 - [x] A04: `GetCertificateStatusResult` now enforces the schema's "ocspResult MAY only be omitted when status is not Accepted" at construction — a non-blank `ocspResult` is required when status=Accepted. Covered by new `GetCertificateStatusResultTest`.
 - [x] M03: `CertificateHashDataChain` now enforces `childCertificateHashData` maxItems 4 in the record (schema already enforced on the wire). Covered by new cases in `CertificateHashDataTest`.
 
-## Phase 8 — Monitoring & Display (Blocks N, O, I)
-Largely 2.0.1-only features.
-- [ ] Variable monitoring: `SetMonitoringBase`, `SetMonitoringLevel`, `SetVariableMonitoring`, `ClearVariableMonitoring`, `GetMonitoringReport`.
-- [ ] Inbound: `NotifyMonitoringReport`.
-- [ ] Customer info: `CustomerInformation` out, `NotifyCustomerInformation` in.
-- [ ] Display: `SetDisplayMessage`, `GetDisplayMessages`, `ClearDisplayMessage` + inbound `NotifyDisplayMessages`.
-- [ ] Tariff: `CostUpdated` (Block I).
+## Phase 8 — Monitoring & Display (Blocks N, O, I) ✅
+Largely 2.0.1-only features; first phase with zero v1.6 siblings at all.
+
+### Block N — Variable monitoring
+- [x] Domain: `MonitorType` (5 spec values), `VariableMonitor` (id,
+  transactionOnly, value, type, severity) with 0-9 severity bounds.
+  Wire helpers added to `DeviceModelWire` for both types + the nested
+  VariableMonitor entry.
+- [x] Outbound: `SetVariableMonitoringUseCaseV201` — `SetMonitoringData`
+  create-vs-replace via nullable `id`, 6-valued `SetMonitoringStatus`,
+  per-entry result with id-only-on-accepted.
+- [x] Outbound: `ClearVariableMonitoringUseCaseV201` — id array in, per-id
+  `ClearMonitoringResult` out with 3-valued status (Accepted / Rejected /
+  NotFound) so callers can tell which specific ids failed.
+- [x] Outbound: `SetMonitoringBaseUseCaseV201` — 3-valued
+  `MonitoringBase` (All / FactoryDefault / HardWiredOnly). Introduced the
+  shared `GenericDeviceModelStatus` enum (4 values) for this and for
+  GetMonitoringReport / future GetBaseReport / GetReport migrations.
+- [x] Outbound: `SetMonitoringLevelUseCaseV201` — severity threshold
+  0-9, GenericStatus response. Severity bounds pulled from
+  `VariableMonitor.SEVERITY_MIN/MAX` so the 0-9 range has one source of
+  truth across SetVariableMonitoring + SetMonitoringLevel.
+- [x] Outbound: `GetMonitoringReportUseCaseV201` — new
+  `MonitoringCriterion` enum (3 values — Threshold / Delta / Periodic),
+  reuses existing `ComponentVariableSelector` for the component/variable
+  filter.
+- [x] Inbound: `NotifyMonitoringReportHandler201` + buffering use case +
+  `MonitorRepositoryPort` / `NotifyMonitoringReportCompletionPort` +
+  `InMemoryMonitorRepository`. `MonitoringReporting201IT` covers the full
+  GetMonitoringReport → multi-frame NotifyMonitoringReport → repo-upsert
+  + completion-event loop.
+
+### Block O — Customer info + Display messages
+- [x] Outbound: `CustomerInformationUseCaseV201`. Bundles the three
+  mutually-optional identifiers (`customerIdentifier` string maxLength 64,
+  `IdToken`, `CertificateHashData`) as `CustomerInformationTarget` with
+  `none()` / `byIdentifier()` / `byIdToken()` / `byCertificate()`
+  factories; 3-valued `CustomerInformationStatus` (Accepted / Rejected /
+  Invalid — Invalid is distinct: format-not-recognised vs general refusal).
+  Reuses existing `IdTokenWire.toWire` and `SecurityWire.certificateHashDataToWire`.
+- [x] Inbound: `NotifyCustomerInformationHandler201` + buffering use case +
+  `CustomerInformationSink` (functional interface). Scalar-string
+  buffering via StringBuilder per (tenant, station, requestId); empty
+  single frames still fire the sink with `""` so "no data" is
+  distinguishable from "no response". `CustomerInformation201IT` covers
+  CustomerInformation(report=true) → 3-frame NotifyCustomerInformation →
+  single sink call with concatenated string.
+- [x] Outbound: `SetDisplayMessageUseCaseV201`. Bootstraps
+  `domain/v201/displaymessage/` — `MessagePriority` (3 values),
+  `MessageState` (4 values), `MessageInfo` record (id + priority +
+  message required; state, display Component, start/end window,
+  transactionId maxLength 36 optional), `SetDisplayMessageStatus` (6
+  spec values). New `DisplayMessageWire` codec. Reuses existing
+  `MessageContent`/`MessageFormat` from `model/`.
+- [x] Outbound: `GetDisplayMessagesUseCaseV201` — optional id array +
+  MessagePriority + MessageState filter; 2-valued
+  `GetDisplayMessagesStatus`.
+- [x] Outbound: `ClearDisplayMessageUseCaseV201` — single id in,
+  2-valued `ClearMessageStatus` (Accepted / Unknown) out.
+- [x] Inbound: `NotifyDisplayMessagesHandler201` + buffering use case +
+  `DisplayMessagesSink` (functional interface). Narrower schema than
+  NotifyReport — no seqNo/generatedAt on the wire — but same multi-frame
+  semantics. `DisplayMessages201IT` covers GetDisplayMessages → 2-frame
+  NotifyDisplayMessages → single sink call with 3 aggregated
+  MessageInfos.
+
+### Block I — Tariff
+- [x] Outbound: `CostUpdatedUseCaseV201` — (totalCost, transactionId),
+  empty-response spec so port returns `CompletableFuture<Void>`.
+  transactionId maxLength 36, negative totalCost allowed for refund
+  scenarios.
+
+Phase 8 tally: 10 new outbound use cases (SetVariableMonitoring,
+ClearVariableMonitoring, SetMonitoringBase, SetMonitoringLevel,
+GetMonitoringReport, CustomerInformation, SetDisplayMessage,
+GetDisplayMessages, ClearDisplayMessage, CostUpdated), 3 new inbound
+handlers (NotifyMonitoringReport, NotifyCustomerInformation,
+NotifyDisplayMessages) with associated buffering use cases + repositories
+/ sinks; ~20 new schema files; 508 core tests (up from 416 at end of
+Phase 7) and 168 adapter-ocpp-ws tests (up from 162). New
+`domain/v201/displaymessage/` package; `domain/v201/devicemodel/`
+extended with the deferred `Monitor` shape from Phase 1.
