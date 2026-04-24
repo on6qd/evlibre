@@ -4,11 +4,14 @@ import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestClient;
 import com.evlibre.server.adapter.ocpp.testutil.OcppTestHarness;
 import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.v201.dto.DeleteCertificateStatus;
 import com.evlibre.server.core.domain.v201.dto.GetInstalledCertificateIdsStatus;
 import com.evlibre.server.core.domain.v201.dto.InstallCertificateStatus;
+import com.evlibre.server.core.domain.v201.security.CertificateHashData;
 import com.evlibre.server.core.domain.v201.security.GetCertificateIdUse;
 import com.evlibre.server.core.domain.v201.security.HashAlgorithm;
 import com.evlibre.server.core.domain.v201.security.InstallCertificateUse;
+import com.evlibre.server.core.usecases.v201.DeleteCertificateUseCaseV201;
 import com.evlibre.server.core.usecases.v201.GetInstalledCertificateIdsUseCaseV201;
 import com.evlibre.server.core.usecases.v201.InstallCertificateUseCaseV201;
 import io.vertx.core.Vertx;
@@ -181,6 +184,95 @@ class SecurityCommand201IT {
                                     var cmd = client.receivedCommands("InstallCertificate").get(0);
                                     assertThat(cmd.payload().get("certificateType").asText())
                                             .isEqualTo("V2GRootCertificate");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void delete_certificate_by_hash_accepted(Vertx vertx, VertxTestContext ctx) {
+        CertificateHashData hash = new CertificateHashData(
+                HashAlgorithm.SHA256,
+                "name-hash-hex", "key-hash-hex", "0A1B2C3D");
+
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("DeleteCertificate", "Accepted");
+                    DeleteCertificateUseCaseV201 useCase =
+                            new DeleteCertificateUseCaseV201(harness.commandSender201);
+                    return useCase.deleteCertificate(TENANT, STATION, hash)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isTrue();
+                                    assertThat(result.status())
+                                            .isEqualTo(DeleteCertificateStatus.ACCEPTED);
+
+                                    var cmd = client.receivedCommands("DeleteCertificate").get(0);
+                                    var h = cmd.payload().get("certificateHashData");
+                                    assertThat(h.get("hashAlgorithm").asText()).isEqualTo("SHA256");
+                                    assertThat(h.get("serialNumber").asText()).isEqualTo("0A1B2C3D");
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void delete_certificate_not_found(Vertx vertx, VertxTestContext ctx) {
+        CertificateHashData hash = new CertificateHashData(
+                HashAlgorithm.SHA384, "nh", "kh", "MISSING");
+
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("DeleteCertificate", "NotFound");
+                    DeleteCertificateUseCaseV201 useCase =
+                            new DeleteCertificateUseCaseV201(harness.commandSender201);
+                    return useCase.deleteCertificate(TENANT, STATION, hash)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.isAccepted()).isFalse();
+                                    assertThat(result.status())
+                                            .isEqualTo(DeleteCertificateStatus.NOT_FOUND);
+                                });
+                                client.close();
+                                return result;
+                            });
+                })
+                .whenComplete((r, err) -> {
+                    if (err != null) ctx.failNow(err);
+                    else ctx.completeNow();
+                });
+    }
+
+    @Test
+    void delete_certificate_failed_with_reason(Vertx vertx, VertxTestContext ctx) {
+        CertificateHashData hash = new CertificateHashData(
+                HashAlgorithm.SHA256, "nh", "kh", "IN-USE");
+
+        OcppTestClient.connect(vertx, harness, STATION.value(), "ocpp2.0.1")
+                .thenCompose(client -> {
+                    client.onCommand("DeleteCertificate", payload -> Map.of(
+                            "status", "Failed",
+                            "statusInfo", Map.of("reasonCode", "CertInUse")));
+                    DeleteCertificateUseCaseV201 useCase =
+                            new DeleteCertificateUseCaseV201(harness.commandSender201);
+                    return useCase.deleteCertificate(TENANT, STATION, hash)
+                            .thenApply(result -> {
+                                ctx.verify(() -> {
+                                    assertThat(result.status())
+                                            .isEqualTo(DeleteCertificateStatus.FAILED);
+                                    assertThat(result.statusInfoReason()).isEqualTo("CertInUse");
                                 });
                                 client.close();
                                 return result;
