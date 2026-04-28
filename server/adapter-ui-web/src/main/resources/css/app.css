@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/*
+ * DaisyUI plugin is installed by scripts/build-css.sh into <repo>/.tools/node_modules/daisyui.
+ * The relative path below climbs from this file (server/adapter-ui-web/src/main/resources/css/)
+ * up to the repo root.
+ */
+@plugin "../../../../../../.tools/node_modules/daisyui" {
+    themes: dim --default;
+}
+
+@source "../templates";
+@source "../../java";

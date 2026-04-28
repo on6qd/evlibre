@@ -48,3 +48,6 @@ data/
 
 # Local config overrides
 local.toml
+
+# Tailwind standalone CLI cache (downloaded by scripts/build-css.sh)
+.tools/
