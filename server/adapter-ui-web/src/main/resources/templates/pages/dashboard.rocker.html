@@ -4,20 +4,22 @@
 @args (DashboardStats stats, String tenantId)
 
 @main.template("Dashboard", tenantId) -> {
-    <div hx-sse="connect:/@tenantId/events/stations">
-        <div class="page-header">
-            <h1>&gt; dashboard</h1>
-            <p>charging network overview</p>
+    <div hx-sse="connect:/@tenantId/events/stations" class="font-sans space-y-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-base-content">Dashboard</h1>
+            <p class="text-sm text-base-content/60 mt-1">Charging network overview</p>
         </div>
 
         <div id="dashboard-stats" hx-sse="swap:dashboard-stats" hx-swap="innerHTML">
             @partials.dashboardStats.template(stats)
         </div>
 
-        <div class="panel">
-            <div class="panel-header">quick actions</div>
-            <div class="panel-body">
-                <a href="/@tenantId/stations" class="btn">view all stations</a>
+        <div class="card bg-base-100 border border-base-300">
+            <div class="card-body">
+                <h2 class="card-title text-base">Quick actions</h2>
+                <div>
+                    <a href="/@tenantId/stations" class="btn btn-primary btn-sm">View all stations</a>
+                </div>
             </div>
         </div>
     </div>

@@ -2,31 +2,31 @@
 
 @args (DashboardStats stats)
 
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="label">total stations</div>
-        <div class="value">@stats.totalStations()</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">online</div>
-        <div class="value green">@stats.onlineStations()</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">offline</div>
-        <div class="value red">@stats.offlineStations()</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">uptime</div>
-        <div class="value blue">@stats.uptimePercentage()%</div>
-    </div>
-</div>
-
-<div class="panel">
-    <div class="panel-header">network uptime</div>
-    <div class="panel-body">
-        <div class="progress-bar">
-            <div class="fill" style="width: @stats.uptimePercentage()%"></div>
+<div class="space-y-4">
+    <div class="stats stats-vertical lg:stats-horizontal w-full bg-base-100 border border-base-300 shadow-none">
+        <div class="stat">
+            <div class="stat-title">Total stations</div>
+            <div class="stat-value">@stats.totalStations()</div>
         </div>
-        <div style="color:var(--fg-dim);font-size:11px;margin-top:6px;">@stats.uptimePercentage()% uptime across all stations</div>
+        <div class="stat">
+            <div class="stat-title">Online</div>
+            <div class="stat-value text-success">@stats.onlineStations()</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">Offline</div>
+            <div class="stat-value text-error">@stats.offlineStations()</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">Uptime</div>
+            <div class="stat-value text-info">@stats.uptimePercentage()%</div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 border border-base-300">
+        <div class="card-body">
+            <h2 class="card-title text-base">Network uptime</h2>
+            <progress class="progress progress-primary w-full" value="@stats.uptimePercentage()" max="100"></progress>
+            <p class="text-xs text-base-content/60">@stats.uptimePercentage()% uptime across all stations</p>
+        </div>
     </div>
 </div>
