@@ -13,8 +13,7 @@ public record StationView(
         String firmwareVersion,
         String protocol,
         String registrationStatus,
-        boolean online,
-        String registrationBadgeClass
+        boolean online
 ) {
 
     public static StationView fromDomain(ChargingStation station, Set<ChargePointIdentity> connectedStations) {
@@ -28,17 +27,7 @@ public record StationView(
                 station.firmwareVersion() != null ? station.firmwareVersion() : "-",
                 station.protocol().name(),
                 station.registrationStatus().name(),
-                online,
-                getRegistrationBadgeClass(station.registrationStatus().name())
+                online
         );
-    }
-
-    private static String getRegistrationBadgeClass(String status) {
-        return switch (status) {
-            case "ACCEPTED" -> "badge-accepted";
-            case "PENDING" -> "badge-pending";
-            case "REJECTED" -> "badge-rejected";
-            default -> "";
-        };
     }
 }
