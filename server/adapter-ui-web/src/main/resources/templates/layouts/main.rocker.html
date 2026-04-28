@@ -1,7 +1,7 @@
 @args (String title, String tenantId, RockerBody body)
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dim">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -290,27 +290,29 @@
     </style>
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <div style="display:flex;align-items:center;gap:24px;">
-                <div class="logo">evlibre</div>
-                <nav>
-                    <a href="/@tenantId/dashboard">dashboard</a>
-                    <a href="/@tenantId/stations">stations</a>
+    <header class="font-sans bg-base-100 border-b border-base-300">
+        <div class="mx-auto max-w-7xl flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-6">
+                <a href="/@tenantId/dashboard" class="text-base font-semibold tracking-tight text-base-content">evlibre</a>
+                <nav class="flex gap-5 text-sm">
+                    <a href="/@tenantId/dashboard" class="text-base-content/70 hover:text-base-content">Dashboard</a>
+                    <a href="/@tenantId/stations" class="text-base-content/70 hover:text-base-content">Stations</a>
                 </nav>
             </div>
-            <div class="tenant-badge">tenant: <span>@tenantId</span></div>
+            <div class="text-xs text-base-content/60">
+                Tenant <span class="ml-1 font-mono text-base-content">@tenantId</span>
+            </div>
         </div>
     </header>
 
     <main>
-        <div class="container">
+        <div class="mx-auto max-w-7xl px-4 py-8">
             @body
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">evlibre // open source ev charging platform</div>
+    <footer class="font-sans border-t border-base-300 mt-12 py-4 text-center text-xs text-base-content/50">
+        evlibre · open source EV charging platform
     </footer>
 </body>
 </html>
