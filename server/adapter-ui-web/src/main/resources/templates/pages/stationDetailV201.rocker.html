@@ -28,7 +28,7 @@
                         <div class="key">protocol</div>
                         <div class="val">@station.protocol()</div>
                         <div class="key">status</div>
-                        <div class="val"><span class="badge @station.statusBadgeClass()">@if (station.online()) {online} else {offline}</span></div>
+                        <div class="val">@partials._onlineBadge.template(station.online())</div>
                         <div class="key">registration</div>
                         <div class="val"><span class="badge @station.registrationBadgeClass()">@station.registrationStatus()</span></div>
                     </div>

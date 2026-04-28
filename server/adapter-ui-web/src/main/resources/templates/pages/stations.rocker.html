@@ -5,28 +5,30 @@
 @args (List<StationView> stations, String tenantId)
 
 @main.template("Stations", tenantId) -> {
-    <div hx-sse="connect:/@tenantId/events/stations">
-        <div class="page-header">
-            <h1>&gt; stations</h1>
-            <p>@stations.size() station(s) registered</p>
+    <div hx-sse="connect:/@tenantId/events/stations" class="font-sans space-y-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-base-content">Stations</h1>
+            <p class="text-sm text-base-content/60 mt-1">@stations.size() station(s) registered</p>
         </div>
 
-        <div class="panel">
-            <table>
-                <thead>
-                    <tr>
-                        <th>station id</th>
-                        <th>vendor / model</th>
-                        <th>protocol</th>
-                        <th>status</th>
-                        <th>registration</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody hx-sse="swap:stations-table" hx-swap="innerHTML">
-                    @partials.stationsTableBody.template(stations, tenantId)
-                </tbody>
-            </table>
+        <div class="card bg-base-100 border border-base-300">
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Station ID</th>
+                            <th>Vendor / model</th>
+                            <th>Protocol</th>
+                            <th>Status</th>
+                            <th>Registration</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody hx-sse="swap:stations-table" hx-swap="innerHTML">
+                        @partials.stationsTableBody.template(stations, tenantId)
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 }

@@ -1,0 +1,11 @@
+@args (boolean online)
+
+@if (online) {
+<span class="inline-flex items-center gap-1.5 rounded-full bg-success/15 text-success px-2 py-0.5 text-xs font-medium font-sans">
+    <span class="w-1.5 h-1.5 rounded-full bg-success"></span>Online
+</span>
+} else {
+<span class="inline-flex items-center gap-1.5 rounded-full bg-error/15 text-error px-2 py-0.5 text-xs font-medium font-sans">
+    <span class="w-1.5 h-1.5 rounded-full bg-error"></span>Offline
+</span>
+}

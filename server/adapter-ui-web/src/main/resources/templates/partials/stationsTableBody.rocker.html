@@ -6,27 +6,21 @@
 @for (StationView station : stations) {
     <tr>
         <td>
-            <a href="/@tenantId/stations/@station.stationId()">@station.stationId()</a>
+            <a href="/@tenantId/stations/@station.stationId()" class="link link-hover font-mono">@station.stationId()</a>
             @if (!station.serialNumber().equals("-")) {
-                <div style="color:var(--fg-dim);font-size:10px;">S/N: @station.serialNumber()</div>
+                <div class="text-xs text-base-content/60 font-mono mt-1">S/N: @station.serialNumber()</div>
             }
         </td>
-        <td>
-            @station.vendor() / @station.model()
-        </td>
-        <td>@station.protocol()</td>
-        <td>
-            <span class="badge @station.statusBadgeClass()">
-                @if (station.online()) {online} else {offline}
-            </span>
-        </td>
+        <td>@station.vendor() / @station.model()</td>
+        <td><span class="font-mono text-xs">@station.protocol()</span></td>
+        <td>@partials._onlineBadge.template(station.online())</td>
         <td>
             <span class="badge @station.registrationBadgeClass()">
                 @station.registrationStatus()
             </span>
         </td>
         <td>
-            <a href="/@tenantId/stations/@station.stationId()" class="btn" style="padding:3px 10px;font-size:10px;">detail</a>
+            <a href="/@tenantId/stations/@station.stationId()" class="btn btn-ghost btn-xs">Detail</a>
         </td>
     </tr>
 }

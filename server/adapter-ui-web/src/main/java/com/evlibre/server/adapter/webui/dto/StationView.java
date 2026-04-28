@@ -14,7 +14,6 @@ public record StationView(
         String protocol,
         String registrationStatus,
         boolean online,
-        String statusBadgeClass,
         String registrationBadgeClass
 ) {
 
@@ -30,7 +29,6 @@ public record StationView(
                 station.protocol().name(),
                 station.registrationStatus().name(),
                 online,
-                online ? "badge-online" : "badge-offline",
                 getRegistrationBadgeClass(station.registrationStatus().name())
         );
     }
