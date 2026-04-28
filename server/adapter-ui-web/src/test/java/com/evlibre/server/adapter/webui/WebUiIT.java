@@ -95,8 +95,8 @@ class WebUiIT {
             .onComplete(ctx.succeeding(response -> ctx.verify(() -> {
                 assertThat(response.statusCode()).isEqualTo(200);
                 String body = response.bodyAsString();
-                // v1.6 template has a plain "commands" panel header; v2.0.1 has "commands (ocpp 2.0.1)".
-                assertThat(body).contains(">commands</div>");
+                // v1.6 template tags itself with an "OCPP 1.6" protocol badge; v2.0.1 has "OCPP 2.0.1".
+                assertThat(body).contains("OCPP 1.6");
                 assertThat(body).doesNotContain("OCPP 2.0.1");
                 ctx.completeNow();
             })));

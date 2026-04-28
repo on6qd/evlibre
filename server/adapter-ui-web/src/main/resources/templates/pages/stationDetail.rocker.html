@@ -4,129 +4,158 @@
 @args (StationView station, String tenantId)
 
 @main.template(station.stationId(), tenantId) -> {
-    <div class="page-header">
-        <p><a href="/@tenantId/stations">&lt; stations</a></p>
-        <h1>&gt; @station.stationId()</h1>
-    </div>
-
-    <div class="two-col">
+    <div class="font-sans space-y-6">
         <div>
-            <div class="panel">
-                <div class="panel-header">station info</div>
-                <div class="panel-body">
-                    <div class="detail-grid">
-                        <div class="key">station id</div>
-                        <div class="val">@station.stationId()</div>
-                        <div class="key">vendor</div>
-                        <div class="val">@station.vendor()</div>
-                        <div class="key">model</div>
-                        <div class="val">@station.model()</div>
-                        <div class="key">serial</div>
-                        <div class="val">@station.serialNumber()</div>
-                        <div class="key">firmware</div>
-                        <div class="val">@station.firmwareVersion()</div>
-                        <div class="key">protocol</div>
-                        <div class="val">@station.protocol()</div>
-                        <div class="key">status</div>
-                        <div class="val">@partials._onlineBadge.template(station.online())</div>
-                        <div class="key">registration</div>
-                        <div class="val"><span class="badge @station.registrationBadgeClass()">@station.registrationStatus()</span></div>
-                    </div>
-                </div>
+            <a href="/@tenantId/stations" class="text-sm text-base-content/60 hover:text-base-content">← Stations</a>
+            <div class="flex items-baseline gap-3 mt-2 flex-wrap">
+                <h1 class="text-2xl font-semibold font-mono break-all">@station.stationId()</h1>
+                <span class="badge badge-soft badge-neutral">OCPP 1.6</span>
             </div>
         </div>
 
-        <div>
-            <div class="panel">
-                <div class="panel-header">commands</div>
-                <div class="panel-body">
-                    @if (station.online()) {
-                        <div class="cmd-grid">
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/reset?type=Soft"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                soft reset
-                            </button>
-                            <button class="btn btn-danger"
-                                    hx-post="/@tenantId/stations/@station.stationId()/reset?type=Hard"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                hard reset
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Operative"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                set operative
-                            </button>
-                            <button class="btn btn-warn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Inoperative"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                set inoperative
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/unlock-connector?connectorId=1"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                unlock connector
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/clear-cache"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                clear cache
-                            </button>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">remote start</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/remote-start"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" name="idTag" placeholder="id tag" value="TAG001" style="width:120px;">
-                                <input type="number" name="connectorId" placeholder="conn" value="1" style="width:70px;">
-                                <button type="submit" class="btn">start</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:12px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">remote stop</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/remote-stop"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="number" name="transactionId" placeholder="tx id" style="width:100px;">
-                                <button type="submit" class="btn">stop</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:12px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">firmware / diagnostics</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/get-diagnostics"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                                <input type="text" name="location" placeholder="ftp://host/path" style="width:200px;">
-                                <button type="submit" class="btn">get diagnostics</button>
-                            </form>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/update-firmware"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" name="location" placeholder="ftp://host/fw.bin" style="width:200px;">
-                                <button type="submit" class="btn btn-warn">update firmware</button>
-                            </form>
-                        </div>
-                    } else {
-                        <div style="color:var(--fg-dim);font-size:12px;">station is offline. commands unavailable.</div>
-                    }
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card bg-base-100 border border-base-300 self-start">
+                <div class="card-body">
+                    <h2 class="card-title text-base">Station info</h2>
+                    <dl class="grid grid-cols-[140px_1fr] gap-y-2 text-sm">
+                        <dt class="text-base-content/60">Station ID</dt>
+                        <dd class="font-mono break-all">@station.stationId()</dd>
+                        <dt class="text-base-content/60">Vendor</dt>
+                        <dd>@station.vendor()</dd>
+                        <dt class="text-base-content/60">Model</dt>
+                        <dd>@station.model()</dd>
+                        <dt class="text-base-content/60">Serial</dt>
+                        <dd class="font-mono">@station.serialNumber()</dd>
+                        <dt class="text-base-content/60">Firmware</dt>
+                        <dd class="font-mono">@station.firmwareVersion()</dd>
+                        <dt class="text-base-content/60">Protocol</dt>
+                        <dd class="font-mono">@station.protocol()</dd>
+                        <dt class="text-base-content/60">Status</dt>
+                        <dd>@partials._onlineBadge.template(station.online())</dd>
+                        <dt class="text-base-content/60">Registration</dt>
+                        <dd>@partials._registrationBadge.template(station.registrationStatus())</dd>
+                    </dl>
                 </div>
             </div>
 
-            <div id="cmd-result"></div>
+            <div class="space-y-4">
+                <div class="card bg-base-100 border border-base-300">
+                    <div class="card-body">
+                        <h2 class="card-title text-base">Commands</h2>
+                        @if (station.online()) {
+                            <div role="tablist" class="tabs tabs-bordered">
+                                <input type="radio" name="commands-tab-v16" role="tab" class="tab" aria-label="Status" checked>
+                                <div role="tabpanel" class="tab-content pt-4 space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button class="btn btn-sm"
+                                                hx-post="/@tenantId/stations/@station.stationId()/reset?type=Soft"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Soft reset
+                                        </button>
+                                        <button class="btn btn-sm btn-error"
+                                                hx-post="/@tenantId/stations/@station.stationId()/reset?type=Hard"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Hard reset
+                                        </button>
+                                        <button class="btn btn-sm"
+                                                hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Operative"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Set operative
+                                        </button>
+                                        <button class="btn btn-sm btn-warning"
+                                                hx-post="/@tenantId/stations/@station.stationId()/change-availability?connectorId=0&type=Inoperative"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Set inoperative
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-sm btn-block"
+                                            hx-post="/@tenantId/stations/@station.stationId()/clear-cache"
+                                            hx-target="#cmd-result" hx-swap="innerHTML">
+                                        Clear cache
+                                    </button>
+                                </div>
+
+                                <input type="radio" name="commands-tab-v16" role="tab" class="tab" aria-label="Transactions">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/remote-start"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Remote start</h3>
+                                        <div class="flex flex-wrap gap-2 items-end">
+                                            <label class="form-control w-36">
+                                                <div class="label py-1"><span class="label-text text-xs">ID tag</span></div>
+                                                <input type="text" name="idTag" value="TAG001" class="input input-sm input-bordered">
+                                            </label>
+                                            <label class="form-control w-24">
+                                                <div class="label py-1"><span class="label-text text-xs">Connector</span></div>
+                                                <input type="number" name="connectorId" value="1" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-primary">Start</button>
+                                        </div>
+                                    </form>
+
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/remote-stop"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Remote stop</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">Transaction ID</span></div>
+                                                <input type="number" name="transactionId" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-warning">Stop</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <input type="radio" name="commands-tab-v16" role="tab" class="tab" aria-label="Hardware">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/unlock-connector"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Unlock connector</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control w-28">
+                                                <div class="label py-1"><span class="label-text text-xs">Connector ID</span></div>
+                                                <input type="number" name="connectorId" value="1" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm">Unlock</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <input type="radio" name="commands-tab-v16" role="tab" class="tab" aria-label="Maintenance">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/get-diagnostics"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Get diagnostics</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control flex-1">
+                                                <div class="label py-1"><span class="label-text text-xs">Upload location</span></div>
+                                                <input type="text" name="location" placeholder="ftp://host/path" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm">Get diagnostics</button>
+                                        </div>
+                                    </form>
+
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/update-firmware"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Update firmware</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control flex-1">
+                                                <div class="label py-1"><span class="label-text text-xs">Firmware location</span></div>
+                                                <input type="text" name="location" placeholder="ftp://host/fw.bin" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-warning">Update firmware</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        } else {
+                            <div class="text-sm text-base-content/60">Station is offline. Commands unavailable.</div>
+                        }
+                    </div>
+                </div>
+
+                <div id="cmd-result"></div>
+            </div>
         </div>
     </div>
 }
