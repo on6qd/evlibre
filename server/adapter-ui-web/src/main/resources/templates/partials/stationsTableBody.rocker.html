@@ -14,11 +14,7 @@
         <td>@station.vendor() / @station.model()</td>
         <td><span class="font-mono text-xs">@station.protocol()</span></td>
         <td>@partials._onlineBadge.template(station.online())</td>
-        <td>
-            <span class="badge @station.registrationBadgeClass()">
-                @station.registrationStatus()
-            </span>
-        </td>
+        <td>@partials._registrationBadge.template(station.registrationStatus())</td>
         <td>
             <a href="/@tenantId/stations/@station.stationId()" class="btn btn-ghost btn-xs">Detail</a>
         </td>

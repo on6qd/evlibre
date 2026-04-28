@@ -1,5 +1,5 @@
 @args (String command, String status, boolean success)
 
-<div class="cmd-result @if (success) {ok} else {err}">
-    &gt; @command: @status
+<div class="alert @if (success) {alert-success} else {alert-error} font-sans text-sm py-2" role="alert">
+    <span class="font-mono">@command:</span> @status
 </div>

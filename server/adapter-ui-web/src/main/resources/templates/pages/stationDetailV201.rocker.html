@@ -4,169 +4,205 @@
 @args (StationView station, String tenantId)
 
 @main.template(station.stationId(), tenantId) -> {
-    <div class="page-header">
-        <p><a href="/@tenantId/stations">&lt; stations</a></p>
-        <h1>&gt; @station.stationId() <span class="badge" style="font-size:10px;vertical-align:middle;">OCPP 2.0.1</span></h1>
-    </div>
-
-    <div class="two-col">
+    <div class="font-sans space-y-6">
         <div>
-            <div class="panel">
-                <div class="panel-header">station info</div>
-                <div class="panel-body">
-                    <div class="detail-grid">
-                        <div class="key">station id</div>
-                        <div class="val">@station.stationId()</div>
-                        <div class="key">vendor</div>
-                        <div class="val">@station.vendor()</div>
-                        <div class="key">model</div>
-                        <div class="val">@station.model()</div>
-                        <div class="key">serial</div>
-                        <div class="val">@station.serialNumber()</div>
-                        <div class="key">firmware</div>
-                        <div class="val">@station.firmwareVersion()</div>
-                        <div class="key">protocol</div>
-                        <div class="val">@station.protocol()</div>
-                        <div class="key">status</div>
-                        <div class="val">@partials._onlineBadge.template(station.online())</div>
-                        <div class="key">registration</div>
-                        <div class="val"><span class="badge @station.registrationBadgeClass()">@station.registrationStatus()</span></div>
-                    </div>
-                </div>
+            <a href="/@tenantId/stations" class="text-sm text-base-content/60 hover:text-base-content">← Stations</a>
+            <div class="flex items-baseline gap-3 mt-2 flex-wrap">
+                <h1 class="text-2xl font-semibold font-mono break-all">@station.stationId()</h1>
+                <span class="badge badge-soft badge-info">OCPP 2.0.1</span>
             </div>
         </div>
 
-        <div>
-            <div class="panel">
-                <div class="panel-header">commands (ocpp 2.0.1)</div>
-                <div class="panel-body">
-                    @if (station.online()) {
-                        <div class="cmd-grid">
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=Immediate"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                reset (immediate)
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=OnIdle"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                reset (on idle)
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Operative"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                set operative
-                            </button>
-                            <button class="btn btn-warn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Inoperative"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                set inoperative
-                            </button>
-                            <button class="btn"
-                                    hx-post="/@tenantId/stations/@station.stationId()/v201/clear-cache"
-                                    hx-target="#cmd-result"
-                                    hx-swap="innerHTML">
-                                clear cache
-                            </button>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">request start transaction</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/request-start"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                <input type="text" name="idToken" placeholder="id token" value="TAG001" required maxlength="36" style="width:140px;">
-                                <select name="tokenType">
-                                    <option value="ISO14443">ISO14443</option>
-                                    <option value="Central">Central</option>
-                                    <option value="eMAID">eMAID</option>
-                                    <option value="ISO15693">ISO15693</option>
-                                    <option value="KeyCode">KeyCode</option>
-                                    <option value="Local">Local</option>
-                                    <option value="MacAddress">MacAddress</option>
-                                    <option value="NoAuthorization">NoAuthorization</option>
-                                </select>
-                                <input type="number" name="evseId" placeholder="evse (opt)" min="1" style="width:100px;">
-                                <button type="submit" class="btn">start</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:12px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">request stop transaction</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/request-stop"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" name="transactionId" placeholder="tx id" required maxlength="36" style="width:220px;">
-                                <button type="submit" class="btn">stop</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">unlock connector</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/unlock-connector"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="number" name="evseId" placeholder="evse id" min="1" required style="width:80px;">
-                                <input type="number" name="connectorId" placeholder="conn id" min="1" required style="width:80px;">
-                                <button type="submit" class="btn">unlock</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">update firmware</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/update-firmware"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" name="location" placeholder="ftp://host/fw.bin" required maxlength="512" style="width:240px;">
-                                <button type="submit" class="btn btn-warn">update firmware</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">get log</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/get-log"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                <select name="logType">
-                                    <option value="DiagnosticsLog">DiagnosticsLog</option>
-                                    <option value="SecurityLog">SecurityLog</option>
-                                </select>
-                                <input type="text" name="remoteLocation" placeholder="ftp://host/path" required maxlength="512" style="width:220px;">
-                                <button type="submit" class="btn">request log</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 8px 0;">change availability (evse/connector)</div>
-                            <form hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability"
-                                  hx-target="#cmd-result"
-                                  hx-swap="innerHTML"
-                                  style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                <select name="operationalStatus">
-                                    <option value="Operative">Operative</option>
-                                    <option value="Inoperative">Inoperative</option>
-                                </select>
-                                <input type="number" name="evseId" placeholder="evse id" min="1" style="width:80px;">
-                                <input type="number" name="connectorId" placeholder="conn (opt)" min="1" style="width:100px;">
-                                <button type="submit" class="btn">apply</button>
-                            </form>
-                        </div>
-                    } else {
-                        <div style="color:var(--fg-dim);font-size:12px;">station is offline. commands unavailable.</div>
-                    }
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card bg-base-100 border border-base-300 self-start">
+                <div class="card-body">
+                    <h2 class="card-title text-base">Station info</h2>
+                    <dl class="grid grid-cols-[140px_1fr] gap-y-2 text-sm">
+                        <dt class="text-base-content/60">Station ID</dt>
+                        <dd class="font-mono break-all">@station.stationId()</dd>
+                        <dt class="text-base-content/60">Vendor</dt>
+                        <dd>@station.vendor()</dd>
+                        <dt class="text-base-content/60">Model</dt>
+                        <dd>@station.model()</dd>
+                        <dt class="text-base-content/60">Serial</dt>
+                        <dd class="font-mono">@station.serialNumber()</dd>
+                        <dt class="text-base-content/60">Firmware</dt>
+                        <dd class="font-mono">@station.firmwareVersion()</dd>
+                        <dt class="text-base-content/60">Protocol</dt>
+                        <dd class="font-mono">@station.protocol()</dd>
+                        <dt class="text-base-content/60">Status</dt>
+                        <dd>@partials._onlineBadge.template(station.online())</dd>
+                        <dt class="text-base-content/60">Registration</dt>
+                        <dd>@partials._registrationBadge.template(station.registrationStatus())</dd>
+                    </dl>
                 </div>
             </div>
 
-            <div id="cmd-result"></div>
+            <div class="space-y-4">
+                <div class="card bg-base-100 border border-base-300">
+                    <div class="card-body">
+                        <h2 class="card-title text-base">Commands · OCPP 2.0.1</h2>
+                        @if (station.online()) {
+                            <div role="tablist" class="tabs tabs-bordered">
+                                <input type="radio" name="commands-tab" role="tab" class="tab" aria-label="Status" checked>
+                                <div role="tabpanel" class="tab-content pt-4 space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button class="btn btn-sm"
+                                                hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=Immediate"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Reset (immediate)
+                                        </button>
+                                        <button class="btn btn-sm"
+                                                hx-post="/@tenantId/stations/@station.stationId()/v201/reset?type=OnIdle"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Reset (on idle)
+                                        </button>
+                                        <button class="btn btn-sm"
+                                                hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Operative"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Set operative
+                                        </button>
+                                        <button class="btn btn-sm btn-warning"
+                                                hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability?operationalStatus=Inoperative"
+                                                hx-target="#cmd-result" hx-swap="innerHTML">
+                                            Set inoperative
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-sm btn-block"
+                                            hx-post="/@tenantId/stations/@station.stationId()/v201/clear-cache"
+                                            hx-target="#cmd-result" hx-swap="innerHTML">
+                                        Clear cache
+                                    </button>
+                                </div>
+
+                                <input type="radio" name="commands-tab" role="tab" class="tab" aria-label="Transactions">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/request-start"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Request start transaction</h3>
+                                        <div class="flex flex-wrap gap-2 items-end">
+                                            <label class="form-control flex-1 min-w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">ID token</span></div>
+                                                <input type="text" name="idToken" value="TAG001" required maxlength="36" class="input input-sm input-bordered">
+                                            </label>
+                                            <label class="form-control min-w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">Token type</span></div>
+                                                <select name="tokenType" class="select select-sm select-bordered">
+                                                    <option value="ISO14443">ISO14443</option>
+                                                    <option value="Central">Central</option>
+                                                    <option value="eMAID">eMAID</option>
+                                                    <option value="ISO15693">ISO15693</option>
+                                                    <option value="KeyCode">KeyCode</option>
+                                                    <option value="Local">Local</option>
+                                                    <option value="MacAddress">MacAddress</option>
+                                                    <option value="NoAuthorization">NoAuthorization</option>
+                                                </select>
+                                            </label>
+                                            <label class="form-control w-24">
+                                                <div class="label py-1"><span class="label-text text-xs">EVSE</span></div>
+                                                <input type="number" name="evseId" min="1" placeholder="opt" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-primary">Start</button>
+                                        </div>
+                                    </form>
+
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/request-stop"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Request stop transaction</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control flex-1">
+                                                <div class="label py-1"><span class="label-text text-xs">Transaction ID</span></div>
+                                                <input type="text" name="transactionId" required maxlength="36" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-warning">Stop</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <input type="radio" name="commands-tab" role="tab" class="tab" aria-label="Hardware">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/unlock-connector"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Unlock connector</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control w-28">
+                                                <div class="label py-1"><span class="label-text text-xs">EVSE ID</span></div>
+                                                <input type="number" name="evseId" min="1" required class="input input-sm input-bordered">
+                                            </label>
+                                            <label class="form-control w-28">
+                                                <div class="label py-1"><span class="label-text text-xs">Connector ID</span></div>
+                                                <input type="number" name="connectorId" min="1" required class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm">Unlock</button>
+                                        </div>
+                                    </form>
+
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/change-availability"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Change availability (per EVSE / connector)</h3>
+                                        <div class="flex flex-wrap gap-2 items-end">
+                                            <label class="form-control min-w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">Operational status</span></div>
+                                                <select name="operationalStatus" class="select select-sm select-bordered">
+                                                    <option value="Operative">Operative</option>
+                                                    <option value="Inoperative">Inoperative</option>
+                                                </select>
+                                            </label>
+                                            <label class="form-control w-24">
+                                                <div class="label py-1"><span class="label-text text-xs">EVSE</span></div>
+                                                <input type="number" name="evseId" min="1" class="input input-sm input-bordered">
+                                            </label>
+                                            <label class="form-control w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">Connector (opt)</span></div>
+                                                <input type="number" name="connectorId" min="1" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm">Apply</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <input type="radio" name="commands-tab" role="tab" class="tab" aria-label="Maintenance">
+                                <div role="tabpanel" class="tab-content pt-4 space-y-4">
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/update-firmware"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Update firmware</h3>
+                                        <div class="flex gap-2 items-end">
+                                            <label class="form-control flex-1">
+                                                <div class="label py-1"><span class="label-text text-xs">Firmware location</span></div>
+                                                <input type="text" name="location" placeholder="ftp://host/fw.bin" required maxlength="512" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm btn-warning">Update firmware</button>
+                                        </div>
+                                    </form>
+
+                                    <form hx-post="/@tenantId/stations/@station.stationId()/v201/get-log"
+                                          hx-target="#cmd-result" hx-swap="innerHTML" class="space-y-2">
+                                        <h3 class="text-sm font-medium">Get log</h3>
+                                        <div class="flex flex-wrap gap-2 items-end">
+                                            <label class="form-control min-w-32">
+                                                <div class="label py-1"><span class="label-text text-xs">Log type</span></div>
+                                                <select name="logType" class="select select-sm select-bordered">
+                                                    <option value="DiagnosticsLog">DiagnosticsLog</option>
+                                                    <option value="SecurityLog">SecurityLog</option>
+                                                </select>
+                                            </label>
+                                            <label class="form-control flex-1 min-w-48">
+                                                <div class="label py-1"><span class="label-text text-xs">Remote location</span></div>
+                                                <input type="text" name="remoteLocation" placeholder="ftp://host/path" required maxlength="512" class="input input-sm input-bordered">
+                                            </label>
+                                            <button type="submit" class="btn btn-sm">Request log</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        } else {
+                            <div class="text-sm text-base-content/60">Station is offline. Commands unavailable.</div>
+                        }
+                    </div>
+                </div>
+
+                <div id="cmd-result"></div>
+            </div>
         </div>
     </div>
 }

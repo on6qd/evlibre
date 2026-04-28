@@ -115,7 +115,7 @@ class WebUiIT {
                 assertThat(response.statusCode()).isEqualTo(200);
                 String body = response.bodyAsString();
                 assertThat(body).contains("OCPP 2.0.1");
-                assertThat(body).contains("commands (ocpp 2.0.1)");
+                assertThat(body).contains("id=\"cmd-result\"");
                 // v1.6-only endpoints must not be rendered for a v2.0.1 station.
                 assertThat(body).doesNotContain("/remote-start");
                 assertThat(body).doesNotContain("/get-diagnostics");
