@@ -12,11 +12,11 @@
 } else {
 <details class="group border-b border-base-300/60">
     <summary class="flex items-center gap-3 py-1.5 px-1 text-xs cursor-pointer hover:bg-base-200/40 list-none">
-        <span class="font-mono text-base-content/60 w-[6.5rem]">@row.formattedTime()</span>
-        <span class="font-mono text-base text-base-content/70 w-4">@row.direction()</span>
-        <span class="badge badge-sm @row.typeBadgeClass()">@row.typeLabel()</span>
+        <span class="text-base-content/60 w-[6.5rem]">@row.formattedTime()</span>
+        <span class="text-base text-base-content/70 w-4">@row.direction()</span>
+        <span class="inline-flex items-center border @row.typeBadgeClass() px-1.5 py-0 text-[10px] uppercase tracking-wider w-[4.5rem] justify-center">@row.typeLabel()</span>
         <span class="font-medium flex-1 truncate">@row.action()</span>
-        <span class="font-mono text-base-content/40 truncate max-w-[12rem]">@row.messageId()</span>
+        <span class="text-base-content/40 truncate max-w-[12rem]">@row.messageId()</span>
         <span class="text-base-content/40 group-open:rotate-90 transition-transform">▸</span>
     </summary>
     <pre class="text-xs font-mono bg-base-200 rounded p-3 my-1 overflow-x-auto">@row.prettyPayload()</pre>

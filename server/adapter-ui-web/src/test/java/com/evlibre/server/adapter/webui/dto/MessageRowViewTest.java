@@ -37,7 +37,7 @@ class MessageRowViewTest {
         assertThat(v.lifecycle()).isFalse();
         assertThat(v.direction()).isEqualTo("→");
         assertThat(v.typeLabel()).isEqualTo("CALL");
-        assertThat(v.typeBadgeClass()).isEqualTo("badge-info");
+        assertThat(v.typeBadgeClass()).contains("border-info").contains("text-info");
         assertThat(v.action()).isEqualTo("Heartbeat");
         assertThat(v.messageId()).isEqualTo("msg-2");
     }
@@ -51,7 +51,7 @@ class MessageRowViewTest {
 
         assertThat(v.direction()).isEqualTo("←");
         assertThat(v.typeLabel()).isEqualTo("RESULT");
-        assertThat(v.typeBadgeClass()).isEqualTo("badge-ghost");
+        assertThat(v.typeBadgeClass()).contains("border-base-content").contains("text-base-content");
         assertThat(v.action()).isEmpty();
     }
 
@@ -63,7 +63,7 @@ class MessageRowViewTest {
         MessageRowView v = MessageRowView.from(f, mapper);
 
         assertThat(v.typeLabel()).isEqualTo("ERROR");
-        assertThat(v.typeBadgeClass()).isEqualTo("badge-error");
+        assertThat(v.typeBadgeClass()).contains("border-error").contains("text-error");
     }
 
     @Test

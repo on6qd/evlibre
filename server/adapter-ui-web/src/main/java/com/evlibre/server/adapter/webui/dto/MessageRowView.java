@@ -63,10 +63,11 @@ public record MessageRowView(
     }
 
     private static String typeBadgeClass(MessageTraceEntry.FrameType type) {
+        // Industrial outline-pill colors: border + bg/10 + text. Paired with `border` in the row.
         return switch (type) {
-            case CALL -> "badge-info";
-            case CALL_RESULT -> "badge-ghost";
-            case CALL_ERROR -> "badge-error";
+            case CALL ->        "border-info/40 bg-info/10 text-info";
+            case CALL_RESULT -> "border-base-content/30 bg-base-300/40 text-base-content/70";
+            case CALL_ERROR ->  "border-error/40 bg-error/10 text-error";
         };
     }
 
