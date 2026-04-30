@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* JetBrains Mono — drives the industrial / mission-control feel. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
+
 /*
  * DaisyUI plugin is installed by scripts/build-css.sh into <repo>/.tools/node_modules/daisyui.
  * The relative path below climbs from this file (server/adapter-ui-web/src/main/resources/css/)
@@ -11,3 +14,16 @@
 
 @source "../templates";
 @source "../../java";
+
+/* Industrial typography — mono everywhere, sans only as a fallback. */
+@theme {
+    --font-sans: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Industrial corner sharpening for the dim theme. */
+[data-theme="dim"] {
+    --radius-selector: 0.125rem;
+    --radius-field:    0.125rem;
+    --radius-box:      0.125rem;
+}
