@@ -2,7 +2,12 @@ package com.evlibre.server.adapter.ocpp;
 
 import com.evlibre.common.model.ChargePointIdentity;
 import com.evlibre.common.ocpp.OcppProtocol;
+import com.evlibre.server.core.domain.shared.model.MessageTraceEntry;
+import com.evlibre.server.core.domain.shared.model.MessageTraceEntry.Direction;
+import com.evlibre.server.core.domain.shared.model.MessageTraceEntry.FrameType;
 import com.evlibre.server.core.domain.shared.model.TenantId;
+import com.evlibre.server.core.domain.shared.ports.outbound.MessageTraceEventPublisher;
+import com.evlibre.server.core.domain.shared.ports.outbound.MessageTraceStorePort;
 import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
 import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,6 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,11 +30,19 @@ public class OcppStationCommandSender {
 
     private static final Logger log = LoggerFactory.getLogger(OcppStationCommandSender.class);
 
+    private static final MessageTraceStorePort NOOP_TRACE_STORE = new MessageTraceStorePort() {
+        @Override public void record(TenantId t, ChargePointIdentity s, MessageTraceEntry e) {}
+        @Override public List<MessageTraceEntry> recent(TenantId t, ChargePointIdentity s) { return List.of(); }
+    };
+    private static final MessageTraceEventPublisher NOOP_TRACE_EVENTS = (t, s, e) -> {};
+
     private final OcppSessionManager sessionManager;
     private final OcppMessageCodec codec;
     private final OcppPendingCallManager pendingCallManager;
     private final ObjectMapper objectMapper;
     private final OcppSchemaValidator schemaValidator;
+    private final MessageTraceStorePort traceStore;
+    private final MessageTraceEventPublisher traceEvents;
 
     private final Ocpp16StationCommandSender v16Port = this::send16;
     private final Ocpp201StationCommandSender v201Port = this::send201;
@@ -36,7 +51,8 @@ public class OcppStationCommandSender {
                                      OcppMessageCodec codec,
                                      OcppPendingCallManager pendingCallManager,
                                      ObjectMapper objectMapper) {
-        this(sessionManager, codec, pendingCallManager, objectMapper, null);
+        this(sessionManager, codec, pendingCallManager, objectMapper, null,
+                NOOP_TRACE_STORE, NOOP_TRACE_EVENTS);
     }
 
     public OcppStationCommandSender(OcppSessionManager sessionManager,
@@ -44,11 +60,24 @@ public class OcppStationCommandSender {
                                      OcppPendingCallManager pendingCallManager,
                                      ObjectMapper objectMapper,
                                      OcppSchemaValidator schemaValidator) {
+        this(sessionManager, codec, pendingCallManager, objectMapper, schemaValidator,
+                NOOP_TRACE_STORE, NOOP_TRACE_EVENTS);
+    }
+
+    public OcppStationCommandSender(OcppSessionManager sessionManager,
+                                     OcppMessageCodec codec,
+                                     OcppPendingCallManager pendingCallManager,
+                                     ObjectMapper objectMapper,
+                                     OcppSchemaValidator schemaValidator,
+                                     MessageTraceStorePort traceStore,
+                                     MessageTraceEventPublisher traceEvents) {
         this.sessionManager = sessionManager;
         this.codec = codec;
         this.pendingCallManager = pendingCallManager;
         this.objectMapper = objectMapper;
         this.schemaValidator = schemaValidator;
+        this.traceStore = traceStore;
+        this.traceEvents = traceEvents;
     }
 
     public Ocpp16StationCommandSender v16() {
@@ -112,6 +141,10 @@ public class OcppStationCommandSender {
 
         log.info("Sending {} to {} (msgId: {})", action, stationIdentity.value(), pendingCall.messageId());
         session.webSocket().writeTextMessage(message);
+        MessageTraceEntry.OcppFrame entry = new MessageTraceEntry.OcppFrame(
+                Instant.now(), Direction.OUT, FrameType.CALL, action, pendingCall.messageId(), message);
+        traceStore.record(tenantId, stationIdentity, entry);
+        traceEvents.messageRecorded(tenantId, stationIdentity, entry);
 
         @SuppressWarnings("unchecked")
         CompletableFuture<Map<String, Object>> result = pendingCall.future().thenApply(jsonNode ->

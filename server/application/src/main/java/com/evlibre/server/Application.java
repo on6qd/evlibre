@@ -7,6 +7,7 @@ import com.evlibre.server.adapter.ocpp.handler.v201.*;
 import com.evlibre.server.adapter.persistence.inmemory.InMemoryDeviceModelRepository;
 import com.evlibre.server.adapter.persistence.inmemory.InMemoryMonitorRepository;
 import com.evlibre.server.adapter.persistence.inmemory.InMemoryStationConfigurationRepository;
+import com.evlibre.server.adapter.webui.EventBusMessageTraceEventPublisher;
 import com.evlibre.server.adapter.webui.EventBusStationEventPublisher;
 import com.evlibre.server.adapter.webui.WebUiVerticle;
 import com.evlibre.server.adapter.persistence.h2.*;
@@ -142,6 +143,10 @@ public class Application {
         // Station event publisher (pushes updates to Web UI via EventBus)
         EventBusStationEventPublisher stationEventPublisher = new EventBusStationEventPublisher(vertx);
 
+        // Per-station OCPP message trace (live tail in the operator UI)
+        InMemoryMessageTraceStore traceStore = new InMemoryMessageTraceStore();
+        EventBusMessageTraceEventPublisher traceEvents = new EventBusMessageTraceEventPublisher(vertx);
+
         // Use cases
         RegisterStationUseCase registerStation = new RegisterStationUseCase(
                 tenantRepo, stationRepo, eventLog, timeProvider,
@@ -182,7 +187,8 @@ public class Application {
         // CSMS -> CS command support
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager(schemaValidator);
         OcppStationCommandSender commandSender = new OcppStationCommandSender(
-                sessionManager, codec, pendingCallManager, objectMapper, schemaValidator);
+                sessionManager, codec, pendingCallManager, objectMapper, schemaValidator,
+                traceStore, traceEvents);
 
         // Station configuration storage
         var stationConfigRepo = new InMemoryStationConfigurationRepository();
@@ -420,7 +426,8 @@ public class Application {
                 config.ocpp().websocketPort(), config.ocpp().pingInterval(),
                 codec, schemaValidator,
                 dispatcher, sessionManager, protocolNegotiator, pendingCallManager,
-                stationEventPublisher, handleHeartbeat);
+                stationEventPublisher, handleHeartbeat,
+                traceStore, traceEvents);
 
         // Web UI — separate v1.6 and v2.0.1 command ports; the detail view picks its
         // template (and thus which port it targets) by the station's negotiated protocol.

@@ -74,6 +74,8 @@ public class OcppTestHarness {
     public final FakeSignCertificatePolicy signCertificatePolicy = new FakeSignCertificatePolicy();
     public final FakeOcspResolver ocspResolver = new FakeOcspResolver();
     public final FakeIso15118ExiProcessor iso15118ExiProcessor = new FakeIso15118ExiProcessor();
+    public final FakeMessageTraceStore traceStore = new FakeMessageTraceStore();
+    public final FakeMessageTraceEventPublisher traceEvents = new FakeMessageTraceEventPublisher();
 
     public final ObjectMapper objectMapper;
     public final OcppWebSocketVerticle verticle;
@@ -161,7 +163,8 @@ public class OcppTestHarness {
         sessionManager = new OcppSessionManager();
         OcppProtocolNegotiator negotiator = new OcppProtocolNegotiator();
         OcppPendingCallManager pendingCallManager = new OcppPendingCallManager(schemaValidator);
-        commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper, schemaValidator);
+        commandSender = new OcppStationCommandSender(sessionManager, codec, pendingCallManager, objectMapper, schemaValidator,
+                traceStore, traceEvents);
         commandSender16 = commandSender.v16();
         commandSender201 = commandSender.v201();
 
@@ -237,7 +240,8 @@ public class OcppTestHarness {
         dispatcher.registerHandler(OcppProtocol.OCPP_201, "Get15118EVCertificate",
                 new Get15118EVCertificateHandler201(handleGet15118EVCertificate201, objectMapper));
 
-        verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator, pendingCallManager, (t, s) -> {}, handleHeartbeat);
+        verticle = new OcppWebSocketVerticle(0, 60, codec, schemaValidator, dispatcher, sessionManager, negotiator,
+                pendingCallManager, (t, s) -> {}, handleHeartbeat, traceStore, traceEvents);
     }
 
     /**
