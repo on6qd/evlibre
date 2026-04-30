@@ -84,10 +84,12 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
 
         router.route("/ocpp/:tenantId/:stationId").handler(ctx -> {
-            log.debug("HTTP request to {}: upgrade={}", ctx.request().path(),
-                    ctx.request().getHeader("Upgrade"));
+            String offeredSubProtocols = ctx.request().getHeader("Sec-WebSocket-Protocol");
+            log.debug("HTTP request to {}: upgrade={}, sub-protocols=[{}]", ctx.request().path(),
+                    ctx.request().getHeader("Upgrade"), offeredSubProtocols);
             ctx.request().toWebSocket().onSuccess(ws -> {
-                handleWebSocketConnection(ws, ctx.pathParam("tenantId"), ctx.pathParam("stationId"));
+                handleWebSocketConnection(ws, ctx.pathParam("tenantId"), ctx.pathParam("stationId"),
+                        offeredSubProtocols);
             }).onFailure(err -> {
                 log.error("WebSocket upgrade failed for {}: {}", ctx.request().path(), err.getMessage());
             });
@@ -115,13 +117,15 @@ public class OcppWebSocketVerticle extends AbstractVerticle {
         return httpServer != null ? httpServer.actualPort() : -1;
     }
 
-    private void handleWebSocketConnection(ServerWebSocket ws, String tenantIdStr, String stationIdStr) {
+    private void handleWebSocketConnection(ServerWebSocket ws, String tenantIdStr, String stationIdStr,
+                                            String offeredSubProtocols) {
         // Negotiate protocol
         String selectedSubProtocol = ws.subProtocol();
         OcppProtocol protocol = OcppProtocol.fromSubProtocol(selectedSubProtocol);
 
         if (protocol == null) {
-            log.warn("No matching OCPP sub-protocol for connection from {}", stationIdStr);
+            log.warn("No matching OCPP sub-protocol for connection from {} (offered: [{}], selected: [{}])",
+                    stationIdStr, offeredSubProtocols, selectedSubProtocol);
             ws.close((short) 1002, "No matching OCPP sub-protocol");
             return;
         }

@@ -22,5 +22,8 @@ class OcppProtocolTest {
     void fromSubProtocol_unknown_returnsNull() {
         assertThat(OcppProtocol.fromSubProtocol("ocpp3.0")).isNull();
         assertThat(OcppProtocol.fromSubProtocol("")).isNull();
+        // Non-spec variants observed in the wild (e.g. eNovates ENOGEN firmware sends
+        // "ocpp2.01"). Per OCPP-J §3.1.2 only the IANA-registered names are valid; reject.
+        assertThat(OcppProtocol.fromSubProtocol("ocpp2.01")).isNull();
     }
 }
