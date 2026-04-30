@@ -433,7 +433,7 @@ public class Application {
         // template (and thus which port it targets) by the station's negotiated protocol.
         WebUiVerticle webUiVerticle = new WebUiVerticle(
                 tenantRepo, stationRepo, transactionRepo, sessionManager,
-                commandSender.v16(), commandSender.v201(), config.webui().port());
+                commandSender.v16(), commandSender.v201(), traceStore, config.webui().port());
 
         awaitDeploy(vertx, ocppVerticle, "OCPP server");
         log.info("OCPP server started on port {} (database: {})",

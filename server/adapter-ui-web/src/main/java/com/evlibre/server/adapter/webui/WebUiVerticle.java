@@ -3,6 +3,7 @@ package com.evlibre.server.adapter.webui;
 import com.evlibre.server.adapter.ocpp.OcppSessionManager;
 import com.evlibre.server.adapter.webui.handlers.DashboardHandler;
 import com.evlibre.server.adapter.webui.handlers.ErrorHandler;
+import com.evlibre.server.adapter.webui.handlers.MessagesHandler;
 import com.evlibre.server.adapter.webui.handlers.SseHandler;
 import com.evlibre.server.adapter.webui.handlers.StationCommandHandler;
 import com.evlibre.server.adapter.webui.handlers.StationCommandHandlerV201;
@@ -10,10 +11,12 @@ import com.evlibre.server.adapter.webui.handlers.StationDetailHandler;
 import com.evlibre.server.adapter.webui.handlers.StationsHandler;
 import com.evlibre.server.adapter.webui.handlers.TenantContextExtractor;
 import com.evlibre.server.core.domain.v16.ports.outbound.Ocpp16StationCommandSender;
+import com.evlibre.server.core.domain.shared.ports.outbound.MessageTraceStorePort;
 import com.evlibre.server.core.domain.shared.ports.outbound.StationRepositoryPort;
 import com.evlibre.server.core.domain.shared.ports.outbound.TenantRepositoryPort;
 import com.evlibre.server.core.domain.v16.ports.outbound.TransactionRepositoryPort;
 import com.evlibre.server.core.domain.v201.ports.outbound.Ocpp201StationCommandSender;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -33,6 +36,7 @@ public class WebUiVerticle extends AbstractVerticle {
     private final OcppSessionManager sessionManager;
     private final Ocpp16StationCommandSender commandSender;
     private final Ocpp201StationCommandSender commandSender201;
+    private final MessageTraceStorePort traceStore;
     private final int port;
     private HttpServer httpServer;
 
@@ -41,7 +45,7 @@ public class WebUiVerticle extends AbstractVerticle {
                          TransactionRepositoryPort transactionRepository,
                          OcppSessionManager sessionManager,
                          int port) {
-        this(tenantRepository, stationRepository, transactionRepository, sessionManager, null, null, port);
+        this(tenantRepository, stationRepository, transactionRepository, sessionManager, null, null, null, port);
     }
 
     public WebUiVerticle(TenantRepositoryPort tenantRepository,
@@ -50,7 +54,7 @@ public class WebUiVerticle extends AbstractVerticle {
                          OcppSessionManager sessionManager,
                          Ocpp16StationCommandSender commandSender,
                          int port) {
-        this(tenantRepository, stationRepository, transactionRepository, sessionManager, commandSender, null, port);
+        this(tenantRepository, stationRepository, transactionRepository, sessionManager, commandSender, null, null, port);
     }
 
     public WebUiVerticle(TenantRepositoryPort tenantRepository,
@@ -60,12 +64,25 @@ public class WebUiVerticle extends AbstractVerticle {
                          Ocpp16StationCommandSender commandSender,
                          Ocpp201StationCommandSender commandSender201,
                          int port) {
+        this(tenantRepository, stationRepository, transactionRepository, sessionManager,
+                commandSender, commandSender201, null, port);
+    }
+
+    public WebUiVerticle(TenantRepositoryPort tenantRepository,
+                         StationRepositoryPort stationRepository,
+                         TransactionRepositoryPort transactionRepository,
+                         OcppSessionManager sessionManager,
+                         Ocpp16StationCommandSender commandSender,
+                         Ocpp201StationCommandSender commandSender201,
+                         MessageTraceStorePort traceStore,
+                         int port) {
         this.tenantRepository = tenantRepository;
         this.stationRepository = stationRepository;
         this.transactionRepository = transactionRepository;
         this.sessionManager = sessionManager;
         this.commandSender = commandSender;
         this.commandSender201 = commandSender201;
+        this.traceStore = traceStore;
         this.port = port;
     }
 
@@ -92,6 +109,12 @@ public class WebUiVerticle extends AbstractVerticle {
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, stationDetailHandler::showStation));
         router.get("/:tenantId/events/stations")
                 .handler(ctx -> contextExtractor.extractAndValidate(ctx, sseHandler::streamStationUpdates));
+
+        if (traceStore != null) {
+            MessagesHandler messagesHandler = new MessagesHandler(vertx, traceStore, new ObjectMapper());
+            router.get("/:tenantId/stations/:stationId/events/messages")
+                    .handler(ctx -> contextExtractor.extractAndValidate(ctx, messagesHandler::streamMessages));
+        }
 
         // Station command endpoints (POST)
         if (commandSender != null) {
