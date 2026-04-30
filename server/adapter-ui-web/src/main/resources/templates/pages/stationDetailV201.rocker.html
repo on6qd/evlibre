@@ -1,7 +1,9 @@
 @import com.evlibre.server.adapter.webui.dto.StationView
+@import com.evlibre.server.adapter.webui.dto.MessageRowView
+@import java.util.List
 @import layouts.main
 
-@args (StationView station, String tenantId)
+@args (StationView station, String tenantId, List<MessageRowView> messages)
 
 @main.template(station.stationId(), tenantId) -> {
     <div class="font-sans space-y-6">
@@ -13,32 +15,36 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="card bg-base-100 border border-base-300 self-start">
-                <div class="card-body">
-                    <h2 class="card-title text-base">Station info</h2>
-                    <dl class="grid grid-cols-[140px_1fr] gap-y-2 text-sm">
-                        <dt class="text-base-content/60">Station ID</dt>
-                        <dd class="font-mono break-all">@station.stationId()</dd>
-                        <dt class="text-base-content/60">Vendor</dt>
-                        <dd>@station.vendor()</dd>
-                        <dt class="text-base-content/60">Model</dt>
-                        <dd>@station.model()</dd>
-                        <dt class="text-base-content/60">Serial</dt>
-                        <dd class="font-mono">@station.serialNumber()</dd>
-                        <dt class="text-base-content/60">Firmware</dt>
-                        <dd class="font-mono">@station.firmwareVersion()</dd>
-                        <dt class="text-base-content/60">Protocol</dt>
-                        <dd class="font-mono">@station.protocol()</dd>
-                        <dt class="text-base-content/60">Status</dt>
-                        <dd>@partials._onlineBadge.template(station.online())</dd>
-                        <dt class="text-base-content/60">Registration</dt>
-                        <dd>@partials._registrationBadge.template(station.registrationStatus())</dd>
-                    </dl>
+        <div role="tablist" class="tabs tabs-bordered">
+            <input type="radio" name="detail-tab" role="tab" class="tab" aria-label="Overview" checked>
+            <div role="tabpanel" class="tab-content pt-6">
+                <div class="card bg-base-100 border border-base-300 max-w-2xl">
+                    <div class="card-body">
+                        <h2 class="card-title text-base">Station info</h2>
+                        <dl class="grid grid-cols-[140px_1fr] gap-y-2 text-sm">
+                            <dt class="text-base-content/60">Station ID</dt>
+                            <dd class="font-mono break-all">@station.stationId()</dd>
+                            <dt class="text-base-content/60">Vendor</dt>
+                            <dd>@station.vendor()</dd>
+                            <dt class="text-base-content/60">Model</dt>
+                            <dd>@station.model()</dd>
+                            <dt class="text-base-content/60">Serial</dt>
+                            <dd class="font-mono">@station.serialNumber()</dd>
+                            <dt class="text-base-content/60">Firmware</dt>
+                            <dd class="font-mono">@station.firmwareVersion()</dd>
+                            <dt class="text-base-content/60">Protocol</dt>
+                            <dd class="font-mono">@station.protocol()</dd>
+                            <dt class="text-base-content/60">Status</dt>
+                            <dd>@partials._onlineBadge.template(station.online())</dd>
+                            <dt class="text-base-content/60">Registration</dt>
+                            <dd>@partials._registrationBadge.template(station.registrationStatus())</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
 
-            <div class="space-y-4">
+            <input type="radio" name="detail-tab" role="tab" class="tab" aria-label="Commands">
+            <div role="tabpanel" class="tab-content pt-6">
                 <div class="card bg-base-100 border border-base-300">
                     <div class="card-body">
                         <h2 class="card-title text-base">Commands · OCPP 2.0.1</h2>
@@ -198,10 +204,34 @@
                         } else {
                             <div class="text-sm text-base-content/60">Station is offline. Commands unavailable.</div>
                         }
+
+                        <div id="cmd-result" class="mt-4"></div>
                     </div>
                 </div>
+            </div>
 
-                <div id="cmd-result"></div>
+            <input type="radio" name="detail-tab" role="tab" class="tab" aria-label="Messages">
+            <div role="tabpanel" class="tab-content pt-6">
+                <div class="card bg-base-100 border border-base-300">
+                    <div class="card-body">
+                        <div class="flex items-baseline justify-between mb-2">
+                            <h2 class="card-title text-base">OCPP messages</h2>
+                            <span class="text-xs text-base-content/50">live · newest first · last 500</span>
+                        </div>
+                        <div hx-sse="connect:/@tenantId/stations/@station.stationId()/events/messages">
+                            <div id="messages-feed"
+                                 hx-sse="swap:message-row"
+                                 hx-swap="afterbegin">
+                                @for (MessageRowView row : messages) {
+                                    @partials._messageRow.template(row)
+                                }
+                                @if (messages.isEmpty()) {
+                                    <div class="text-sm text-base-content/50 italic py-4">No messages yet. Frames will appear here as the station communicates.</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

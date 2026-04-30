@@ -91,7 +91,7 @@ public class WebUiVerticle extends AbstractVerticle {
         TenantContextExtractor contextExtractor = new TenantContextExtractor(tenantRepository);
         DashboardHandler dashboardHandler = new DashboardHandler(vertx, stationRepository, sessionManager);
         StationsHandler stationsHandler = new StationsHandler(vertx, stationRepository, sessionManager);
-        StationDetailHandler stationDetailHandler = new StationDetailHandler(vertx, stationRepository, sessionManager);
+        StationDetailHandler stationDetailHandler = new StationDetailHandler(vertx, stationRepository, sessionManager, traceStore);
         SseHandler sseHandler = new SseHandler(vertx, stationRepository, sessionManager);
         ErrorHandler errorHandler = new ErrorHandler();
 
